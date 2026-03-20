@@ -1,0 +1,211 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treasurer Dashboard | Eldopoly SACCO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --eldo-navy: #0B1F3A;
+            --eldo-gold: #D4AF37;
+            --eldo-white: #FFFFFF;
+            --eldo-light: #f4f4f6;
+        }
+
+        body {
+            background: var(--eldo-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 240px;
+            background: var(--eldo-navy);
+            color: var(--eldo-white);
+            padding-top: 1.5rem;
+            z-index: 1000;
+        }
+
+        .sidebar-brand {
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--eldo-gold);
+            margin-bottom: 2rem;
+            letter-spacing: 1px;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            color: var(--eldo-white);
+            padding: 12px 20px;
+            text-decoration: none;
+            transition: 0.3s;
+            margin: 4px 15px;
+            border-radius: 8px;
+        }
+
+        .sidebar a i { margin-right: 12px; font-size: 1.1rem; }
+
+        .sidebar a:hover, .sidebar a.active {
+            background: var(--eldo-gold);
+            color: var(--eldo-navy);
+            font-weight: 600;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-left: 240px;
+            padding: 30px;
+        }
+
+        /* CARDS */
+        .stat-card {
+            border: none;
+            border-radius: 15px;
+            transition: transform 0.3s ease;
+            border-left: 5px solid var(--eldo-gold);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title-sub {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6c757d;
+            font-weight: 700;
+        }
+
+        .table-card {
+            border-radius: 15px;
+            overflow: hidden;
+            border: none;
+        }
+
+        .bg-eldo-navy { background-color: var(--eldo-navy); }
+        .text-gold { color: var(--eldo-gold); }
+
+        .btn-export {
+            background: var(--eldo-gold);
+            color: var(--eldo-navy);
+            border: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-brand">ELDOPOLY <br><small style="font-size: 0.7rem; color: white;">TREASURY DEPT</small></div>
+    <a href="{% url 'admin_dashboard' %}"><i class="bi bi-speedometer2"></i> Admin Home</a>
+    <a href="#" class="active"><i class="bi bi-bank"></i> Treasury Overview</a>
+    <a href="{% url 'manage_loan_requests' %}"><i class="bi bi-file-earmark-check"></i> Loan Approvals</a>
+    <a href="#"><i class="bi bi-graph-up-arrow"></i> Financial Reports</a>
+    <a href="#"><i class="bi bi-people"></i> Member Ledger</a>
+    <hr class="mx-3 text-secondary">
+    <a href="{% url 'home' %}"><i class="bi bi-box-arrow-left"></i> Logout</a>
+</div>
+
+<div class="main-content">
+    <div class="container-fluid">
+        
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-0" style="color: var(--eldo-navy);">Financial Controller</h3>
+                <p class="text-muted">Real-time Sacco Liquidity & Asset Tracking</p>
+            </div>
+            <div class="text-end">
+                <span class="badge bg-success px-3 py-2 mb-2">System Live</span>
+                <p class="small text-muted mb-0">Today: {% now "jS F Y" %}</p>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm p-3">
+                    <div class="card-title-sub">Cash at Hand (Liquidity)</div>
+                    <h2 class="fw-bold mt-2" style="color: var(--eldo-navy);">KES {{ available_cash|floatformat:2 }}</h2>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm p-3">
+                    <div class="card-title-sub">Member Savings Pool</div>
+                    <h2 class="fw-bold mt-2">KES {{ total_savings|floatformat:2 }}</h2>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm p-3">
+                    <div class="card-title-sub">Active Loan Debt</div>
+                    <h2 class="fw-bold mt-2 text-danger">KES {{ active_loans_value|floatformat:2 }}</h2>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card shadow-sm p-3" style="border-left-color: var(--eldo-navy);">
+                    <div class="card-title-sub">Total Interest Earned</div>
+                    <h2 class="fw-bold mt-2 text-success">KES {{ total_interest|floatformat:2 }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="card table-card shadow-sm">
+            <div class="card-header bg-eldo-navy py-3 d-flex justify-content-between align-items-center">
+                <h5 class="text-white mb-0"><i class="bi bi-list-columns-reverse me-2"></i> Global Transaction Ledger</h5>
+                <button class="btn btn-sm btn-export"><i class="bi bi-download me-1"></i> Generate Report</button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Timestamp</th>
+                                <th>Member</th>
+                                <th>Category</th>
+                                <th>Ref #</th>
+                                <th class="text-end pe-4">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in recent_transactions %}
+                            <tr>
+                                <td class="ps-4">{{ tx.timestamp|date:"d/m/Y H:i" }}</td>
+                                <td class="fw-600">{{ tx.member.user.get_full_name }}</td>
+                                <td>
+                                    {% if tx.transaction_type == 'deposit' %}
+                                        <span class="badge bg-info-subtle text-info border border-info">Saving</span>
+                                    {% elif tx.transaction_type == 'repayment' %}
+                                        <span class="badge bg-success-subtle text-success border border-success">Repayment</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary">{{ tx.transaction_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-muted small">{{ tx.reference }}</td>
+                                <td class="text-end pe-4 fw-bold">KES {{ tx.amount|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">No transactions found in the ledger.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

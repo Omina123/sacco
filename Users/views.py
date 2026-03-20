@@ -16,8 +16,6 @@ def register(request):
         user_form = MemberRegistrationForm()
 
     return render(request, 'register.html', {'user_form': user_form})
-
-# --- LOGIN / LOGOUT ---
 def Login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -31,15 +29,20 @@ def Login(request):
             if user is not None:
                 login(request, user)
 
-                profile = user.profile
+                # 🔥 Handle NEXT redirect
+                next_url = request.GET.get('next')
 
-                # Check if profile is filled
+                try:
+                    profile = user.profile
+                except:
+                    return redirect('update_profile')
+
                 if profile.id_number and profile.phone_number:
 
-                    if user.is_superuser:
-                        return redirect('admin_dashboard')
+                    if next_url:
+                        return redirect(next_url)
 
-                    elif user.user_type == 'admin':
+                    if user.is_superuser or user.user_type == 'admin':
                         return redirect('admin_dashboard')
 
                     elif user.user_type == 'staff':
@@ -61,6 +64,50 @@ def Login(request):
         form = LoginForm()
 
     return render(request, 'login.html', {'form': form})
+# --- LOGIN / LOGOUT ---
+# def Login(request):
+#     if request.method == 'POST':
+#         form = LoginForm(request.POST)
+
+#         if form.is_valid():
+#             email = form.cleaned_data['Email']
+#             password = form.cleaned_data['password']
+
+#             user = authenticate(request, username=email, password=password)
+
+#             if user is not None:
+#                 login(request, user)
+
+#                 profile = user.profile
+
+#                 # Check if profile is filled
+#                 if profile.id_number and profile.phone_number:
+
+#                     if user.is_superuser:
+#                         return redirect('admin_dashboard')
+
+#                     elif user.user_type == 'admin':
+#                         return redirect('admin_dashboard')
+
+#                     elif user.user_type == 'staff':
+#                         return redirect('staff_dashboard')
+
+#                     elif user.user_type == 'treasurer':
+#                         return redirect('treasurer_dashboard')
+
+#                     else:
+#                         return redirect('member_dashboard')
+
+#                 else:
+#                     return redirect('update_profile')
+
+#             else:
+#                 form.add_error(None, "Invalid email or password")
+
+#     else:
+#         form = LoginForm()
+
+#     return render(request, 'login.html', {'form': form})
 
 # def Login(request):
 #     if request.method == 'POST':

@@ -20,5 +20,7 @@ urlpatterns = [
     path ('manage_loan_requests', views.manage_loan_requests, name='manage_loan_requests'),
     path ('record_transaction', views.record_transaction, name='record_transaction'),
     path ('initiate_stk_push', views.initiate_stk_push, name='initiate_stk_push'),
+    path ('treasurer_dashboard',views.treasurer_dashboard,name='treasurer_dashboard'),
+    path('edit_user_role/<int:user_id>', views.edit_user_role, name='edit_user_role')
     
 ]

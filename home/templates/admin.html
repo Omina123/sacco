@@ -87,7 +87,7 @@
         <small>Eldopoly SACCO Management</small>
     </div>
     <nav class="nav flex-column">
-        <a class="nav-link active" href="#"><i class="fas fa-tachometer-alt me-2"></i> Dashboard Overview</a>
+        <a class="nav-link active" href="{%url 'treasurer_dashboard'%}"><i class="fas fa-tachometer-alt me-2"></i> Dashboard Overview</a>
         <a class="nav-link" href="#"><i class="fas fa-users me-2"></i> Manage Members</a>
         <a class="nav-link" href="#"><i class="fas fa-times-circle me-2 text-danger"></i> Rejected loans
             
@@ -104,6 +104,8 @@
         <a class="nav-link" href="#"><i class="fas fa-vault me-2"></i> SACCO Liquidity</a>
         <a class="nav-link" href="#"><i class="fas fa-receipt me-2"></i> All Transactions</a>
         <a class="nav-link" href="{% url 'LoanP' %}"><i class="fas fa-cog me-2"></i> Loan Setting</a>
+        <td>
+    
     </nav>
 </div>
 
@@ -221,6 +223,17 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                {% for member in all_members %}
+<tr>
+    <td>{{ member.user.get_full_name }}</td>
+    <td>{{ member.user.get_user_type_display }}</td>
+    <td>
+        <a href="{% url 'edit_user_role' member.user.id %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-pencil"></i> Change Role
+        </a>
+    </td>
+</tr>
+{% endfor %}
             </div>
         </div>
     </div>

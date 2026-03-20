@@ -153,8 +153,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const interestInput = document.getElementById("id_interest_rate");
 
     // Example: 12% yearly (you can make dynamic)
-    const interestRate = 12;
-
+// Just hardcode the rate or let the user type it. 
+// DON'T overwrite the rate with a currency amount.
+document.getElementById("id_interest_rate").value = 12;
     amountInput.addEventListener("input", function () {
         let amount = parseFloat(this.value) || 0;
 

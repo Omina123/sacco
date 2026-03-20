@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     "django_bootstrap5",
 ]
-# settings.py
+LOGIN_URL = 'Login'
+LOGIN_REDIRECT_URL = 'member_dashboard'  # fallback# settings.py
 MPESA_CONSUMER_KEY = 'zGwNsbORIOzKwqA2P3sgr0ArDopPQotM1iyyRhjGmdGj7n4T'
 MPESA_CONSUMER_SECRET = 'EMjOYhpEjagIsSvwa5Yucq68e7hGL9yAvWRvZqqLJQ9uS1E5a0ufLD73vkV8ALtg'
 MPESA_SHORTCODE = '174379'

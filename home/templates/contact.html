@@ -72,7 +72,7 @@
             </div>
             <div class="container px-0">
                 <nav class="navbar navbar-expand-lg navbar-dark bg-white py-3 px-4">
-                    <a href="index.html" class="navbar-brand p-0">
+                    <a href="{% url "home"%}" class="navbar-brand p-0">
                         <h1 class="text-primary m-0"><i class="fas fa-donate me-3"></i>SACCO MS</h1>
                         <!-- <img src="img/logo.png" alt="Logo"> -->
                     </a>
@@ -82,10 +82,10 @@
                     {{ request.user.username }}
                     <div class="collapse navbar-collapse" id="navbarCollapse">
                         <div class="navbar-nav ms-auto py-0">
-                           <a href="home" class="nav-item nav-link active">Home</a>
+                           <a href="{% url "home"%}" class="nav-item nav-link active">Home</a>
                             <a href="{% url  'about' %}" class="nav-item nav-link">About</a>
                             <a href="{% url 'Service'%}" class="nav-item nav-link">Services</a>
-                            <a href="project.html" class="nav-item nav-link">Projects</a>
+                            <a href="{% url 'Login'%}" class="nav-item nav-link">Staff</a>
                             <a href="{% url 'Contact'%}" class="nav-item nav-link">Contact</a>
                         </div>
                        

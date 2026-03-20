@@ -103,19 +103,15 @@ def deposit_savings(request):
 
 
 def admin_dashboard(request):
-    # 1. Fetching the Pending Loans for the table
     pending_loans = Loan.objects.filter(status='pending')
     approved_loans = Loan.objects.filter(status='approved')
     rejected_loans = Loan.objects.filter(status='rejected')
     
-    # 2. Calculating Summary Card Data
-    # Total Savings Pool: Sum of all MonthlyContribution amounts
+    # ADD THIS LINE to get all profiles/members
+    all_members = Profile.objects.all() 
+
     total_savings_pool = MonthlyContribution.objects.aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # Total Members count
     total_members = Profile.objects.count()
-    
-    # Total Interest Earned (Example logic: Sum of all completed loans)
     total_interest_earned = Loan.objects.filter(status='completed').aggregate(Sum('amount'))['amount__sum'] or 0
 
     context = {
@@ -123,13 +119,11 @@ def admin_dashboard(request):
         'total_savings_pool': total_savings_pool,
         'total_members': total_members,
         'total_interest_earned': total_interest_earned,
-        'approved_loans':approved_loans,
-        'rejected_loans':rejected_loans
+        'approved_loans': approved_loans,
+        'rejected_loans': rejected_loans,
+        'all_members': all_members, # Add this to context
     }
-
-    # IMPORTANT: Ensure this matches the template name you are using
     return render(request, 'admin.html', context)
-
 @login_required
 def apply_loan(request):
     profile = request.user.profile
@@ -398,6 +392,57 @@ def manage_loan_requests(request):
     
     return render(request, 'approve.html', {'loans': pending_loans})
 
+#@login_required
+def treasurer_dashboard(request):
+
+    # Ensure only treasurers can access
+    #if request.user.user_type != 'treasurer':
+        # messages.error(request, "Access denied. Treasurer only.")
+        # return redirect('member_dashboard')
+
+    total_savings = MonthlyContribution.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_shares = CapitalShare.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    active_loans_value = Loan.objects.filter(status='approved').aggregate(Sum('amount'))['amount__sum'] or 0
+    total_interest_earned = LoanRepaymentSchedule.objects.filter(is_paid=True).aggregate(Sum('amount_due'))['amount_due__sum'] or 0
+    
+    total_repayments = LoanRepayment.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+    available_cash = (total_savings + total_shares + total_repayments) - active_loans_value
+
+    recent_transactions = Transaction.objects.all().order_by('-timestamp')[:10]
+
+    context = {
+        'total_savings': total_savings,
+        'total_shares': total_shares,
+        'active_loans_value': active_loans_value,
+        'available_cash': available_cash,
+        'total_interest': total_interest_earned,
+        'recent_transactions': recent_transactions,
+    }
+
+    return render(request, 'treasurer_dashboard.html', context)
+
+def edit_user_role(request, user_id):
+    # Get the user whose role is being changed
+    target_user = get_object_or_404(CustomUser, id=user_id)
+    
+    if request.method == "POST":
+        form = UserRoleForm(request.POST, instance=target_user)
+        if form.is_valid():
+            user = form.save(commit=False)
+            # Logic: If they become an Admin or Staff, they might need is_staff access
+            if user.user_type in ['admin', 'staff']:
+                user.is_staff = True
+            else:
+                user.is_staff = False
+            
+            user.save()
+            messages.success(request, f"Role for {user.username} updated to {user.get_user_type_display()}.")
+            return redirect('admin_dashboard')
+    else:
+        form = UserRoleForm(instance=target_user)
+    
+    return render(request, 'edit.html', {'form': form, 'target_user': target_user})
 @staff_member_required
 
 def approve_loan(request, loan_id):
@@ -407,35 +452,29 @@ def approve_loan(request, loan_id):
         action = request.POST.get('action')
 
         if action == 'approve':
-
-            # 🔒 Prevent re-approving same loan
-            if loan.status == 'approved':
-                messages.warning(request, "Loan already approved.")
-                return redirect('admin_dashboard')
-
-            # 🔒 Prevent duplicate schedules
-            if LoanRepaymentSchedule.objects.filter(loan=loan).exists():
-                messages.warning(request, "Repayment schedule already exists.")
-                return redirect('admin_dashboard')
-
-            # ✅ Update loan
+            # SANITY CHECK: If interest_rate is > 100, it's definitely a mistake from the form
+            if loan.interest_rate > 100:
+                loan.interest_rate = Decimal('12.00') # Default to a safe rate
+            
             loan.status = 'approved'
             loan.approval_date = timezone.now()
+            
+            principal = loan.amount
+            # Convert interest rate to decimal (e.g., 12 becomes 0.12)
+            rate = loan.interest_rate / Decimal('100')
+            # Time in years (e.g., 12 months becomes 1.0)
+            time = Decimal(loan.duration_months) / Decimal('12')
+
+            total_interest = principal * rate * time
+            total_payable = principal + total_interest
+            
             loan.save()
 
-            # ✅ Calculate interest
-            total_interest = (
-                loan.amount *
-                (loan.interest_rate / Decimal('100')) *
-                (loan.duration_months / Decimal('12'))
-            )
+            # Clear any old schedules first to prevent duplicates
+            LoanRepaymentSchedule.objects.filter(loan=loan).delete()
 
-            total_payable = loan.amount + total_interest
+            monthly_installment = total_payable / Decimal(loan.duration_months)
 
-            # ✅ Monthly installment
-            monthly_installment = total_payable / loan.duration_months
-
-            # ✅ Generate repayment schedule
             for i in range(1, loan.duration_months + 1):
                 LoanRepaymentSchedule.objects.create(
                     loan=loan,
@@ -445,21 +484,8 @@ def approve_loan(request, loan_id):
                     is_paid=False
                 )
 
-            messages.success(
-                request,
-                f"Loan Approved ✅ | Total Interest: KES {total_interest:,.2f} | Monthly: KES {monthly_installment:,.2f}"
-            )
-
+            messages.success(request, f"Loan Approved. Total to pay: KES {total_payable:,.2f}")
             return redirect('admin_dashboard')
-
-        elif action == 'reject':
-            loan.status = 'rejected'
-            loan.save()
-
-            messages.warning(request, "Loan has been rejected.")
-            return redirect('admin_dashboard')
-
-    return redirect('admin_dashboard')
 def record_transaction(member_profile, type, amount, reference=None, loan=None):
     if not reference:
         # Map transaction types to prefixes

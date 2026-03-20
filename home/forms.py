@@ -1,7 +1,16 @@
 from django import forms
 from .models import *
 from Users.models import Profile
+from Users.models import CustomUser
 
+class UserRoleForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['user_type', 'is_active', 'is_staff']
+        widgets = {
+            'user_type': forms.Select(attrs={'class': 'form-select'}),
+        }
+        
 class LoanApplicationForm(forms.ModelForm):
 
     guarantors = forms.ModelMultipleChoiceField(
