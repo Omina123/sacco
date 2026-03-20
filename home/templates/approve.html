@@ -1,0 +1,31 @@
+<h2>Pending Loan Applications</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Member</th>
+            <th>Amount</th>
+            <th>Purpose</th>
+            <th>Duration</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for loan in loans %}
+        <tr>
+            <td>{{ loan.member }}</td>
+            <td>{{ loan.amount }}</td>
+            <td>{{ loan.purpose }}</td>
+            <td>{{ loan.duration_months }} Months</td>
+            <td>
+                <form method="POST" action="{% url 'approve_loan' loan.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button name="action" value="approve" class="btn btn-success btn-sm">Approve</button>
+                    <button name="action" value="reject" class="btn btn-danger btn-sm">Reject</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No pending loans found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
