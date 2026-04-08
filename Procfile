@@ -1,1 +1,1 @@
-web: gunicorn sacco.wsgi
+ gunicorn sacco.wsgi
