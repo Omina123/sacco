@@ -54,18 +54,27 @@ MPESA_CONSUMER_KEY = 'zGwNsbORIOzKwqA2P3sgr0ArDopPQotM1iyyRhjGmdGj7n4T'
 MPESA_CONSUMER_SECRET = 'EMjOYhpEjagIsSvwa5Yucq68e7hGL9yAvWRvZqqLJQ9uS1E5a0ufLD73vkV8ALtg'
 MPESA_SHORTCODE = '174379'
 MPESA_PASSKEY = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Must be right after SecurityMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
+# MIDDLEWARE = [
+#     'django.middleware.security.SecurityMiddleware',
+#     'django.contrib.sessions.middleware.SessionMiddleware',
+#     'django.middleware.common.CommonMiddleware',
+#     'django.middleware.csrf.CsrfViewMiddleware',
+#     'django.contrib.auth.middleware.AuthenticationMiddleware',
+#     'django.contrib.messages.middleware.MessageMiddleware',
+#     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+#     'django.middleware.security.SecurityMiddleware',
+#     'whitenoise.middleware.WhiteNoiseMiddleware',
+# ]
 
 ROOT_URLCONF = 'SACCO.urls'
 
@@ -154,3 +163,4 @@ AUTHENTICATION_BACKENDS=["Users.EmailBackend.EmailBackend",  # your custom email
 ]
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'member_dashboard'
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
