@@ -1,1 +1,1 @@
- gunicorn core.wsgi
+ gunicorn SACCO.wsgi
