@@ -1,0 +1,1 @@
+web: gunicorn sacco.wsgi
