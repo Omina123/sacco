@@ -1,146 +1,68 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
+
 from .forms import *
 from .EmailBackend import EmailBackend
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login,logout
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+
 def register(request):
     if request.method == 'POST':
         user_form = MemberRegistrationForm(request.POST)
         if user_form.is_valid():
             user = user_form.save(commit=False)
-            user.user_type = 'member'
-            # Note: UserCreationForm handles password hashing automatically
-            user.save() 
-            return redirect('Login')
+            user.user_type = '4'  # Assign 'Member'
+            user.save()
+            
+            # CRITICAL: Create the empty profile so the user can log in
+            # and later fill it out via 'update_profile'
+            Profile.objects.get_or_create(user=user)
+            
+            # messages.success(request, "Registration successful! Please login to complete your profile.")
+            return redirect('succfy')
     else:
         user_form = MemberRegistrationForm()
-
     return render(request, 'register.html', {'user_form': user_form})
+
+# --- LOGIN / LOGOUT ---
+
 def Login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
-
         if form.is_valid():
             email = form.cleaned_data['Email']
             password = form.cleaned_data['password']
 
             user = authenticate(request, username=email, password=password)
-
+            
             if user is not None:
+                login(request, user)  # ONLY once
+                print("Authenticated:", user)
                 login(request, user)
+                print("User logged in:", request.user.is_authenticated)
+                print("Authenticated:", user)
+                print("Is staff?", user.is_staff)
+                print("User type:", user.user_type)
+                profile = user.profile
 
-                # 🔥 Handle NEXT redirect
-                next_url = request.GET.get('next')
-
-                try:
-                    profile = user.profile
-                except:
-                    return redirect('update_profile')
-
+                # Redirect based on user type
                 if profile.id_number and profile.phone_number:
-
-                    if next_url:
-                        return redirect(next_url)
-
-                    if user.is_superuser or user.user_type == 'admin':
+                    if user.is_superuser or user.user_type == '1':
                         return redirect('admin_dashboard')
-
-                    elif user.user_type == 'staff':
+                    elif user.user_type == '2':
                         return redirect('staff_dashboard')
-
-                    elif user.user_type == 'treasurer':
+                    elif user.user_type == '3':
                         return redirect('treasurer_dashboard')
-
                     else:
                         return redirect('member_dashboard')
-
                 else:
                     return redirect('update_profile')
-
             else:
                 form.add_error(None, "Invalid email or password")
-
     else:
         form = LoginForm()
-
     return render(request, 'login.html', {'form': form})
-# --- LOGIN / LOGOUT ---
-# def Login(request):
-#     if request.method == 'POST':
-#         form = LoginForm(request.POST)
 
-#         if form.is_valid():
-#             email = form.cleaned_data['Email']
-#             password = form.cleaned_data['password']
-
-#             user = authenticate(request, username=email, password=password)
-
-#             if user is not None:
-#                 login(request, user)
-
-#                 profile = user.profile
-
-#                 # Check if profile is filled
-#                 if profile.id_number and profile.phone_number:
-
-#                     if user.is_superuser:
-#                         return redirect('admin_dashboard')
-
-#                     elif user.user_type == 'admin':
-#                         return redirect('admin_dashboard')
-
-#                     elif user.user_type == 'staff':
-#                         return redirect('staff_dashboard')
-
-#                     elif user.user_type == 'treasurer':
-#                         return redirect('treasurer_dashboard')
-
-#                     else:
-#                         return redirect('member_dashboard')
-
-#                 else:
-#                     return redirect('update_profile')
-
-#             else:
-#                 form.add_error(None, "Invalid email or password")
-
-#     else:
-#         form = LoginForm()
-
-#     return render(request, 'login.html', {'form': form})
-
-# def Login(request):
-#     if request.method == 'POST':
-#         form = LoginForm(request.POST)
-#         if form.is_valid():
-#             # Match the field name 'Email' from your forms.py
-#             email = form.cleaned_data['Email'] 
-#             password = form.cleaned_data['password']
-
-#             # Authenticate using the EmailBackend
-#             user = authenticate(request, username=email, password=password)
-            
-#             if user is not None:
-#                 login(request, user)
-#                 # Dynamic Redirect based on user_typ
-#                 profile = user.profile 
-#                 #is_profile_complete = profile.id_number is not None and profile.phone_number != ""
-#                 if profile.id_number and profile.phone_number:
-#                     if user.is_superuser:
-#                         return redirect('admin_dashboard')
-#                     if user.user_type == 'admin':
-#                         return redirect('admin_dashboard') # Ensure these URLs exist
-#                     elif user.user_type == 'staff':
-#                         return redirect('staff_dashboard')
-#                     elif user.user_type == 'treasurer':
-#                         return redirect('treasurer_dashboard')
-#                 else:
-#                     return redirect('update_profile')
-#             else:
-#                 form.add_error(None, "Invalid email or password")
-#     else:
-#         form = LoginForm()
-#     return render(request, 'login.html', {'form': form})
 @login_required
 def update_profile(request):
     if request.method == 'POST':
@@ -166,3 +88,38 @@ def update_profile(request):
         'u_form': u_form,
         'p_form': p_form
     })
+def Logout(request):
+    logout(request)
+    return redirect('login')
+@login_required
+def edit_user_role(request, user_id):
+    # Only allow actual Admins (type '1') to access this view
+    if request.user.user_type != '1' and not request.user.is_superuser:
+        messages.error(request, "Unauthorized access.")
+        return redirect('member_dashboard')
+
+    target_user = get_object_or_404(CustomUser, id=user_id)
+    
+    if request.method == "POST":
+        form = UserRoleForm(request.POST, instance=target_user)
+        if form.is_valid():
+            user = form.save(commit=False)
+            
+            # Sync internal Django permissions with your SACCO roles
+            # Admin('1'), Staff('2'), and Treasurer('3') need is_staff = True
+            if user.user_type in ['1', '2', '3']:
+                user.is_staff = True
+            else:
+                user.is_staff = False
+            
+            user.save()
+            messages.success(request, f"Role for {user.username} updated.")
+            return redirect('admin_dashboard')
+    else:
+        form = UserRoleForm(instance=target_user)
+    
+    return render(request, 'edit.html', {'form': form, 'target_user': target_user})
+def access_denied(request):
+    return render(request, '403.html', status=403)
+def succfy(request):
+    return render(request, "ht.html")

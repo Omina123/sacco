@@ -1,0 +1,253 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Portal | Eldopoly SACCO</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --admin-green: #1B5E20;
+    --sidebar-dark: #144718;
+    --admin-gold: #D4AF37;
+    --admin-yellow: #FFD700;
+    --sidebar-width: 280px;
+    --soft-bg: #f4f7f6;
+}
+
+body { background: var(--soft-bg); font-family: 'Inter', sans-serif; color: #2c3e50; margin: 0; }
+
+/* SIDEBAR ENHANCEMENTS */
+.admin-sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    top: 0; left: 0;
+    background: linear-gradient(180deg, var(--admin-green) 0%, var(--sidebar-dark) 100%);
+    color: white;
+    z-index: 1000;
+    box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    overflow-y: auto;
+}
+.admin-sidebar::-webkit-scrollbar { width: 6px; }
+.admin-sidebar::-webkit-scrollbar-thumb { background-color: rgba(255,255,255,0.3); border-radius: 3px; }
+
+.brand-section { padding: 2rem 1.5rem; background: rgba(0,0,0,0.1); text-align: center; }
+
+.nav-link-side {
+    color: rgba(255,255,255,0.7);
+    padding: 12px 25px;
+    text-decoration: none;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    margin: 4px 15px;
+}
+.nav-link-side i { font-size: 1.1rem; width: 30px; }
+
+.nav-link-side:hover, .nav-link-side.active {
+    background: rgba(255,255,255,0.15);
+    color: var(--admin-yellow);
+    transform: translateX(5px);
+}
+.nav-link-side.active {
+    background: var(--admin-gold);
+    color: white;
+    font-weight: 600;
+}
+
+/* COLLAPSIBLE SIDEBAR FOR MOBILE */
+#sidebarToggle { display: none; }
+@media (max-width: 992px) {
+    .admin-sidebar { left: -280px; }
+    .admin-sidebar.show { left: 0; }
+    #sidebarToggle { display: block; position: fixed; top: 15px; left: 15px; z-index: 1100; background: var(--admin-green); border: none; color: var(--admin-yellow); padding: 8px 12px; border-radius: 6px; }
+}
+
+/* TOP NAVBAR */
+.top-navbar {
+    margin-left: var(--sidebar-width);
+    background: white;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid #eef2f6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: margin-left 0.3s;
+}
+@media (max-width: 992px) { .top-navbar { margin-left: 0; padding: 1rem; } }
+
+/* CARDS */
+.content-wrapper { margin-left: var(--sidebar-width); padding: 2rem; transition: margin-left 0.3s; }
+@media (max-width: 992px) { .content-wrapper { margin-left: 0; padding: 1rem; } }
+
+.summary-card { border: none; border-radius: 16px; padding: 1.5rem; transition: transform 0.3s; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+.summary-card:hover { transform: translateY(-5px); }
+
+.card-icon { width: 56px; height: 56px; background: #e8f5e9; color: var(--admin-green); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+
+/* TABLE STYLING */
+.data-table-card { border: none; border-radius: 16px; overflow: hidden; background: white; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+.table thead th { background: #f8f9fa; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; font-weight: 700; color: #7f8c8d; padding: 1.2rem; border-bottom: 1px solid #eee; }
+.table tbody td { padding: 1.2rem; border-bottom: 1px solid #f8f9fa; }
+
+/* ACTION BUTTONS */
+.btn-action { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; transition: 0.2s; border: none; }
+.btn-approve { background: #d4edda; color: #1B5E20; }
+.btn-approve:hover { background: #1B5E20; color: white; }
+.btn-reject { background: #f8d7da; color: #721c24; }
+.btn-reject:hover { background: #721c24; color: white; }
+
+/* PROGRESS TRACKER */
+.progress-pill { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+.pill-done { background: #e8f5e9; color: #2e7d32; }
+.pill-wait { background: #f5f5f5; color: #9e9e9e; }
+
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR TOGGLE BUTTON FOR MOBILE -->
+<button id="sidebarToggle"><i class="bi bi-list"></i> Menu</button>
+
+<div class="admin-sidebar" id="adminSidebar">
+    <div class="brand-section mb-3">
+        <h4 class="fw-bold mb-0" style="color: var(--admin-yellow); letter-spacing: 2px;">ELDOPOLY</h4>
+        <small class="text-white-50 text-uppercase fw-semibold" style="font-size: 0.65rem;">Staff Credit Office</small>
+    </div>
+    
+    <nav class="nav flex-column">
+        <a class="nav-link-side active" href="{% url 'staff_dashboard' %}"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+        <a class="nav-link-side" href="{% url 'pending_loans' %}"><i class="bi bi-file-earmark-medical"></i> Pending Reviews
+            <span class="badge rounded-pill bg-danger ms-auto">{{ pending_loans.count }}</span>
+        </a>
+        <div class="px-4 py-2 mt-3 small text-white-50 text-uppercase fw-bold" style="font-size: 0.65rem;">Management</div>
+        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-wallet2"></i> Members Savings</a>
+        <a href="{% url 'approved_loans' %}" class="nav-link-side"><i class="bi bi-check-circle"></i> Approved Loans</a>
+        <a href="{% url 'rejected_loans' %}" class="nav-link-side"><i class="bi bi-x-circle"></i> Rejected Loans</a>
+        <a href="{% url 'Completed_loans' %}" class="nav-link-side"><i class="bi bi-flag"></i> Completed Loans</a>
+        <a href="{% url 'member_dashboard' %}" class="nav-link-side"><i class="bi bi-gear"></i> Visit Members Site</a>
+        <hr class="mx-4 opacity-10">
+        <a href="{% url 'member_dashboard' %}" class="nav-link-side"><i class="bi bi-arrow-left-right"></i> Member Site</a>
+        <a class="nav-link-side text-danger" href="{% url 'Logout' %}"><i class="bi bi-box-arrow-left"></i> Logout</a>
+    </nav>
+</div>
+
+<div class="top-navbar">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-shield-check text-success fs-4 me-2"></i>
+        <h5 class="fw-bold mb-0">Loan Processing Desk</h5>
+    </div>
+    <div class="d-flex align-items-center">
+        <div class="text-end me-3">
+            <div class="fw-bold small">{{ user.get_full_name|default:user.username }}</div>
+            <div class="text-muted" style="font-size: 0.7rem;">Credit Officer</div>
+        </div>
+        <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=1B5E20&color=fff" class="rounded-circle" width="40" alt="avatar">
+    </div>
+</div>
+
+<div class="content-wrapper">
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="summary-card d-flex align-items-center">
+                <div class="card-icon"><i class="bi bi-people"></i></div>
+                <div class="ms-3">
+                    <h6 class="text-muted small mb-1">Total Members</h6>
+                    <h4 class="fw-bold mb-0">{{ total_members }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card d-flex align-items-center">
+                <div class="card-icon" style="background: #fff3e0; color: #ef6c00;"><i class="bi bi-pen"></i></div>
+                <div class="ms-3">
+                    <h6 class="text-muted small mb-1">Pending My Signature</h6>
+                    <h4 class="fw-bold mb-0">{{ pending_loans.count }}</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="summary-card d-flex align-items-center">
+                <div class="card-icon" style="background: #e3f2fd; color: #1565c0;"><i class="bi bi-bank"></i></div>
+                <div class="ms-3">
+                    <h6 class="text-muted small mb-1">Total Savings Pool</h6>
+                    <h4 class="fw-bold mb-0">KES {{ total_savings_pool|floatformat:2 }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-table-card">
+        <div class="p-4 bg-white d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-warning"></i>Applications Awaiting Approval</h5>
+            <button class="btn btn-sm btn-light border text-muted px-3 rounded-pill">View All</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Member Details</th>
+                        <th>Loan Purpose</th>
+                        <th>Amount</th>
+                        <th>Duration</th>
+                        <th>Approval Flow</th>
+                        <th class="text-center">Quick Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in pending_loans %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold">{{ loan.member.user.get_full_name|default:loan.member.user.username }}</div>
+                            <small class="text-muted">ID: #{{ loan.id|stringformat:"05d" }}</small>
+                        </td>
+                        <td><span class="badge bg-light text-dark fw-medium">{{ loan.purpose.name }}</span></td>
+                        <td><span class="fw-bold">KES {{ loan.amount|floatformat:2 }}</span></td>
+                        <td>{{ loan.duration_months }} Months</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <span class="progress-pill {% if loan.admin_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-person-badge"></i> Admin</span>
+                                <span class="progress-pill {% if loan.staff_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-person-check"></i> Staff</span>
+                                <span class="progress-pill {% if loan.treasurer_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-cash-coin"></i> Treasurer</span>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'approve_loan' loan.id %}" class="btn btn-success">Approve</a>
+                            <a href="{% url 'reject_loan' loan.id %}" class="btn btn-danger">Reject</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="py-4">
+                                <i class="bi bi-inbox text-light display-1"></i>
+                                <p class="text-muted mt-3 italic">Queue is clear. No pending applications found.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const sidebar = document.getElementById('adminSidebar');
+const toggle = document.getElementById('sidebarToggle');
+toggle.addEventListener('click', () => {
+    sidebar.classList.toggle('show');
+});
+</script>
+</body>
+</html>

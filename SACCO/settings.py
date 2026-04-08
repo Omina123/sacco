@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     "django_bootstrap5",
+    'mathfilters',
+  
 ]
 LOGIN_URL = 'Login'
 LOGIN_REDIRECT_URL = 'member_dashboard'  # fallback# settings.py
@@ -140,3 +142,5 @@ AUTH_USER_MODEL = 'Users.CustomUser'
 AUTHENTICATION_BACKENDS=["Users.EmailBackend.EmailBackend",  # your custom email backend
     'django.contrib.auth.backends.ModelBackend',  # fallback
 ]
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'member_dashboard'

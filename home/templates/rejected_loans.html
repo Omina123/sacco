@@ -1,0 +1,206 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rejected Loans | Eldopoly SACCO</title>
+    
+    <!-- Google Fonts & Bootstrap -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<style>
+    :root {
+        --eldo-green: #14452F;
+        --eldo-gold: #D4AF37;
+        --sidebar-width: 260px;
+        --top-nav-height: 70px;
+        --bg-light: #f4f7f6;
+    }
+
+    body { 
+        background-color: var(--bg-light);
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        margin: 0;
+        overflow-x: hidden;
+    }
+
+    /* --- SIDEBAR --- */
+    .sidebar {
+        width: var(--sidebar-width);
+        height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+        background: var(--eldo-green);
+        z-index: 1100;
+        padding: 1.5rem;
+        color: white;
+        transition: all 0.3s ease;
+        overflow-y: auto;
+    }
+    .sidebar.hide { transform: translateX(-100%); }
+
+    .sidebar-brand {
+        font-weight: 800;
+        font-size: 1.2rem;
+        color: var(--eldo-gold);
+        padding-bottom: 2rem;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .nav-link-side {
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        padding: 12px 15px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: 0.2s;
+    }
+    .nav-link-side:hover, .nav-link-side.active { background: rgba(255,255,255,0.1); color: var(--eldo-gold); }
+    .nav-link-side i { font-size: 1.1rem; margin-right: 12px; }
+
+    /* --- TOP NAVBAR --- */
+    .top-navbar {
+        height: var(--top-nav-height);
+        background: white;
+        position: fixed;
+        top: 0;
+        right: 0;
+        left: var(--sidebar-width);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1.5rem;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.03);
+        border-bottom: 1px solid #eee;
+    }
+
+    /* --- MAIN CONTENT AREA --- */
+    .main-wrapper {
+        margin-left: var(--sidebar-width);
+        margin-top: var(--top-nav-height);
+        padding: 2.5rem;
+        transition: margin-left 0.3s ease;
+    }
+
+    /* --- Responsive --- */
+    @media (max-width: 992px) {
+        .sidebar { transform: translateX(-100%); position: fixed; }
+        .sidebar.show { transform: translateX(0); }
+        .top-navbar { left: 0; }
+        .main-wrapper { margin-left: 0; padding: 1rem; }
+        .metric-card { text-align: center; }
+    }
+
+    /* --- Buttons --- */
+    .btn-toggle-sidebar { display: none; border: none; background: none; font-size: 1.5rem; }
+    @media (max-width: 992px) { .btn-toggle-sidebar { display: inline-block; } }
+
+    /* --- Cards and Tables --- */
+    .metric-card { background: white; border-radius: 20px; padding: 1.5rem; border: 1px solid #f0f0f0; box-shadow: 0 4px 12px rgba(0,0,0,0.02); margin-bottom: 1.5rem; }
+    .label-text { font-size: 0.7rem; font-weight: 800; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+    .value-text { font-size: 1.5rem; font-weight: 800; color: var(--eldo-green); }
+
+    .content-card { background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.03); border: 1px solid #eee; margin-bottom: 2rem; }
+
+    .status-pill { padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; }
+
+    .btn-gold { background: var(--eldo-gold); color: var(--eldo-green); border: none; font-weight: 800; border-radius: 10px; padding: 10px 20px; transition: 0.3s; }
+    .btn-gold:hover { background: #b8972f; color: white; transform: translateY(-2px); }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><i class="bi bi-bank2"></i> ELDOPOLY</div>
+    <nav>
+        <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="#" class="nav-link-side active"><i class="bi bi-wallet2"></i> Treasury Dept</a>
+        {% comment %} <a href="{% url 'manage_loan_requests' %}" class="nav-link-side"><i class="bi bi-journal-check"></i> Pending Approvals</a> {% endcomment %}
+        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-people"></i> Members Savings</a>
+        <a href="{% url 'pending_loans' %}" class="nav-link-side"><i class="bi bi-gear"></i> Pending Loans</a>
+        <a href="{% url 'approved_loans' %}" class="nav-link-side"><i class="bi bi-gear"></i> Approved Loans</a>
+        <a href="{% url 'rejected_loans' %}" class="nav-link-side"><i class="bi bi-gear"></i> Rejected Loans</a>
+        <div style="margin-top: 50px;">
+            <p class="small text-muted px-3 mb-2">SYSTEM</p>
+            <a href="#" class="nav-link-side text-white-50"><i class="bi bi-gear"></i> Settings</a>
+            <a href="{% url 'Logout' %}" class="nav-link-side text-danger"><i class="bi bi-power"></i> Sign Out</a>
+        </div>
+    </nav>
+</aside>
+<header class="top-navbar">
+    <div class="d-flex align-items-center">
+        <button class="btn-toggle-sidebar me-3" id="toggleSidebar"><i class="bi bi-list"></i></button>
+        <h5 class="mb-0 fw-800" style="color: #444;">Treasury Oversight</h5>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <div class="text-end d-none d-sm-block">
+            <div class="fw-800 small">{{ request.user.get_full_name }}</div>
+            <div class="text-muted" style="font-size: 0.7rem;">Senior Treasurer</div>
+        </div>
+        <div class="bg-light rounded-circle p-2 border" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+            <i class="bi bi-person-fill text-eldo-green"></i>
+        </div>
+    </div>
+</header>
+
+
+<div class="main-wrapper">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h2 class="fw-800 mb-1">Rejected Loans</h2>
+            <p class="text-muted">Generated on: {% now "jS F Y" %}</p>
+        </div>
+        <button class="btn btn-print shadow-sm" onclick="window.print()">
+            <i class="bi bi-file-pdf-fill me-2"></i> GENERATE PDF
+        </button>
+    </div>
+
+    <div class="report-card">
+        <div class="table-responsive">
+            <table class="table table-premium align-middle">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Loan Amount</th>
+                        <th>Purpose</th>
+                        <th>Status</th>
+                        <th class="text-end">Approvals</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in rejected_loans %}
+                    <tr>
+                        <td>{{ loan.member.user.get_full_name }}</td>
+                        <td class="currency-text">KES {{ loan.amount|floatformat:2 }}</td>
+                        <td>{{ loan.purpose.name }}</td>
+                        <td class="text-danger fw-bold">{{ loan.status|title }}</td>
+                        <td class="text-end fw-bold">{{ loan.approval_count }}/3</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">No rejected loans.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

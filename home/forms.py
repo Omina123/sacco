@@ -3,40 +3,43 @@ from .models import *
 from Users.models import Profile
 from Users.models import CustomUser
 
-class UserRoleForm(forms.ModelForm):
-    class Meta:
-        model = CustomUser
-        fields = ['user_type', 'is_active', 'is_staff']
-        widgets = {
-            'user_type': forms.Select(attrs={'class': 'form-select'}),
-        }
-        
 class LoanApplicationForm(forms.ModelForm):
-
-    guarantors = forms.ModelMultipleChoiceField(
-        queryset=Profile.objects.none(),
-        widget=forms.SelectMultiple(attrs={'class': 'form-select select2'}),
-        help_text="Hold Ctrl (or Cmd) to select multiple members"
+    
+    DURATION_CHOICES = [(i, f"{i} Months") for i in range(1, 49)]
+    
+    duration_months = forms.ChoiceField(
+        choices=DURATION_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control', 'id': 'id_duration_months'}),
+        label="Loan Duration"
     )
 
-    def __init__(self, *args, **kwargs):   # ✅ FIXED (was *ar)
+    def __init__(self, *args, **kwargs):
+        user_profile = kwargs.pop('user_profile', None)
+        super().__init__(*args, **kwargs)
+
+        if 'purpose' in self.fields:
+            self.fields['purpose'].widget.attrs.update({'class': 'form-control'})
+
+        if 'amount' in self.fields:
+            self.fields['amount'].widget.attrs.update({'class': 'form-control'})
+
+    class Meta:
+        model = Loan
+        fields = ['purpose', 'amount', 'duration_months']
+        
+class GuarantorForm(forms.ModelForm):
+    class Meta:
+        model = Guarantor
+        fields = ['guarantor', 'guaranteed_amount']
+
+    def __init__(self, *args, **kwargs):
         user_profile = kwargs.pop('user_profile', None)
         super().__init__(*args, **kwargs)
 
         if user_profile:
-            self.fields['guarantors'].queryset = Profile.objects.exclude(id=user_profile.id)
+            self.fields['guarantor'].queryset = Profile.objects.exclude(id=user_profile.id)
 
-    # ✅ MUST BE INSIDE THE CLASS
-    class Meta:
-        model = Loan
-        fields = ['purpose', 'amount', 'duration_months', 'interest_rate']
-        widgets = {
-            'purpose': forms.Select(attrs={'class': 'form-select'}),
-            'amount': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 50000'}),
-            'duration_months': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Months'}),
-            'interest_rate': forms.NumberInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
-        }
-class SavingsForm(forms.ModelForm):
+class MonthlyContributionForm(forms.ModelForm):
     class Meta:
         model = MonthlyContribution
         # Exclude 'member' because we set it automatically in the view
@@ -69,14 +72,23 @@ class LoanRepaymentForm(forms.ModelForm):
         if user_profile:
           # Only show loans that are Approved and not yet fully Completed
             self.fields['loan'].queryset = Loan.objects.filter(
-                member=user_profile, 
-                status='approved'
-            )
-# class SharesForm(forms.ModelForm):
-#     class Meta:
-#         model =SharePurchase
-#         fields='__all__'
-        
+    member=user_profile,
+    status__in=['approved', 'disbursed']
+)
+            
+class SharesForm(forms.ModelForm):
+    class Meta:
+        model =CapitalShare
+
+        fields=['amount']
+class SavingsForm(forms.ModelForm):
+    class Meta:
+        model = MonthlyContribution
+        fields = ['amount', 'month']
+        widgets = {
+            'month': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control'}),
+        }    
 # class SettinForm(forms.ModelForm):
 #     class Meta:
 #         model= LoanSetting

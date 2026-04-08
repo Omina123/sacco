@@ -5,96 +5,160 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Eldopoly SACCO | Member Registration</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
     <style>
         :root {
-            --eldo-navy: #0B1F3A;
-            --eldo-gold: #D4AF37;
+            /* Theme Colors: mostly little yellow (Gold) and little green */
+            --eldo-navy: #0B1F3A; /* Keep for primary text and footer */
+            --eldo-gold: #D4AF37; /* SACCO Yellow */
+            --eldo-green: #28a745; /* Green for growth/trust */
+            --eldo-light-green: #e9f7ef; /* Ultra-light background hint */
             --eldo-white: #FFFFFF;
         }
 
         body {
-            background-color: #f4f7f6;
+            /* Ultra light green background for freshness */
+            background-color: var(--eldo-light-green); 
             min-height: 100vh;
             display: flex;
             align-items: center;
             padding: 40px 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         .registration-card {
             max-width: 800px;
             margin: auto;
             border: none;
-            border-radius: 12px;
-            box-shadow: 0 15px 35px rgba(11, 31, 58, 0.15);
-            border-top: 8px solid var(--eldo-gold);
+            border-radius: 20px; /* More rounded */
+            box-shadow: 0 20px 60px rgba(40, 167, 69, 0.1); /* Subtle green shadow */
             background-color: var(--eldo-white);
+            overflow: hidden; /* Important for header border-radius */
+            transition: 0.3s ease-in-out;
         }
 
+        .registration-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 70px rgba(40, 167, 69, 0.15);
+        }
+
+        /* The Header Section: Modern Two-Tone Gradient */
         .header-section {
-            background-color: var(--eldo-navy);
-            color: var(--eldo-white);
-            padding: 20px;
+            background: linear-gradient(135deg, #FFD700 0%, var(--eldo-gold) 50%, var(--eldo-green) 100%);
+            color: var(--eldo-navy); /* Keep navy for contrast on light colors */
+            padding: 40px 20px;
             text-align: center;
-            border-radius: 4px 4px 0 0;
+            position: relative;
+        }
+
+        .header-section::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50% 50% 0 0;
+        }
+
+        .poly-logo-text {
+            font-weight: 800;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 2rem;
+            text-shadow: 1px 1px 0px var(--eldo-white);
+        }
+
+        .small-tagline {
+            color: var(--eldo-navy);
+            opacity: 0.8;
+            font-weight: 600;
+        }
+
+        /* Informative Alert regarding Two-Step Process */
+        .sacco-info-alert {
+            background-color: var(--eldo-light-green);
+            border-left: 5px solid var(--eldo-green);
+            color: var(--eldo-navy);
+            border-radius: 8px;
+            font-size: 0.9rem;
         }
 
         .section-title {
             color: var(--eldo-navy);
-            border-bottom: 2px solid var(--eldo-gold);
-            padding-bottom: 5px;
-            margin-bottom: 20px;
-            font-weight: bold;
+            border-bottom: 3px solid var(--eldo-green); /* Green underline */
+            padding-bottom: 8px;
+            margin-bottom: 25px;
+            font-weight: 700;
             text-transform: uppercase;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            display: inline-block;
         }
 
+        /* Buttons: Focus on Green for Action/Submit */
         .btn-eldo {
-            background-color: var(--eldo-navy);
+            background: linear-gradient(to right, var(--eldo-green) 0%, #34ce57 100%);
             color: var(--eldo-white);
-            font-weight: bold;
-            padding: 12px 30px;
+            font-weight: 700;
+            padding: 15px 40px;
             transition: 0.3s;
             border: none;
+            letter-spacing: 1px;
+            font-size: 1rem;
         }
 
         .btn-eldo:hover {
-            background-color: #1a3a63;
-            color: var(--eldo-gold);
-            transform: translateY(-2px);
+            color: var(--eldo-gold); /* Hint of yellow on hover */
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.2);
         }
 
         .form-label {
             color: var(--eldo-navy);
-            font-weight: 600;
+            font-weight: 700;
             font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            opacity: 0.8;
         }
 
-        .text-gold {
-            color: var(--eldo-gold) !important;
-        }
+        .text-green { color: var(--eldo-green) !important; }
+        .text-gold { color: var(--eldo-gold) !important; }
 
         /* Styling for Django's auto-generated forms */
         input, select, textarea {
             display: block;
             width: 100%;
-            padding: 0.375rem 0.75rem;
+            padding: 12px 18px;
             font-size: 1rem;
             font-weight: 400;
             line-height: 1.5;
             color: #212529;
             background-color: #fff;
-            background-clip: padding-box;
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-            transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+            border: 2px solid #e1e5eb;
+            border-radius: 10px;
+            transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
         }
 
+        /* Form Input Focus: Use Green */
         input:focus {
-            border-color: var(--eldo-gold);
+            border-color: var(--eldo-green);
             outline: 0;
-            box-shadow: 0 0 0 0.25rem rgba(212, 175, 55, 0.25);
+            box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.15);
         }
+
+        /* Stylized Sign In link */
+        .sign-in-link {
+            color: var(--eldo-green);
+            font-weight: 700;
+            text-decoration: none;
+            border-bottom: 2px solid var(--eldo-gold); /* Yellow highlight */
+            padding-bottom: 2px;
+        }
+
     </style>
 </head>
 <body>
@@ -103,35 +167,48 @@
     <div class="card registration-card">
         <div class="header-section">
             <h2 class="mb-0 poly-logo-text">ELDOPOLY SACCO</h2>
-            <p class="mb-0 small text-gold">Membership Application Form</p>
+            <p class="mb-0 small-tagline">Secure Your Financial Future</p>
         </div>
 
         <div class="card-body p-4 p-md-5">
             <form method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
 
-                <div class="section-title">Account Credentials</div>
-                <div class="row g-3">
+                <div class="alert sacco-info-alert p-3 mb-5 d-flex align-items-center shadow-sm" role="alert">
+                    <i class="bi bi-info-circle-fill fs-4 me-3 text-green"></i>
+                    <div>
+                        <strong>Welcome!</strong> Start your journey with us by creating your account credentials. You will complete your full profile (Phone, ID, Address) after signing in.
+                    </div>
+                </div>
+
+                <div class="text-center mb-4">
+                    <div class="section-title">Step 1: Account Credentials</div>
+                </div>
+                
+                <div class="row g-4">
                     {% for field in user_form %}
                         <div class="col-md-6 mb-3">
                             <label class="form-label">{{ field.label }}</label>
                             {{ field }}
                             {% if field.errors %}
-                                <div class="text-danger small">{{ field.errors }}</div>
+                                <div class="text-danger small mt-1"><i class="bi bi-exclamation-triangle me-1"></i> {{ field.errors }}</div>
                             {% endif %}
                         </div>
                     {% endfor %}
                 </div>
 
-               
+                
                 <div class="text-center mt-5">
-                    <button type="submit" class="btn btn-eldo px-5 rounded-pill shadow">REGISTER AS MEMBER</button>
-                    <p class="mt-4 small text-muted">
-                        Already have an account? <a href="{% url 'Login' %}" class="text-gold fw-bold text-decoration-none">Sign In</a>
+                    <button type="submit" class="btn btn-eldo px-5 rounded-pill shadow-lg">
+                        REGISTER AS MEMBER <i class="bi bi-arrow-right-circle ms-2"></i>
+                    </button>
+                    <p class="mt-4 pt-2 small text-muted">
+                        Already have an account? <a href="{% url 'login' %}" class="sign-in-link">Sign In</a>
                     </p>
                 </div>
             </form>
         </div>
+        <div style="height: 10px; background: linear-gradient(to right, var(--eldo-gold) 0%, var(--eldo-green) 100%);"></div>
     </div>
 </div>
 

@@ -76,7 +76,8 @@ class Loan(models.Model):
     STATUS = (
     ('pending', 'Pending'),
     ('approved', 'Approved'),
-    ('issued', 'Issued'),
+    ('partially_approved', 'Partially Approved'),
+    ('disbursed', 'Disbursed'),
     ('defaulted', 'Defaulted'),
     ('completed', 'Completed'),
     ('rejected', 'Rejected'),
@@ -88,7 +89,8 @@ class Loan(models.Model):
 
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     Othes_Guarantor = models.CharField(max_length=56,blank=True,null=True)
-    interest_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    interest_rate = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('12.00'))  # Default interest rate of 12%
+    insurance= models.DecimalField(max_digits=10,decimal_places=2 , null=True, blank=True)
 
     duration_months = models.IntegerField(
         
@@ -96,10 +98,56 @@ class Loan(models.Model):
                     MaxValueValidator(48)])
 
     status = models.CharField(max_length=20, choices=STATUS, default='pending')
+    admin_approved = models.BooleanField(default=False)
+    staff_approved = models.BooleanField(default=False)
+    treasurer_approved = models.BooleanField(default=False)
+
+    # approval_count = models.IntegerField(default=0)
+    
 
     application_date = models.DateTimeField(auto_now_add=True)
 
     approval_date = models.DateTimeField(null=True, blank=True)
+    is_disbursed = models.BooleanField(default=False)
+    disbursed_at = models.DateTimeField(null=True, blank=True)
+    @property
+    def approval_count(self):
+        return sum([
+            self.admin_approved,
+            self.staff_approved,
+            self.treasurer_approved
+        ])
+    @property
+    def insurance_fee(self):
+        """2% of the principal loan amount"""
+        return self.amount * Decimal('0.02')
+
+
+    # @property
+    # def total_interest(self):
+    #     """Interest = principal * rate * duration_in_years"""
+    #     duration_years = Decimal(self.duration_months) / Decimal('12')
+    #     return self.amount * (self.interest_rate / Decimal('100')) * duration_years
+
+    # @property
+    # def total_payable(self):
+    #     """Principal + interest + insurance"""
+    #     # Ensure we handle None values for insurance
+    #     ins = self.insurance if self.insurance else self.insurance_fee
+    #     return self.amount + self.total_interest + ins
+
+    # @property
+    # def total_paid(self):
+    #     """Sums up all successful repayments for this loan"""
+    #     return sum(repayment.amount_paid for repayment in self.loanrepayment_set.all())
+
+    # @property
+    # def payment_progress(self):
+    #     """Calculates percentage of repayment progress"""
+    #     if self.total_payable == 0:
+    #         return 0
+    #     progress = (self.total_paid / self.total_payable) * 100
+    #     return min(round(progress, 1), 100) # Ensures it doesn't exceed 100%    return self.amount + self.total_interest + self.insurance_fee
 
     def __str__(self):
         return f"Loan {self.id} - {self.member}"
@@ -109,16 +157,28 @@ class Loan(models.Model):
 # GUARANTORS
 # -------------------------
 class Guarantor(models.Model):
+    STATUS = (
+        ('pending', 'Pending Response'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    )
 
     loan = models.ForeignKey(Loan, on_delete=models.CASCADE)
-
     guarantor = models.ForeignKey(Profile, on_delete=models.CASCADE)
-
     guaranteed_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS, default='pending')
 
     def __str__(self):
-        return f"{self.guarantor} guaranteeing Loan {self.loan.id}"
+        return f"{self.guarantor} - {self.status} for Loan {self.loan.id}"
 
+    @staticmethod
+    def available_guarantors():
+        # Exclude those with active loans
+        used_guarantors = Guarantor.objects.filter(
+            loan__status__in=['pending', 'approved', 'disbursed'],
+            status='accepted'
+        ).values_list('guarantor_id', flat=True)
+        return Profile.objects.exclude(id__in=used_guarantors)
 
 # -------------------------
 # LOAN REPAYMENT SCHEDULE

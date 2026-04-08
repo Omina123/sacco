@@ -1,0 +1,240 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repayment Report | Eldopoly SACCO</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --eldo-green: #14452F;
+            --eldo-gold: #D4AF37;
+            --sidebar-width: 260px;
+            --top-nav-height: 70px;
+            --bg-light: #f4f7f6;
+        }
+
+        body { 
+            background-color: var(--bg-light);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: var(--eldo-green);
+            z-index: 1100;
+            padding: 1.5rem;
+            color: white;
+        }
+
+        .sidebar-brand {
+            font-weight: 800;
+            font-size: 1.3rem;
+            color: var(--eldo-gold);
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-link-side {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            padding: 12px 15px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .nav-link-side.active {
+            background: rgba(255,255,255,0.1);
+            color: var(--eldo-gold);
+        }
+
+        /* Top navbar */
+        .top-navbar {
+            height: var(--top-nav-height);
+            background: white;
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: var(--sidebar-width);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.03);
+        }
+
+        /* Main content */
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--top-nav-height);
+            padding: 3rem;
+        }
+
+        .report-card {
+            background: white;
+            border-radius: 25px;
+            padding: 2.5rem;
+            border: 1px solid #eee;
+        }
+
+        .table-premium thead th {
+            background: var(--eldo-green) !important;
+            color: var(--eldo-gold) !important;
+            -webkit-print-color-adjust: exact;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 15px 20px;
+            border: none;
+        }
+
+        .currency-text { 
+            font-family: 'Courier New', monospace; 
+            font-weight: 800; 
+            color: var(--eldo-green); 
+        }
+
+        .btn-print { 
+            background: var(--eldo-gold); 
+            color: var(--eldo-green); 
+            border: none; 
+            font-weight: 800; 
+            border-radius: 10px; 
+            padding: 10px 25px; 
+        }
+
+        @media print {
+            .sidebar, .top-navbar, .btn-print, hr, .sidebar-brand {
+                display: none !important;
+            }
+
+            .main-wrapper {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            body {
+                background: white !important;
+            }
+
+            .report-card {
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+
+            .table-premium thead th {
+                background-color: #14452F !important;
+                color: #D4AF37 !important;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .main-wrapper::before {
+                content: "ELDOPOLY SACCO - OFFICIAL REPAYMENT REPORT";
+                display: block;
+                text-align: center;
+                font-weight: 800;
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+                color: #14452F;
+                border-bottom: 2px solid #D4AF37;
+                padding-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <i class="bi bi-bank2"></i> ELDOPOLY
+    </div>
+    
+    <nav>
+        <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="#" class="nav-link-side active"><i class="bi bi-wallet2"></i> Treasury Dept</a>
+        {% comment %} <a href="{% url 'manage_loan_requests' %}" class="nav-link-side"><i class="bi bi-journal-check"></i> Pending Approvals</a> {% endcomment %}
+        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-people"></i> Members savings</a>
+        <a href="#" class="nav-link-side"><i class="bi bi-bar-chart"></i> Financial Reports</a>
+        <a href="{% url 'monthly_repayment_report'%}" class="nav-link-side"><i class="bi bi-gear"></i> Reports</a>
+        
+        <div style="margin-top: 50px;">
+            <p class="small text-muted px-3 mb-2" style="font-size: 0.65rem;">SYSTEM</p>
+            <a href="#" class="nav-link-side text-white-50"><i class="bi bi-gear"></i> Settings</a>
+            <a href="{% url 'Logout' %}" class="nav-link-side text-danger"><i class="bi bi-power"></i> Sign Out</a>
+        </div>
+    </nav>
+</aside>
+
+<header class="top-navbar">
+    <h5 class="mb-0 fw-800">Financial Reporting Suite</h5>
+    <div class="fw-bold text-muted small">Treasurer: {{ request.user.first_name }}</div>
+</header>
+
+<div class="main-wrapper">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h2 class="fw-800 mb-1">Member Loan Repayments</h2>
+            <p class="text-muted">Generated on: {% now "jS F Y" %}</p>
+        </div>
+        <button class="btn btn-print shadow-sm" onclick="window.print()">
+            <i class="bi bi-file-pdf-fill me-2"></i> GENERATE PDF
+        </button>
+    </div>
+
+    <div class="report-card">
+        <div class="table-responsive">
+            <table class="table table-premium align-middle">
+                <thead>
+                    <tr>
+                        <th>REPORTING MONTH</th>
+                        <th>MEMBER ACCOUNT</th>
+                        <th>LOAN REFERENCE</th>
+                        <th>Pf number</th>
+                        <th>TOTAL REPAID</th>
+                        <th class="text-end">STATUS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in report_data %}
+                    <tr>
+                        <td>{{ entry.month|date:"F Y" }}</td>
+                        <td class="fw-bold">{{ entry.member__user__first_name }} {{ entry.member__user__last_name }}</td>
+                        <td class="text-muted">#LN-{{ entry.loan__id }}</td>
+                        <td class="text-muted">{{ entry.member__pf_number }}</td>
+                        <td class="currency-text">KES {{ entry.total_paid|floatformat:2 }}</td>
+                        <td class="text-end text-success fw-bold">LOGGED</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">No data available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

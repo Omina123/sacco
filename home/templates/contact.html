@@ -79,13 +79,13 @@
                     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
                         <span class="fa fa-bars"></span>
                     </button>
-                    {{ request.user.username }}
+                    
                     <div class="collapse navbar-collapse" id="navbarCollapse">
                         <div class="navbar-nav ms-auto py-0">
                            <a href="{% url "home"%}" class="nav-item nav-link active">Home</a>
                             <a href="{% url  'about' %}" class="nav-item nav-link">About</a>
                             <a href="{% url 'Service'%}" class="nav-item nav-link">Services</a>
-                            <a href="{% url 'Login'%}" class="nav-item nav-link">Staff</a>
+                           <a href="{% url 'login'%}" class="nav-item nav-link">Staff</a>
                             <a href="{% url 'Contact'%}" class="nav-item nav-link">Contact</a>
                         </div>
                        

@@ -1,0 +1,101 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Loan Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+<a href ="{%url 'treasurer_dashboard'%}">BAck</a>
+    <h3 class="fw-bold mb-4">Loan #{{ loan.id }}</h3>
+
+    <!-- Loan Info -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <p><strong>Amount:</strong> KES {{ loan.amount }}</p>
+            <p><strong>Intrest:</strong> % {{ loan.interest_rate }}</p>
+            <p><strong>Purpose:</strong> {{ loan.purpose }}</p>
+            <p><strong>Duration:</strong> {{ loan.duration_months }} months</p>
+            <p><strong>Status:</strong> 
+                <span class="badge bg-info">{{ loan.status }}</span>
+            </p>
+            <p><strong>Applied On:</strong> {{ loan.application_date }}</p>
+        </div>
+    </div>
+
+    <!-- Approval Progress -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">Approval Progress</h5>
+
+            <p>Admin: 
+                {% if loan.admin_approved %}
+                    ✅ Approved
+                {% else %}
+                    ❌ Pending
+                {% endif %}
+            </p>
+
+            <p>Staff: 
+                {% if loan.staff_approved %}
+                    ✅ Approved
+                {% else %}
+                    ❌ Pending
+                {% endif %}
+            </p>
+
+            <p>Treasurer: 
+                {% if loan.treasurer_approved %}
+                    ✅ Approved
+                {% else %}
+                    ❌ Pending
+                {% endif %}
+            </p>
+
+            <p><strong>Total Approvals:</strong> {{ loan.approval_count }}/3</p>
+        </div>
+    </div>
+
+    <!-- Guarantors -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h5 class="fw-bold mb-3">Guarantors</h5>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount</th>
+                        
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for g in guarantors %}
+                    <tr>
+                        <td>{{ g.guarantor.user.get_full_name }}</td>
+                        <td>KES {{ g.guaranteed_amount }}</td>
+                        <td>
+                            {% if g.status == 'accepted' %}
+                                <span class="text-success">Accepted</span>
+                            {% elif g.status == 'rejected' %}
+                                <span class="text-danger">Rejected</span>
+                            {% else %}
+                                <span class="text-warning">Pending</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3">No guarantors yet</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

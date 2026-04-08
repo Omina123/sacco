@@ -8,17 +8,23 @@ def validate_kenyan_phone(value):
     pattern = r'^2547\d{8}$'   # 2547XXXXXXXX
     if not re.match(pattern, value):
         raise ValidationError("Enter a valid phone number (e.g. 254710000000)")
-
+def validate_pf_number(value):
+    # Matches: 4 digits, 1 uppercase letter, 5 digits
+    pattern = r'^\d{4}[A-Z]\d{5}$'
+    if not re.match(pattern, value):
+        raise ValidationError(
+            "PF Number must be in the format: Year + Letter + 5 digits (e.g., 2021N00028)"
+        )
 
 class CustomUser(AbstractUser):
     USER_TYPE_CHOICES = (
-        ('admin', 'Admin'),
-        ('staff', 'Staff'),
-        ('treasurer', 'Treasurer'),
-        ('member', 'Member'),
+        ('1', 'Admin'),
+        ('2', 'Staff'),
+        ('3', 'Treasurer'),
+        ('4', 'Member'),
     )
 
-    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='member')
+    user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='4')
     email = models.EmailField(unique=True)
     is_verified = models.BooleanField(default=False)
     otp = models.CharField(max_length=6, blank=True, null=True)
@@ -45,7 +51,12 @@ class Profile(models.Model):
     )
     id_number = models.CharField(max_length=20)
     membership_number = models.CharField(max_length=20, unique=True, null=True)
-    pf_number = models.CharField(max_length=20, unique=True, null=True)  # <-- Added PF number
+    pf_number = models.CharField(
+        max_length=20, 
+        unique=True, 
+        null=True, 
+        validators=[validate_pf_number] # Add validator here
+    )
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     address = models.CharField(max_length=255, blank=True, null=True)
     date_joined = models.DateField(auto_now_add=True)

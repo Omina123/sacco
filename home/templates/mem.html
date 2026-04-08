@@ -1,0 +1,266 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Directory | Eldopoly SACCO</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --eldo-green: #14452F;
+            --eldo-gold: #D4AF37;
+            --sidebar-width: 260px;
+            --top-nav-height: 70px;
+            --bg-light: #f4f7f6;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            background: var(--eldo-green);
+            padding: 1.5rem;
+            color: white;
+            z-index: 1000;
+        }
+
+        .sidebar-brand {
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: var(--eldo-gold);
+            margin-bottom: 2rem;
+            display: block;
+            text-decoration: none;
+        }
+
+        .nav-link-side {
+            color: rgba(255,255,255,0.7);
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            transition: 0.3s;
+            font-weight: 600;
+        }
+
+        .nav-link-side:hover, .nav-link-side.active {
+            background: rgba(255,255,255,0.1);
+            color: var(--eldo-gold);
+        }
+
+        .top-navbar {
+            position: fixed;
+            left: var(--sidebar-width);
+            right: 0;
+            height: var(--top-nav-height);
+            background: white;
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            z-index: 900;
+        }
+
+        .main-wrapper {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--top-nav-height);
+            padding: 2.5rem;
+        }
+
+        .content-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+            border: 1px solid #eee;
+        }
+
+        /* Search Bar Styling */
+        .search-container {
+            position: relative;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .search-input {
+            border-radius: 12px;
+            padding: 10px 15px 10px 45px;
+            border: 2px solid #eee;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: var(--eldo-gold);
+            box-shadow: 0 0 0 0.25 margin-bottom: 2rem;rem rgba(212, 175, 55, 0.1);
+            outline: none;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #aaa;
+        }
+
+        .btn-gold {
+            background: var(--eldo-gold);
+            color: var(--eldo-green);
+            font-weight: 800;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+        }
+
+        .btn-gold:hover {
+            background: #b8972f;
+            color: white;
+        }
+
+        .table thead th {
+            border: none;
+            color: #888;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 15px;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar { display: none; }
+            .top-navbar { left: 0; }
+            .main-wrapper { margin-left: 0; }
+        }
+    </style>
+</head>
+
+<body>
+
+<aside class="sidebar">
+    <a href="/" class="sidebar-brand"><i class="bi bi-bank2"></i> ELDOPOLY</a>
+    <nav>
+        <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+        <a href="#" class="nav-link-side active"><i class="bi bi-people me-2"></i> Members</a>
+        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-wallet2 me-2"></i> Savings</a>
+        <a href="{% url 'pending_loans' %}" class="nav-link-side"><i class="bi bi-cash-stack me-2"></i> Loans</a>
+        <a href="{% url 'Logout' %}" class="nav-link-side text-danger mt-5"><i class="bi bi-power me-2"></i> Sign Out</a>
+    </nav>
+</aside>
+
+<header class="top-navbar">
+    <h5 class="mb-0 fw-bold">Treasury Oversight</h5>
+    
+    <div class="search-container d-none d-md-block">
+        <i class="bi bi-search search-icon"></i>
+        <input type="text" id="memberSearch" class="form-control search-input" placeholder="Search by name, PF, or phone...">
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+        <div class="text-end">
+            <div class="fw-bold small">{{ request.user.get_full_name|default:request.user.username }}</div>
+            <div class="text-muted small" style="font-size: 0.7rem;">Senior Treasurer</div>
+        </div>
+        <div class="bg-light rounded-circle p-2 border"><i class="bi bi-person-circle text-success"></i></div>
+    </div>
+</header>
+
+<main class="main-wrapper">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-800 mb-0">Sacco Member Directory</h3>
+        <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">Active System</span>
+    </div>
+
+    <div class="content-card">
+        <div class="table-responsive">
+            <table class="table align-middle" id="memberTable">
+                <thead>
+                    <tr>
+                        <th>Name & ID</th>
+                        <th>Phone Number</th>
+                        <th>Membership #</th>
+                        <th>PF Number</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for member in members %}
+                    <tr class="member-row">
+                        <td>
+                            <div class="fw-bold member-name">{{ member.user.get_full_name|default:member.user.username }}</div>
+                            <small class="text-muted">ID: {{ member.id_number|default:"---" }}</small>
+                        </td>
+                        <td class="member-phone">{{ member.phone_number }}</td>
+                        <td><span class="badge bg-light text-dark border">{{ member.membership_number|default:"Pending" }}</span></td>
+                        <td class="member-pf">{{ member.pf_number|default:"---" }}</td>
+
+                        <td class="text-end">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{% url 'treasurer_buy_shares' member.id %}" class="btn btn-gold btn-sm">
+                                    <i class="bi bi-plus-circle me-1"></i> Shares
+                                </a>
+
+                                {% with member.member_loans.all|first as loan %}
+                                    {% if loan %}
+                                        <a href="{% url 'loan_detail' loan.id %}" class="btn btn-primary btn-sm">
+                                            View Loan
+                                        </a>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-secondary" disabled>No Loan</button>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <i class="bi bi-people text-muted opacity-25" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3 fw-600">No registered members found.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.getElementById('memberSearch').addEventListener('keyup', function() {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll('.member-row');
+
+        rows.forEach(row => {
+            let name = row.querySelector('.member-name').textContent.toLowerCase();
+            let phone = row.querySelector('.member-phone').textContent.toLowerCase();
+            let pf = row.querySelector('.member-pf').textContent.toLowerCase();
+            
+            if (name.includes(filter) || phone.includes(filter) || pf.includes(filter)) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

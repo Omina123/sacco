@@ -1,165 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eldopoly SACCO | Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eldopoly SACCO | Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --eldo-navy: #0B1F3A;
+            --eldo-gold: #D4AF37;
+            --eldo-green: #28a745;
+            --eldo-light-green: #e9f7ef;
+            --eldo-white: #FFFFFF;
+        }
 
-<style>
+        body {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            /* Light Green background to match Registration */
+            background-color: var(--eldo-light-green);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-:root{
---eldo-navy:#0B1F3A;
---eldo-gold:#D4AF37;
---eldo-white:#FFFFFF;
-}
+        .login-card {
+            max-width: 420px;
+            margin: auto;
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(40, 167, 69, 0.1);
+            background-color: var(--eldo-white);
+            overflow: hidden;
+            transition: 0.3s ease-in-out;
+        }
 
-/* SILVER BACKGROUND */
-body{
-height:100vh;
-display:flex;
-align-items:center;
-background: linear-gradient(135deg,#dfe3e6,#f4f6f8,#cfd4d8);
-background-attachment: fixed;
-font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-}
+        .login-card:hover {
+            transform: translateY(-5px);
+        }
 
-/* LOGIN CARD */
+        /* Gradient Header to match Registration */
+        .login-header {
+            background: linear-gradient(135deg, #FFD700 0%, var(--eldo-gold) 50%, var(--eldo-green) 100%);
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+        }
 
-.login-card{
-max-width:420px;
-margin:auto;
-border:none;
-border-radius:14px;
-box-shadow:0 15px 40px rgba(0,0,0,0.15);
-border-top:6px solid var(--eldo-gold);
-backdrop-filter: blur(10px);
-}
+        /* Logo Circle overlapping the header */
+        .logo-circle {
+            width: 70px;
+            height: 70px;
+            background: var(--eldo-navy);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--eldo-gold);
+            font-weight: 800;
+            font-size: 1.4rem;
+            margin: 0 auto -75px; /* Pulls it down to sit on the edge */
+            border: 4px solid var(--eldo-white);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 2;
+        }
 
-/* LOGO */
+        .btn-eldo {
+            background: linear-gradient(to right, var(--eldo-green) 0%, #34ce57 100%);
+            color: white;
+            font-weight: 700;
+            padding: 12px;
+            transition: 0.3s;
+            border-radius: 10px;
+            border: none;
+            letter-spacing: 1px;
+        }
 
-.logo-circle{
-width:80px;
-height:80px;
-background:var(--eldo-navy);
-border-radius:50%;
-margin:-40px auto 20px;
-display:flex;
-align-items:center;
-justify-content:center;
-color:var(--eldo-gold);
-font-weight:bold;
-font-size:1.6rem;
-border:4px solid var(--eldo-white);
-box-shadow:0 6px 15px rgba(0,0,0,0.2);
-}
+        .btn-eldo:hover {
+            color: var(--eldo-gold);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.2);
+            transform: translateY(-2px);
+        }
 
-/* BUTTON */
+        .form-control {
+            border-radius: 10px;
+            padding: 12px;
+            border: 2px solid #e1e5eb;
+        }
 
-.btn-eldo{
-background:var(--eldo-navy);
-color:white;
-font-weight:600;
-padding:12px;
-transition:0.3s;
-border-radius:8px;
-}
+        .form-control:focus {
+            border-color: var(--eldo-green);
+            box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.1);
+        }
 
-.btn-eldo:hover{
-background:#1a3a63;
-color:var(--eldo-gold);
-}
+        .form-label {
+            font-weight: 700;
+            color: var(--eldo-navy);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            opacity: 0.8;
+        }
 
-/* INPUTS */
+        .sign-up-link {
+            color: var(--eldo-green);
+            font-weight: 700;
+            text-decoration: none;
+            border-bottom: 2px solid var(--eldo-gold);
+        }
 
-.form-control{
-border-radius:8px;
-padding:10px;
-}
-
-.form-control:focus{
-border-color:var(--eldo-gold);
-box-shadow:0 0 6px rgba(212,175,55,0.5);
-}
-
-.form-label{
-font-weight:600;
-color:var(--eldo-navy);
-}
-
-.text-gold{
-color:var(--eldo-gold);
-}
-
-</style>
+    </style>
 </head>
 
 <body>
 
 <div class="container">
+    <div class="logo-circle">EPC</div>
+    
+    <div class="card login-card">
+        <div class="login-header">
+            <h3 class="fw-extrabold mb-0" style="color:var(--eldo-navy); letter-spacing: 2px;">ELDOPOLY</h3>
+            <p class="small mb-0 text-dark opacity-75 fw-bold">MEMBER PORTAL</p>
+        </div>
 
-<div class="card login-card">
+        <div class="card-body p-4 pt-5"> <form method="POST">
+                {% csrf_token %}
 
-<div class="card-body p-4 pt-0">
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger p-2 small border-0 shadow-sm">
+                    <i class="bi bi-exclamation-circle-fill me-2"></i> {{ form.non_field_errors }}
+                </div>
+                {% endif %}
 
-<div class="logo-circle">
-EPC
-</div>
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ field.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
 
-<div class="text-center mb-4">
-<h3 class="fw-bold" style="color:var(--eldo-navy)">ELDOPOLY</h3>
-<p class="text-muted small">SACCO MEMBER PORTAL</p>
-</div>
+                <button type="submit" class="btn btn-eldo w-100 mt-3 shadow-sm">
+                    SIGN IN <i class="bi bi-box-arrow-in-right ms-2"></i>
+                </button>
+            </form>
 
-<form method="POST">
-{% csrf_token %}
-
-{% if form.non_field_errors %}
-<div class="alert alert-danger p-2 small">
-{{ form.non_field_errors }}
-</div>
-{% endif %}
-
-{% for field in form %}
-<div class="mb-3">
-
-<label class="form-label">{{ field.label }}</label>
-
-{{ field }}
-
-{% if field.errors %}
-<div class="text-danger small">
-{{ field.errors }}
-</div>
-{% endif %}
-
-</div>
-{% endfor %}
-
-<button type="submit" class="btn btn-eldo w-100 mt-2">
-SIGN IN
-</button>
-
-</form>
-
-<div class="text-center mt-4">
-
-<p class="small text-muted">
-Not a member?
-<a href="{% url 'register' %}" class="fw-bold text-decoration-none text-gold">
-Create Account
-</a>
-</p>
-
-</div>
-
-</div>
-</div>
-
+            <div class="text-center mt-4 pt-2">
+                <p class="small text-muted mb-0">
+                    Not a member yet? 
+                </p>
+                <a href="{% url 'register' %}" class="sign-up-link small">
+                    Create Sacco Account
+                </a>
+            </div>
+        </div>
+        
+        <div style="height: 8px; background: linear-gradient(to right, var(--eldo-gold) 0%, var(--eldo-green) 100%);"></div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 </body>
 </html>
