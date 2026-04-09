@@ -14,10 +14,7 @@ class MemberRegistrationForm(UserCreationForm):
         model = CustomUser
         fields = ('username', 'email', 'password1', 'password2')  # user_type removed
 
-from django import forms
-from .models import Profile
-from django import forms
-from .models import Profile
+
 
 class ProfileForm(forms.ModelForm):
     class Meta:
@@ -74,11 +71,9 @@ class LoginForm(forms.Form):
                 "class": "form-control"
             }
         ))
-# forms.py
-from django import forms
-from .models import CustomUser, Profile
 
-class UserUpdateForm(forms.ModelForm):
+
+class UpdateForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = ['first_name', 'last_name', 'email', 'user_type']
@@ -91,7 +86,7 @@ class UserUpdateForm(forms.ModelForm):
         }
 
 
-class ProfileUpdateForm(forms.ModelForm):
+class PUpdateForm(forms.ModelForm):
     class Meta:
         model = Profile
         fields = [

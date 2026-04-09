@@ -168,8 +168,8 @@ def update_user(request, user_id):
     profile = get_object_or_404(Profile, user=user)
 
     if request.method == 'POST':
-        user_form = UserUpdateForm(request.POST, instance=user)
-        profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
+        user_form = UpdateForm(request.POST, instance=user)
+        profile_form = PUpdateForm(request.POST, request.FILES, instance=profile)
 
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
