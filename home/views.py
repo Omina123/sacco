@@ -148,7 +148,7 @@ def member_dashboard(request):
         'pending_guarantor_requests': pending_guarantor_requests,
     }
 
-    return render(request, 'me.html', context)
+    return render(request, 'r_dashboard.html', context)
 
 
 
@@ -580,7 +580,6 @@ def treasurer_pay_loan(request, loan_id):
     if request.user.user_type != '3':  # Only Treasurer
         messages.error(request, "Unauthorized access")
         return redirect('treasurer_dashboard')
-
     if request.method == "POST":
         try:
             amount = Decimal(request.POST.get('amount'))
