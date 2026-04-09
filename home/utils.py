@@ -27,3 +27,5 @@ def generate_transaction_ref(prefix="TX"):
     date_str = datetime.datetime.now().strftime('%Y%m%d')
     unique_id = uuid.uuid4().hex[:6].upper()
     return f"{prefix}-{date_str}-{unique_id}"
+def calculate_insurance(principal, months):
+    return ((Decimal('5.03') * Decimal(months) + Decimal('3.03')) * Decimal(principal)) / Decimal('6000')

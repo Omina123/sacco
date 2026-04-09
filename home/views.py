@@ -21,7 +21,7 @@ from django.forms import modelformset_factory
 from django.db.models import F
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
-from .utils import generate_transaction_ref # Make sure you have a function to generate unique references
+from .utils import generate_transaction_ref , calculate_insurance # Make sure you have a function to generate unique references
 import json
 from .pamision import role_required
 def home(request):
@@ -96,7 +96,7 @@ def member_dashboard(request):
     profile = request.user.profile
     
     # 1. Basic Data Retrieval
-    loans = Loan.objects.filter(member=profile).select_related('purpose').order_by('-application_date')
+    loans = Loan.objects.filter(member=profile).order_by('-application_date')
     savings_list = MonthlyContribution.objects.filter(member=profile).order_by('-created_at')
     shares_list = CapitalShare.objects.filter(member=profile)
 
@@ -148,7 +148,7 @@ def member_dashboard(request):
         'pending_guarantor_requests': pending_guarantor_requests,
     }
 
-    return render(request, 'r_dashboard.html', context)
+    return render(request, 'me.html', context)
 
 
 
@@ -250,24 +250,26 @@ def calculate_loan_risk(member_profile, requested_amount):
 
 @login_required
 
+
+
+
+
 def apply_loan(request):
     profile = request.user.profile
-    
-    # 0. DEFINE GUARANTOR FORMSET
-    # Requires 3 unique guarantors as per system requirements
-    GuarantorFormSet = modelformset_factory(
-    Guarantor,
-    form=GuarantorForm,   # 👈 use custom form
-    extra=3,
-    max_num=3,
-    validate_min=True,
-    min_num=3
-)
 
-    # 1. PRE-CALCULATE LIMITS
+    GuarantorFormSet = modelformset_factory(
+        Guarantor,
+        form=GuarantorForm,
+        extra=3,
+        max_num=3,
+        validate_min=True,
+        min_num=3
+    )
+
+    # LIMITS
     total_active_loans = Loan.objects.filter(
         member=profile,
-        status__in=['pending','approved']
+        status__in=['pending', 'approved']
     ).aggregate(Sum('amount'))['amount__sum'] or 0
 
     total_savings = CapitalShare.objects.filter(
@@ -276,14 +278,12 @@ def apply_loan(request):
 
     loan_limit = Decimal(total_savings) * Decimal('3.5')
 
-    # Base context to reuse for both GET and failed POST renders
     context = {
         'loan_limit': loan_limit,
         'total_savings': total_savings,
         'member_active_loans': total_active_loans,
     }
 
-    # 2. HANDLE SUBMISSION
     if request.method == 'POST':
         form = LoanApplicationForm(request.POST, user_profile=profile)
         formset = GuarantorFormSet(request.POST, queryset=Guarantor.objects.none())
@@ -291,100 +291,119 @@ def apply_loan(request):
         if form.is_valid() and formset.is_valid():
             loan = form.save(commit=False)
             loan.member = profile
-            loan.interest_rate = Decimal('12.00')
-            loan.insurance = loan.amount * Decimal('0.02')
 
-            # --- VALIDATION: RISK SCORE ---
-            risk_score = calculate_loan_risk(profile, loan.amount)
-            if risk_score > 100:
-                messages.error(request, f"Loan flagged as high risk (Score: {risk_score:.2f}).")
-                # Render to keep form data; Redirect would wipe it.
+            principal = Decimal(loan.amount)
+            months = Decimal(loan.duration_months)
+
+            # 🔥 NEW INSURANCE
+            principal = Decimal(loan.amount)
+            months = Decimal(loan.duration_months)
+
+            # 🔥 INSURANCE
+            insurance = calculate_insurance(principal, months)
+
+            # 🔥 INTEREST (use your rate)
+            interest_rate = Decimal('0.259')  # 25.9% yearly
+            years = months / Decimal('12')
+
+            interest = principal * interest_rate * years
+
+            # ✅ SAVE TO DB
+            loan.insurance = insurance
+            loan.interest = interest
+            # 🔥 SALARY LOGIC
+            gross = Decimal(loan.Gross_salary)
+            net = Decimal(loan.net_salary)
+
+            one_third_gross = gross / Decimal('3')
+            affordability = one_third_gross - net
+
+            monthly_payment = (principal + loan.insurance) / months
+
+            if affordability <= 0:
+                messages.error(request, "Loan rejected: Your net salary is too high compared to gross.")
                 context.update({'form': form, 'formset': formset})
                 return render(request, 'apply_loan.html', context)
 
-            # --- VALIDATION: USER LIMIT ---
+            if affordability < monthly_payment:
+                messages.error(request, f"Loan rejected: Salary cannot support monthly payment of KES {monthly_payment:,.2f}")
+                context.update({'form': form, 'formset': formset})
+                return render(request, 'apply_loan.html', context)
+
+            # LIMIT CHECK
             if loan.amount > loan_limit:
-                messages.error(request, f"Your max loan limit is KES {loan_limit:,.2f}")
+                messages.error(request, f"Max loan limit is KES {loan_limit:,.2f}")
                 context.update({'form': form, 'formset': formset})
                 return render(request, 'apply_loan.html', context)
 
-            # --- VALIDATION: GUARANTORS ---
+            # GUARANTORS
             total_guaranteed_amount = Decimal('0.00')
-            selected_guarantors_profiles = []
+            selected = []
 
-            # We use cleaned_data to validate before committing anything
             for g_form in formset:
                 if g_form.cleaned_data:
                     g_profile = g_form.cleaned_data.get('guarantor')
                     g_amount = g_form.cleaned_data.get('guaranteed_amount')
 
-                    if not g_profile or not g_amount:
-                        continue
-
-                    # Check if applicant is trying to guarantee themselves
                     if g_profile == profile:
                         messages.error(request, "You cannot guarantee your own loan.")
                         context.update({'form': form, 'formset': formset})
                         return render(request, 'apply_loan.html', context)
-                    
-                    selected_guarantors_profiles.append(g_profile)
 
-                    # Check Guarantor's individual available limit
-                    # Using MonthlyContribution per your logic
-                    g_sav = MonthlyContribution.objects.filter(member=g_profile).aggregate(Sum('amount'))['amount__sum'] or 0
+                    selected.append(g_profile)
+
+                    g_sav = CapitalShare.objects.filter(member=g_profile).aggregate(Sum('amount'))['amount__sum'] or 0
                     g_lim = Decimal(g_sav) * Decimal('3.5')
-                    g_act = Loan.objects.filter(member=g_profile, status__in=['pending', 'approved']).aggregate(Sum('amount'))['amount__sum'] or 0
-                    
-                    available_limit = g_lim - Decimal(g_act)
+                    g_act = Loan.objects.filter(member=g_profile, status__in=['pending','approved']).aggregate(Sum('amount'))['amount__sum'] or 0
 
-                    if g_amount > available_limit:
-                        messages.error(request, f"{g_profile.user.get_full_name()} only has KES {available_limit:,.2f} available.")
+                    available = g_lim - Decimal(g_act)
+
+                    if g_amount > available:
+                        messages.error(request, f"{g_profile.user.get_full_name()} has only KES {available:,.2f}")
                         context.update({'form': form, 'formset': formset})
                         return render(request, 'apply_loan.html', context)
 
                     total_guaranteed_amount += g_amount
 
-            # Check for 3 unique guarantors
-            if len(set(selected_guarantors_profiles)) < 3:
-                messages.error(request, "You must select 3 unique guarantors.")
+            if len(set(selected)) < 3:
+                messages.error(request, "Select 3 unique guarantors.")
                 context.update({'form': form, 'formset': formset})
                 return render(request, 'apply_loan.html', context)
 
-            # Final Coverage Check
             if total_guaranteed_amount < loan.amount:
-                messages.error(request, f"Total guaranteed (KES {total_guaranteed_amount:,.2f}) is less than loan amount.")
+                messages.error(request, "Guarantors do not fully cover loan.")
+                context.update({'form': form, 'formset': formset})
+                return render(request, 'apply_loan.html', context)
+            if loan.purpose != 'normal Loan' and loan.duration_months > 12:
+                messages.error(request, "Only Normal Loans can exceed 12 months.")
                 context.update({'form': form, 'formset': formset})
                 return render(request, 'apply_loan.html', context)
 
-            # 3. ATOMIC SAVE
             try:
                 with transaction.atomic():
                     loan.status = 'pending'
-                    loan.save()  # Loan gets its primary key here
-                    
-                    # Save formset instances and link to the new loan
-                    guarantor_instances = formset.save(commit=False)
-                    for g_instance in guarantor_instances:
-                        g_instance.loan = loan
-                        g_instance.save()
+                    loan.save()
 
-                messages.success(request, f"Loan submitted! Risk Score: {risk_score:.2f}. Awaiting approvals.")
+                    guarantors = formset.save(commit=False)
+                    for g in guarantors:
+                        g.loan = loan
+                        g.save()
+
+                messages.success(request, "Loan submitted successfully.")
                 return redirect('member_dashboard')
+
             except Exception as e:
-                messages.error(request, f"An unexpected error occurred: {str(e)}")
+                messages.error(request, str(e))
+
         else:
-            # If form or formset is invalid, Django automatically populates errors
-            messages.error(request, "Please correct the errors in the form.")
-    
+            messages.error(request, "Fix form errors.")
+
     else:
-        # GET request
         form = LoanApplicationForm(user_profile=profile)
         formset = GuarantorFormSet(queryset=Guarantor.objects.none())
 
-    # Update context with the active form/formset and render
     context.update({'form': form, 'formset': formset})
     return render(request, 'apply_loan.html', context)
-from django.shortcuts import get_object_or_404
 
 @login_required
 @role_required(allowed_roles=['3'])  # Treasurer only
@@ -418,6 +437,8 @@ def calculate_penalty(loan):
 @login_required
 
 
+# Make sure your function is imported
+
 def pay_loan(request):
     profile = request.user.profile
 
@@ -446,9 +467,8 @@ def pay_loan(request):
         if months > 0:
             total_penalty += inst.amount_due * penalty_rate * months
 
-    # 🚫 HANDLE MANUAL PAYMENT (TREASURER ONLY)
+    # 🚫 Handle manual payment (Treasurer only)
     if request.method == "POST":
-
         if request.user.user_type == '4':  # Member
             messages.error(request, "Members can only pay via M-Pesa.")
             return redirect('pay_loan')
@@ -463,7 +483,7 @@ def pay_loan(request):
                     repayment.loan = active_loan
                     repayment.save()
 
-                    # 💰 Distribute payment
+                    # 💰 Distribute payment across schedules
                     amount = repayment.amount_paid
                     schedules = LoanRepaymentSchedule.objects.filter(
                         loan=active_loan,
@@ -473,7 +493,6 @@ def pay_loan(request):
                     for inst in schedules:
                         if amount <= 0:
                             break
-
                         if amount >= inst.amount_due:
                             amount -= inst.amount_due
                             inst.is_paid = True
@@ -481,7 +500,7 @@ def pay_loan(request):
                         else:
                             break
 
-                    # 💾 Excess → savings
+                    # 💾 Excess → Monthly Contribution
                     if amount > 0:
                         MonthlyContribution.objects.create(
                             member=profile,
@@ -527,8 +546,9 @@ def pay_loan(request):
         is_paid=False
     ).order_by('due_date').first()
 
+    # 🔥 Use your calculate_insurance function
+    insurance_total = calculate_insurance(active_loan.amount, active_loan.duration_months)
     duration = active_loan.duration_months or 1
-    insurance_total = active_loan.amount * Decimal('0.02')
 
     monthly_principal = active_loan.amount / duration
     monthly_insurance = insurance_total / duration
@@ -854,11 +874,11 @@ def approve_loan(request, loan_id):
 
             # --- CALCULATIONS ---
             principal = Decimal(str(loan.amount))
-            interest_rate = Decimal('0.12')
+            interest_rate = Decimal('0.259')
             duration_years = Decimal(str(loan.duration_months)) / Decimal('12')
 
             total_interest = principal * interest_rate * duration_years
-            insurance = principal * Decimal('0.02')
+            insurance = calculate_insurance(principal, loan.duration_months)
             total_payable = principal + total_interest + insurance
             monthly_installment = total_payable / Decimal(str(loan.duration_months))
 
@@ -1071,55 +1091,53 @@ def LoanP(request):
 
 
 @login_required
-@role_required(allowed_roles=['3'])  # Only Treasurer
+@role_required(allowed_roles=['3'])
 def treasurer_purchase_shares(request, member_id):
-    # 1. Get the member profile
     member_profile = get_object_or_404(Profile, id=member_id)
 
     if request.method == "POST":
-        amount = request.POST.get('amount')
-        receipt_no = request.POST.get('receipt_no')
+        form = SharesForm(request.POST)
 
-        # Basic Validation
-        if not amount or float(amount) <= 0:
-            messages.error(request, "Please enter a valid amount.")
-            return render(request, 'treasurer_confirm_share.html', {'member': member_profile})
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    share = form.save(commit=False)
+                    share.member = member_profile
+                    share.save()
 
-        try:
-            # 2. Save the Share Record
-            share = CapitalShare.objects.create(
-                member=member_profile,
-                amount=Decimal(amount)
-                # Note: date_paid is auto_now_add in your model
-            )
+                    # Transaction record
+                    Transaction.objects.create(
+                        member=member_profile,
+                        transaction_type='shares',
+                        amount=share.amount,
+                        # reference=f"CASH-{request.POST.get('receipt_no')}"
+                    )
 
-            # 3. Create the Transaction record (for the ledger)
-            Transaction.objects.create(
-                member=member_profile,
-                transaction_type='shares', # Matches your 'shares' choice in model
-                amount=Decimal(amount),
-                reference=f"CASH-{receipt_no}"
-            )
+                messages.success(
+                    request,
+                    f"KES {share.amount} shares recorded for {member_profile.user.get_full_name()}"
+                )
+                return redirect('approved_loans')
 
-            messages.success(request, f"Successfully added KES {amount} shares for {member_profile.user.get_full_name()}")
-            
-            # CRITICAL: You must REDIRECT here. 
-            # If you don't, the database might save, but the user won't know.
-            return redirect('approved_loans') 
+            except Exception as e:
+                messages.error(request, f"Database Error: {str(e)}")
+        else:
+            messages.error(request, "Please correct the form errors.")
 
-        except Exception as e:
-            messages.error(request, f"Database Error: {str(e)}")
-    
-    # If GET request, just show the form
-    return render(request, 'treasurer_confirm_share.html', {'member': member_profile})
+    else:
+        form = SharesForm()
 
+    return render(request, 'treasurer_confirm_share.html', {
+        'member': member_profile,
+        'form': form
+    })
 @login_required
 @role_required(allowed_roles=['1', '2', '3', '4'])  # Staff, Treasurer, Admin
 def member_individual_report(request):
     # Get the profile of the currently logged-in user
     member = request.user.profile 
     
-    shares = CapitalShare.objects.filter(member=member).order_by('-date_paid')
+    shares = CapitalShare.objects.filter(member=member).order_by('-date_created')
     total_shares = shares.aggregate(Sum('amount'))['amount__sum'] or 0
     
     loans = Loan.objects.filter(member=member).order_by('-application_date')

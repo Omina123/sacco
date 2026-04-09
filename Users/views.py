@@ -123,3 +123,51 @@ def access_denied(request):
     return render(request, '403.html', status=403)
 def succfy(request):
     return render(request, "ht.html")
+# views.py
+
+
+# Optional: Only allow admins/treasurers to delete members
+
+def delete_member(request, user_id):
+    """
+    Deletes a member (CustomUser) and their related profile.
+    """
+    member = get_object_or_404(CustomUser, id=user_id)
+
+    if request.method == "POST":
+        member_name = member.get_full_name() or member.username
+        member.delete()
+        messages.success(request, f"Member '{member_name}' has been deleted successfully.")
+        return redirect('admin_dashboard')  # Change to your members list page
+
+    # If GET request, render a confirmation page
+    return render(request, 'delete.html', {'member': member})
+
+# @role_required(allowed_roles=['1'])  # Admin only
+def update_user(request, user_id):
+    user = get_object_or_404(CustomUser, id=user_id)
+    profile = get_object_or_404(Profile, user=user)
+
+    if request.method == 'POST':
+        user_form = UserUpdateForm(request.POST, instance=user)
+        profile_form = ProfileUpdateForm(request.POST, request.FILES, instance=profile)
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+
+            messages.success(request, "User updated successfully ✅")
+            return redirect('Member')  # your member list page
+
+        else:
+            messages.error(request, "Please correct the errors below ❌")
+
+    else:
+        user_form = UserUpdateForm(instance=user)
+        profile_form = ProfileUpdateForm(instance=profile)
+
+    return render(request, 'update_user.html', {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'user_obj': user
+    })

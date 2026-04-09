@@ -82,7 +82,7 @@
     <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
         <div>
             <h2 class="fw-bold text-eldo-green">Hello, {{ profile.user.get_full_name }}!</h2>
-            <p class="text-muted">Member ID: <span class="fw-bold">#{{ profile.id }}</span> | Status: <span class="badge bg-success">Active</span></p>
+            <p class="text-muted">Member Number: <span class="fw-bold">#{{ profile.membership_number }}</span> | Status: <span class="badge bg-success">Active</span></p>
         </div>
         <div class="date-display bg-white p-2 px-3 rounded shadow-sm text-muted border-start border-4 border-warning">
             <i class="fas fa-calendar-check me-2 text-warning"></i> {% now "F j, Y" %}
@@ -119,7 +119,7 @@
                                 <span class="text-eldo-green fw-bold">KES {{ g.loan.amount|floatformat:2 }}</span>.
                             </p>
                             <small class="text-muted">
-                                <i class="fas fa-info-circle me-1"></i> Purpose: {{ g.loan.purpose.name }}
+                                <i class="fas fa-info-circle me-1"></i> Purpose: {{ g.loan.purpose}}
                             </small>
                         </div>
                         <div class="d-flex gap-2">

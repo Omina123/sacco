@@ -1,0 +1,200 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Member | Eldopoly SACCO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --eldo-navy: #0B1F3A;
+            --eldo-gold: #D4AF37;
+            --eldo-green: #28a745;
+            --eldo-light-green: #e9f7ef;
+            --eldo-white: #FFFFFF;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background-color: var(--eldo-light-green);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            padding: 40px 0;
+        }
+
+        .update-card {
+            max-width: 700px; /* Wider for profile editing */
+            margin: auto;
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(40, 167, 69, 0.1);
+            background-color: var(--eldo-white);
+            overflow: hidden;
+        }
+
+        .login-header {
+            background: linear-gradient(135deg, #FFD700 0%, var(--eldo-gold) 50%, var(--eldo-green) 100%);
+            padding: 40px 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo-circle {
+            width: 70px;
+            height: 70px;
+            background: var(--eldo-navy);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--eldo-gold);
+            font-weight: 800;
+            font-size: 1.4rem;
+            margin: 0 auto -75px;
+            border: 4px solid var(--eldo-white);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 2;
+        }
+
+        .btn-eldo {
+            background: linear-gradient(to right, var(--eldo-green) 0%, #34ce57 100%);
+            color: white;
+            font-weight: 700;
+            padding: 12px;
+            transition: 0.3s;
+            border-radius: 10px;
+            border: none;
+            letter-spacing: 1px;
+        }
+
+        .btn-eldo:hover {
+            color: var(--eldo-gold);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Styling Django form fields to match your design */
+        input, select, textarea {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #212529;
+            background-color: #fff;
+            background-clip: padding-box;
+            border: 2px solid #e1e5eb;
+            appearance: none;
+            border-radius: 10px;
+            transition: border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        }
+
+        input:focus {
+            border-color: var(--eldo-green);
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.1);
+        }
+
+        .form-label {
+            font-weight: 700;
+            color: var(--eldo-navy);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            opacity: 0.8;
+            margin-top: 1rem;
+        }
+
+        .section-divider {
+            border-bottom: 2px dashed var(--eldo-light-green);
+            margin: 25px 0;
+            position: relative;
+        }
+
+        .section-divider span {
+            background: var(--eldo-white);
+            padding: 0 15px;
+            color: var(--eldo-gold);
+            font-weight: 800;
+            font-size: 0.75rem;
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo-circle">EPC</div>
+    
+    <div class="card update-card">
+        <div class="login-header">
+            <h3 class="fw-extrabold mb-0" style="color:var(--eldo-navy); letter-spacing: 2px;">ELDOPOLY</h3>
+            <p class="small mb-0 text-dark opacity-75 fw-bold">UPDATE MEMBER: {{ user_obj.username }}</p>
+        </div>
+
+        <div class="card-body p-4 p-md-5 pt-5">
+            
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} border-0 shadow-sm mb-4">
+                    <i class="bi {% if message.tags == 'error' %}bi-x-circle{% else %}bi-check-circle{% endif %}-fill me-2"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="section-divider"><span>Account Information</span></div>
+                <div class="row">
+                    {% for field in user_form %}
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="section-divider"><span>Profile Details</span></div>
+                <div class="row">
+                    {% for field in profile_form %}
+                    <div class="{% if field.name == 'address' %}col-12{% else %}col-md-6{% endif %} mb-3">
+                        <label class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="d-flex gap-3 mt-4">
+                    <a href="{% url 'Member' %}" class="btn btn-outline-secondary w-50" style="border-radius: 10px; padding: 12px; font-weight: 700;">
+                        CANCEL
+                    </a>
+                    <button type="submit" class="btn btn-eldo w-50 shadow-sm">
+                        SAVE CHANGES <i class="bi bi-check2-circle ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div style="height: 8px; background: linear-gradient(to right, var(--eldo-gold) 0%, var(--eldo-green) 100%);"></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

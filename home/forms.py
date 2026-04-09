@@ -25,7 +25,7 @@ class LoanApplicationForm(forms.ModelForm):
 
     class Meta:
         model = Loan
-        fields = ['purpose', 'amount', 'duration_months']
+        fields = ['purpose', 'amount', 'duration_months','Gross_salary','net_salary']
         
 class GuarantorForm(forms.ModelForm):
     class Meta:
@@ -76,11 +76,27 @@ class LoanRepaymentForm(forms.ModelForm):
     status__in=['approved', 'disbursed']
 )
             
+from django import forms
+from .models import CapitalShare
+
 class SharesForm(forms.ModelForm):
     class Meta:
-        model =CapitalShare
+        model = CapitalShare
+        fields = ['amount', 'month']
 
-        fields=['amount']
+        widgets = {
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter amount e.g. 5000',
+                'min': '1',
+                'step': '0.01'
+            }),
+            'month': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+                'placeholder': 'Select contribution month'
+            }),
+        }
 class SavingsForm(forms.ModelForm):
     class Meta:
         model = MonthlyContribution

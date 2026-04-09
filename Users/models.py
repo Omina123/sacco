@@ -3,18 +3,30 @@ from django.contrib.auth.models import AbstractUser
 import random
 import re
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 def validate_kenyan_phone(value):
-    pattern = r'^2547\d{8}$'   # 2547XXXXXXXX
+    pattern = r'^2547\d{8}$' 
     if not re.match(pattern, value):
         raise ValidationError("Enter a valid phone number (e.g. 254710000000)")
+
 def validate_pf_number(value):
-    # Matches: 4 digits, 1 uppercase letter, 5 digits
-    pattern = r'^\d{4}[A-Z]\d{5}$'
+    # Matches: 1-4 digits, then 'N', then any number of digits
+    # Example: 1N123, 2024N55, 21N00028
+    pattern = r'^\d{1,4}N\d+$'
     if not re.match(pattern, value):
         raise ValidationError(
-            "PF Number must be in the format: Year + Letter + 5 digits (e.g., 2021N00028)"
+            "PF Number must start with 1-4 digits followed by 'N' and more digits (e.g., 2024N001)."
         )
+
+def validate_membership_range(value):
+    # Ensures the string entered is a number between 1 and 1000
+    try:
+        num = int(value)
+        if num < 1 or num > 1000:
+            raise ValidationError("Membership number must be between 1 and 1000.")
+    except ValueError:
+        raise ValidationError("Membership number must be a valid numeric value.")
 
 class CustomUser(AbstractUser):
     USER_TYPE_CHOICES = (
@@ -23,7 +35,6 @@ class CustomUser(AbstractUser):
         ('3', 'Treasurer'),
         ('4', 'Member'),
     )
-
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='4')
     email = models.EmailField(unique=True)
     is_verified = models.BooleanField(default=False)
@@ -35,7 +46,6 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
-
 
 class Profile(models.Model):
     GENDER_CHOICES = (
@@ -50,13 +60,25 @@ class Profile(models.Model):
         validators=[validate_kenyan_phone]
     )
     id_number = models.CharField(max_length=20)
-    membership_number = models.CharField(max_length=20, unique=True, null=True)
-    pf_number = models.CharField(
+    
+    # Updated Membership Number with range validation
+    membership_number = models.CharField(
         max_length=20, 
         unique=True, 
-        null=True, 
-        validators=[validate_pf_number] # Add validator here
+        null=True,
+        validators=[validate_membership_range]
     )
+    
+    # Updated PF Number with flexible year/prefix validation
+    pf_number = models.CharField(
+        max_length=20, 
+        unique=True,  
+        validators=[validate_pf_number]
+    )
+    
+    # Added Date of Birth
+    date_of_birth = models.DateField(null=True, blank=True)
+    
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     address = models.CharField(max_length=255, blank=True, null=True)
     date_joined = models.DateField(auto_now_add=True)
@@ -65,5 +87,4 @@ class Profile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        # This changes "kevin profile" to "Kevin Omina"
         return f"{self.user.get_full_name() or self.user.username}"

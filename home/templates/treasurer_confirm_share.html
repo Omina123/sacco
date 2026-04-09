@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -37,7 +38,6 @@
             border: 1px solid rgba(255, 255, 255, 0.8);
             width: 100%;
             max-width: 520px;
-            position: relative;
         }
 
         .brand-accent {
@@ -77,66 +77,17 @@
             padding: 14px 18px;
             border: 2px solid #e2ece8;
             font-weight: 600;
-            transition: all 0.25s ease;
-            background: #fff;
-        }
-
-        .form-control:focus {
-            border-color: var(--eldo-gold);
-            box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.15);
-            outline: none;
-        }
-
-        .input-group-text {
-            background: #e9eee0;
-            border: 2px solid #e2ece8;
-            border-right: none;
-            border-radius: 14px 0 0 14px;
-            font-weight: 800;
-            color: var(--eldo-green);
-            padding-left: 18px;
-            padding-right: 18px;
         }
 
         .btn-gold {
-            background: var(--eldo-green); /* Primary brand color */
-            color: var(--eldo-gold); /* Gold accent */
+            background: var(--eldo-green);
+            color: var(--eldo-gold);
             border: 2px solid var(--eldo-gold);
             font-weight: 800;
             border-radius: 14px;
             padding: 16px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             width: 100%;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
             margin-top: 10px;
-        }
-
-        .btn-gold:hover {
-            background: var(--eldo-dark);
-            color: #fff;
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(10, 38, 26, 0.2);
-            border-color: #fff;
-        }
-
-        .input-icon-wrapper {
-            position: relative;
-        }
-
-        .input-icon-wrapper i {
-            position: absolute;
-            left: 18px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--eldo-green);
-            font-size: 1.2rem;
-            opacity: 0.5;
-        }
-
-        .input-icon-wrapper .form-control {
-            padding-left: 48px;
         }
 
         .back-link {
@@ -144,106 +95,80 @@
             margin-top: 2rem;
         }
 
-        .back-link a {
-            color: #64748b;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 0.85rem;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .back-link a:hover {
-            color: var(--eldo-green);
-        }
-
-        .form-text {
-            color: #8fa39a;
-            font-weight: 500;
-        }
-
         .badge-pf {
             background: var(--eldo-green);
             color: var(--eldo-gold);
             padding: 6px 12px;
             border-radius: 8px;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
         }
     </style>
 </head>
 <body>
 
-    <div class="content-card">
-        <div class="brand-accent"></div>
-        
-        <div class="text-center mb-4">
-            <div class="d-inline-block mb-3" style="color: var(--eldo-gold);">
-                <i class="bi bi-shield-check fs-1"></i>
+<div class="content-card">
+    <div class="brand-accent"></div>
+    
+    <div class="text-center mb-4">
+        <i class="bi bi-shield-check fs-1 text-warning"></i>
+        <h3 class="fw-bold text-success">Share Purchase</h3>
+        <p class="text-muted small">Processing manual cash equity for members.</p>
+    </div>
+
+    <!-- ✅ FIXED: member not profile -->
+    <div class="member-info-box">
+        <div class="row">
+            <div class="col-7">
+                <span class="label-text">Member Name</span>
+                <span class="member-val">{{ member.user.get_full_name }}</span>
             </div>
-            <h3 class="fw-800" style="color: var(--eldo-green);">Share Purchase</h3>
-            <p class="text-muted small">Processing manual cash equity for members.</p>
-        </div>
-
-        <div class="member-info-box">
-            <div class="row align-items-center">
-                <div class="col-7">
-                    <span class="label-text">Member Name</span>
-                    <span class="member-val text-capitalize">jumbe caleb</span>
-                </div>
-                <div class="col-5 text-end">
-                    <span class="label-text">PF Number</span>
-                    <span class="badge-pf fw-bold">107n00028</span>
-                </div>
+            <div class="col-5 text-end">
+                <span class="label-text">PF Number</span>
+                <span class="badge-pf">{{ member.pf_number }}</span>
             </div>
-        </div>
-
-        <form method="POST">
-            {% csrf_token %}
-            
-            <div class="mb-4">
-                <label class="label-text">Transaction Amount</label>
-                <div class="input-group">
-                    <span class="input-group-text">KES</span>
-                    <input type="number" 
-                           name="amount" 
-                           class="form-control" 
-                           placeholder="0.00" 
-                           min="1" 
-                           step="0.01" 
-                           required
-                           style="border-radius: 0 14px 14px 0;">
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <label class="label-text">Physical Receipt Number</label>
-                <div class="input-icon-wrapper">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <input type="text" 
-                           name="receipt_no" 
-                           class="form-control" 
-                           placeholder="e.g. ELDO-88210" 
-                           required>
-                </div>
-                <div class="form-text mt-2" style="font-size: 0.7rem;">
-                    <i class="bi bi-info-circle me-1"></i> Required for internal treasury audit logs.
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-gold" onclick="return confirm('Confirm KES payment for Caleb? This action cannot be undone.')">
-                <i class="bi bi-check2-circle me-2"></i> Authorize Purchase
-            </button>
-        </form>
-
-        <div class="back-link">
-            <a href="{% url  'Member' %}">
-                <i class="bi bi-arrow-left"></i> Return to Directory
-            </a>
         </div>
     </div>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- ✅ Amount -->
+        <div class="mb-4">
+            <label class="label-text">Transaction Amount</label>
+            <div class="input-group">
+                <span class="input-group-text">KES</span>
+                {{ form.amount }}
+            </div>
+        </div>
+
+        <!-- ✅ Month -->
+        <div class="mb-4">
+            <label class="label-text">Contribution Month</label>
+            {{ form.month }}
+            <div class="form-text">Select the month this payment belongs to</div>
+        </div>
+
+        {% comment %} <!-- Receipt -->
+        <div class="mb-4">
+            <label class="label-text">Receipt Number</label>
+            <input type="text"
+                   name="receipt_no"
+                   class="form-control"
+                   placeholder="Enter receipt e.g. ELDO-88210"
+                   required>
+        </div> {% endcomment %}
+
+        <button type="submit" class="btn btn-gold"
+            onclick="return confirm('Confirm this share purchase?')">
+            <i class="bi bi-check-circle"></i> Confirm Purchase
+        </button>
+    </form>
+
+    <div class="back-link">
+        <a href="{% url 'Member' %}">
+            ← Back to Members
+        </a>
+    </div>
+</div>
 
 </body>
 </html>

@@ -33,8 +33,10 @@ class CapitalShare(models.Model):
     member = models.ForeignKey(Profile, on_delete=models.CASCADE)
 
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    month =models.DateField()
+    date_created=models.DateTimeField(auto_now_add=True)
 
-    date_paid = models.DateField(auto_now_add=True)
+    
 
     def __str__(self):
         return f"{self.member} - {self.amount}"
@@ -61,6 +63,7 @@ class MonthlyContribution(models.Model):
 # LOAN PURPOSES
 # -------------------------
 class LoanPurpose(models.Model):
+    
 
     name = models.CharField(max_length=200)
 
@@ -82,15 +85,26 @@ class Loan(models.Model):
     ('completed', 'Completed'),
     ('rejected', 'Rejected'),
 )
+    purpo=(
+        ('normal Loan', 'Normal Loan'),
+        ('choll fees', 'Scholl fees'),
+        ('emergency', 'Emergency'),
+        ('personal', 'Personal'),
+        
+    )
 
     member = models.ForeignKey(Profile, on_delete=models.CASCADE,related_name="member_loans")
 
-    purpose = models.ForeignKey(LoanPurpose, on_delete=models.SET_NULL, null=True)
+    purpose = models.CharField(max_length=50, choices=purpo,default='normal Loan')
+    Gross_salary = models.DecimalField(max_digits=10, decimal_places=2)
+    net_salary = models.DecimalField(max_digits=10, decimal_places=2)
 
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     Othes_Guarantor = models.CharField(max_length=56,blank=True,null=True)
     interest_rate = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('12.00'))  # Default interest rate of 12%
     insurance= models.DecimalField(max_digits=10,decimal_places=2 , null=True, blank=True)
+    interest= models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    
 
     duration_months = models.IntegerField(
         
@@ -119,8 +133,8 @@ class Loan(models.Model):
         ])
     @property
     def insurance_fee(self):
-        """2% of the principal loan amount"""
-        return self.amount * Decimal('0.02')
+        """25.9% of the principal loan amount"""
+        return self.amount * Decimal('0.259')
 
 
     # @property
@@ -188,6 +202,7 @@ class LoanRepaymentSchedule(models.Model):
     loan = models.ForeignKey(Loan, on_delete=models.CASCADE)
 
     installment_number = models.IntegerField()
+    
 
     due_date = models.DateField()
 

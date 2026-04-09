@@ -182,7 +182,8 @@ SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
     'django-insecure-9$3yvfi(_9i(bn&24njr8*h8v0fi=mt3f4i3p%s@^@$2jhbcue'
 )
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+# DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+DEBUG =  True # Set to False for production, can be overridden by env var
 ALLOWED_HOSTS = ['*']  # or set your Render URL
 
 # --------------------------
@@ -244,7 +245,7 @@ WSGI_APPLICATION = 'SACCO.wsgi.application'
 # --------------------------
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://sacco_asbe_user:47QnEQuRbzyHoFVT7GphT0GTLdwymsc3@dpg-d7auiscvjg8s73eo1h6g-a.oregon-postgres.render.com/sacco_asbe',
+        default='postgresql://eldoret_user:mRntB6itarrj0Jj8ay4CRj2pEkRb4TQj@dpg-d7b9fcmdqaus73d60mj0-a.oregon-postgres.render.com/eldoret',
         conn_max_age=600,
         ssl_require=True
     )

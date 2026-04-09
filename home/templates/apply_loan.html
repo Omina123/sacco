@@ -2,90 +2,89 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apply for Loan | Eldopoly SACCO</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apply for Loan | Eldopoly SACCO</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-    <style>
-        :root {
-            --eldo-deep-green: #14452F;
-            --eldo-light-green: #8DC63F;
-            --eldo-gold: #FFD700;
-            --sidebar-width: 280px;
-            --bg-light: #f8fafb;
-            --glass-white: rgba(255, 255, 255, 0.9);
-        }
+<style>
+:root {
+    --eldo-deep-green: #14452F;
+    --eldo-light-green: #8DC63F;
+    --eldo-gold: #FFD700;
+    --sidebar-width: 280px;
+    --bg-light: #f8fafb;
+    --glass-white: rgba(255, 255, 255, 0.9);
+}
 
-        body, html {
-            height: 100%; margin: 0; background: var(--bg-light);
-            font-family: 'Plus Jakarta Sans', sans-serif; color: #2D3748; overflow: hidden;
-        }
+body, html {
+    height: 100%; margin: 0; background: var(--bg-light);
+    font-family: 'Plus Jakarta Sans', sans-serif; color: #2D3748; overflow: hidden;
+}
 
-        .wrapper { display: flex; height: 100vh; width: 100vw; }
+.wrapper { display: flex; height: 100vh; width: 100vw; }
 
-        .sidebar {
-            width: var(--sidebar-width); background: var(--eldo-deep-green);
-            flex-shrink: 0; display: flex; flex-direction: column; z-index: 1050;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.1);
-        }
-        .sidebar-brand { padding: 2.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .sidebar a {
-            padding: 14px 24px; color: rgba(255,255,255,0.6); text-decoration: none;
-            display: flex; align-items: center; gap: 15px; font-weight: 500;
-            transition: 0.2s ease; margin: 4px 12px; border-radius: 12px;
-        }
-        .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.1); color: var(--eldo-gold); }
+.sidebar {
+    width: var(--sidebar-width); background: var(--eldo-deep-green);
+    flex-shrink: 0; display: flex; flex-direction: column; z-index: 1050;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+}
+.sidebar-brand { padding: 2.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.sidebar a {
+    padding: 14px 24px; color: rgba(255,255,255,0.6); text-decoration: none;
+    display: flex; align-items: center; gap: 15px; font-weight: 500;
+    transition: 0.2s ease; margin: 4px 12px; border-radius: 12px;
+}
+.sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.1); color: var(--eldo-gold); }
 
-        .main-container { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
-        .scrollable-content { flex-grow: 1; overflow-y: auto; padding: 2rem; }
-        
-        .glass-card {
-            background: var(--glass-white); backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 28px;
-            padding: 35px; box-shadow: 0 20px 40px rgba(0,0,0,0.03);
-        }
+.main-container { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+.scrollable-content { flex-grow: 1; overflow-y: auto; padding: 2rem; }
 
-        .borrow-power-banner {
-            background: linear-gradient(135deg, var(--eldo-deep-green) 0%, #1a5a3d 100%);
-            border-radius: 24px; padding: 25px; color: white; margin-bottom: 2rem;
-        }
+.glass-card {
+    background: var(--glass-white); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 28px;
+    padding: 35px; box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+}
 
-        .custom-slider {
-            -webkit-appearance: none; width: 100%; height: 8px;
-            border-radius: 10px; background: #e2e8f0; outline: none; margin: 15px 0;
-        }
-        .custom-slider::-webkit-slider-thumb {
-            -webkit-appearance: none; appearance: none; width: 24px; height: 24px;
-            border-radius: 50%; background: var(--eldo-deep-green); cursor: pointer;
-            border: 3px solid var(--eldo-gold); box-shadow: 0 0 10px rgba(0,0,0,0.15);
-        }
+.borrow-power-banner {
+    background: linear-gradient(135deg, var(--eldo-deep-green) 0%, #1a5a3d 100%);
+    border-radius: 24px; padding: 25px; color: white; margin-bottom: 2rem;
+}
 
-        .guarantor-row {
-            background: #fdfdfd; border: 2px solid #edf2f7; 
-            border-radius: 16px; transition: 0.3s; margin-bottom: 10px;
-        }
-        .guarantor-row:hover { border-color: var(--eldo-light-green); }
+.custom-slider {
+    -webkit-appearance: none; width: 100%; height: 8px;
+    border-radius: 10px; background: #e2e8f0; outline: none; margin: 15px 0;
+}
+.custom-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 24px; height: 24px;
+    border-radius: 50%; background: var(--eldo-deep-green); cursor: pointer;
+    border: 3px solid var(--eldo-gold); box-shadow: 0 0 10px rgba(0,0,0,0.15);
+}
 
-        .form-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #718096; }
-        .btn-eldo {
-            background: var(--eldo-deep-green); color: var(--eldo-gold);
-            font-weight: 700; border-radius: 16px; padding: 18px; border: none;
-        }
-        .btn-eldo:disabled { opacity: 0.5; cursor: not-allowed; }
+.guarantor-row {
+    background: #fdfdfd; border: 2px solid #edf2f7; 
+    border-radius: 16px; transition: 0.3s; margin-bottom: 10px;
+}
+.guarantor-row:hover { border-color: var(--eldo-light-green); }
 
-        .breakdown-box { background: #f8fafc; border-radius: 20px; padding: 24px; border: 1px dashed #e2e8f0; }
+.form-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #718096; }
+.btn-eldo {
+    background: var(--eldo-deep-green); color: var(--eldo-gold);
+    font-weight: 700; border-radius: 16px; padding: 18px; border: none;
+}
+.btn-eldo:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Django Input Styling */
-        #id_amount, #id_duration_months {
-            border: 1px solid #e2e8f0; background: #f8fafc; font-weight: 800;
-            color: var(--eldo-deep-green); width: 100%; border-radius: 8px; padding: 5px 12px;
-        }
-    </style>
+.breakdown-box { background: #f8fafc; border-radius: 20px; padding: 24px; border: 1px dashed #e2e8f0; }
+
+#id_amount, #id_duration_months, #id_Gross_salary, #id_net_salary {
+    border: 1px solid #e2e8f0; background: #f8fafc; font-weight: 800;
+    color: var(--eldo-deep-green); width: 100%; border-radius: 8px; padding: 5px 12px;
+}
+</style>
 </head>
 <body>
 
@@ -102,8 +101,6 @@
             <a href="{% url 'apply_loan' %}"><i class="fas fa-file-invoice-dollar"></i> Apply Loan</a>
             <a href="{% url 'pay_loan' %}"><i class="fas fa-hand-holding-usd"></i> Repay Loan</a>
             <a href="{% url 'my_loans' %}"><i class="fas fa-exchange-alt"></i> My Loans</a>
-            <a href="{% url 'my_shares' %}"><i class="fas fa-exchange-alt"></i> My Shares</a>
-            <a href="{% url 'my_savings' %}"><i class="fas fa-exchange-alt"></i> My Monthly Savings</a>
             <hr class="mx-3 text-white-50">
             <a href="{% url 'Logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
@@ -113,7 +110,7 @@
         <main class="scrollable-content">
             <div class="container-fluid">
                 <div class="col-xl-8 col-lg-10 mx-auto">
-                    
+
                     {% if messages %}
                         {% for message in messages %}
                             <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 mb-4">
@@ -148,27 +145,33 @@
                             {% csrf_token %}
                             {{ formset.management_form }}
 
-                            <div class="row mb-5">
+                            <div class="row mb-4">
                                 <div class="col-md-6 mb-4">
                                     <label class="form-label"><i class="bi bi-cash-stack me-2"></i>Loan Amount</label>
-                                    <input type="range" class="custom-slider" id="amount_range" 
-                                           min="1000" max="{{ loan_limit|default:50000 }}" step="500" value="5000">
+                                    <input type="range" class="custom-slider" id="amount_range" min="1000" max="{{ loan_limit|default:50000 }}" step="500" value="5000">
                                     {{ form.amount }}
                                 </div>
                                 <div class="col-md-6 mb-4">
                                     <label class="form-label"><i class="bi bi-calendar-event me-2"></i>Duration (Months)</label>
-                                    <input type="range" class="custom-slider" id="month_range" 
-                                           min="1" max="48" step="1" value="6">
+                                    <input type="range" class="custom-slider" id="month_range" min="1" max="48" step="1" value="6">
                                     {{ form.duration_months }}
                                 </div>
-                                <div class="col-12">
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label">Gross Salary</label>
+                                    {{ form.Gross_salary }}
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <label class="form-label">Net Salary</label>
+                                    {{ form.net_salary }}
+                                </div>
+                                <div class="col-12 mb-4">
                                     <label class="form-label"><i class="bi bi-chat-left-dots me-2"></i>Purpose of Loan</label>
                                     {{ form.purpose }}
                                 </div>
                             </div>
 
-                            <div class="mb-5">
-                                <div class="d-flex justify-content-between border-bottom pb-2 mb-4">
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
                                     <h5 class="fw-bold m-0 text-eldo-deep-green">Assign 3 Guarantors</h5>
                                     <span id="math-status" class="badge bg-danger p-2">Shortfall Found</span>
                                 </div>
@@ -190,14 +193,14 @@
                                 {% endfor %}
                             </div>
 
-                            <div class="breakdown-box mb-5">
-                                <h6 class="fw-bold mb-4 text-dark"><i class="bi bi-calculator me-2"></i>Repayment Estimate</h6>
+                            <div class="breakdown-box mb-4">
+                                <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-calculator me-2"></i>Repayment Estimate</h6>
                                 <div class="d-flex justify-content-between mb-2 opacity-75">
-                                    <span>Interest (12% p.a)</span>
+                                    <span>Interest </span>
                                     <span id="p-interest">KES 0.00</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2 opacity-75">
-                                    <span>Insurance (2%)</span>
+                                    <span>Insurance </span>
                                     <span id="p-insurance">KES 0.00</span>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
@@ -206,35 +209,14 @@
                                 </div>
                             </div>
 
-                            <button type="button" class="btn btn-eldo w-100 shadow-lg" id="proceedBtn" onclick="showReview()">
-                                Proceed to Confirmation <i class="bi bi-arrow-right ms-2"></i>
+                            <button type="submit" class="btn btn-eldo w-100 shadow-lg">
+                                Submit Loan Application
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
         </main>
-    </div>
-</div>
-
-<div class="modal fade" id="confirmModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0" style="border-radius: 30px;">
-            <div class="modal-body p-5 text-center">
-                <h4 class="fw-bold mb-2">Review Application</h4>
-                <p class="text-muted small mb-4">All selected guarantors must approve this request for the loan status to change.</p>
-                
-                <div class="bg-light p-4 rounded-4 mb-4 border border-dashed">
-                    <h2 class="fw-bold text-eldo-deep-green mb-1" id="m-principal"></h2>
-                    <p class="text-muted m-0" id="m-duration"></p>
-                </div>
-
-                <div class="row g-2">
-                    <div class="col-6"><button class="btn btn-light w-100 py-3 rounded-4" data-bs-dismiss="modal">Edit</button></div>
-                    <div class="col-6"><button type="button" onclick="submitLoanForm()" class="btn btn-eldo w-100 py-3 rounded-4">Submit</button></div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -248,65 +230,66 @@ $(document).ready(function() {
     const $amtInput = $('#id_amount');
     const $monRange = $('#month_range');
     const $monInput = $('#id_duration_months');
+    const $purpose = $('#id_purpose');
 
-    // Make inputs readonly so user can't type but sliders still work
     $amtInput.prop('readonly', true);
     $monInput.prop('readonly', true);
 
-    // Initialize Select2
+    // Initialize Select2 for guarantors
     $('select[name$="-guarantor"]').select2({ width: '100%' });
 
-    // Slider Sync
-    $amtRange.on('input', function() { $amtInput.val($(this).val()); updateCalculations(); });
-    $monRange.on('input', function() { $monInput.val($(this).val()); });
+    // Sync sliders with form fields
+    $amtInput.val($amtRange.val());
+    $monInput.val($monRange.val());
 
-    // Validate Coverage
+    $amtRange.on('input', function() { $amtInput.val($(this).val()); updateCalculations(); });
+    $monRange.on('input', function() { $monInput.val($(this).val()); updateCalculations(); });
+
+    $purpose.on('change', function() {
+        if ($purpose.val() !== 'normal Loan') {
+            if (parseInt($monRange.val()) > 12) {
+                $monRange.val(12); $monInput.val(12);
+            }
+            $monRange.attr('max', 12);
+        } else {
+            $monRange.attr('max', 48);
+        }
+        updateCalculations();
+    });
+
+    // Validate guarantor coverage
     function validateCoverage() {
         let totalGuaranteed = 0;
         const requestedAmount = parseFloat($amtInput.val()) || 0;
-
-        $('input[name$="-guaranteed_amount"]').each(function() {
-            totalGuaranteed += parseFloat($(this).val()) || 0;
-        });
-
+        $('input[name$="-guaranteed_amount"]').each(function() { totalGuaranteed += parseFloat($(this).val()) || 0; });
         const $status = $('#math-status');
-        const $btn = $('#proceedBtn');
-
         if (totalGuaranteed >= requestedAmount && requestedAmount > 0) {
             $status.text("Coverage Ready: KES " + totalGuaranteed.toLocaleString()).removeClass('bg-danger').addClass('bg-success');
-            $btn.prop('disabled', false);
         } else {
             let diff = requestedAmount - totalGuaranteed;
             $status.text("KES " + diff.toLocaleString() + " Shortfall").removeClass('bg-success').addClass('bg-danger');
-            $btn.prop('disabled', true);
         }
     }
 
+    $(document).on('input', 'input[name$="-guaranteed_amount"]', validateCoverage);
+
     function updateCalculations() {
         const principal = parseFloat($amtInput.val()) || 0;
-        const interest = principal * 0.12;
-        const insurance = principal * 0.02;
+        const months = parseFloat($monInput.val()) || 1;
+        const interest = principal * 0.259;
+        const insurance = ((5.03 * months + 3.03) * principal) / 6000;
         const total = principal + interest + insurance;
 
-        $('#p-interest').text("KES " + interest.toLocaleString());
-        $('#p-insurance').text("KES " + insurance.toLocaleString());
-        $('#p-total').text("KES " + total.toLocaleString());
+        $('#p-interest').text("KES " + interest.toLocaleString(undefined,{minimumFractionDigits:2}));
+        $('#p-insurance').text("KES " + insurance.toLocaleString(undefined,{minimumFractionDigits:2}));
+        $('#p-total').text("KES " + total.toLocaleString(undefined,{minimumFractionDigits:2}));
+
         validateCoverage();
     }
 
-    $(document).on('input', 'input[name$="-guaranteed_amount"]', validateCoverage);
     updateCalculations();
 });
-
-function showReview() {
-    $('#m-principal').text("KES " + parseFloat($('#id_amount').val()).toLocaleString());
-    $('#m-duration').text($('#id_duration_months').val() + " Month Duration");
-    new bootstrap.Modal('#confirmModal').show();
-}
-
-function submitLoanForm() {
-    document.getElementById('loanForm').submit();
-}
 </script>
+
 </body>
 </html>
