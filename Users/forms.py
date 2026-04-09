@@ -16,36 +16,45 @@ class MemberRegistrationForm(UserCreationForm):
 
 from django import forms
 from .models import Profile
+from django import forms
+from .models import Profile
 
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ('phone_number', 'id_number', 'membership_number', 'pf_number', 'gender', 'address','date_of_birth')
+        fields = (
+            'phone_number', 'id_number', 'membership_number', 'pf_number',
+            'gender', 'address', 'date_of_birth', 'next_of_kin', 'Next_of_kin_phone'
+        )
+        widgets = {
+            'date_of_birth': forms.DateInput(
+                attrs={
+                    'type': 'date',  # This enables the calendar picker
+                    'class': 'form-control',
+                }
+            ),
+            'gender': forms.Select(attrs={'class': 'form-select'}),  # Keep your select styling
+        }
 
     def __init__(self, *args, **kwargs):
-        super(ProfileForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         
-        # Define specific placeholders
         placeholders = {
             'phone_number': 'e.g. 254712345678',
             'id_number': 'Enter National ID Number',
             'membership_number': 'e.g. 1-1000',
             'pf_number': 'e.g. 1999N00000',
             'address': 'Enter your physical address',
-            'date_of_birth': 'YYYY-MM-DD',
+            'next_of_kin': 'Enter next of kin name',
+            'Next_of_kin_phone': 'e.g. 254712345678',
         }
 
         for field_name, placeholder_text in placeholders.items():
             if field_name in self.fields:
                 self.fields[field_name].widget.attrs.update({
                     'placeholder': placeholder_text,
-                    'class': 'form-control' # Adds Bootstrap styling
+                    'class': 'form-control'
                 })
-        
-        # Special handling for the Gender dropdown class
-        if 'gender' in self.fields:
-            self.fields['gender'].widget.attrs.update({'class': 'form-select'})
-
 class UserUpdateForm(forms.ModelForm):
     class Meta:
         model = CustomUser

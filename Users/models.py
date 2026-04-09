@@ -78,7 +78,13 @@ class Profile(models.Model):
     
     # Added Date of Birth
     date_of_birth = models.DateField(null=True, blank=True)
-    
+    next_of_kin = models.CharField(max_length=255, blank=True, null=True)   
+    Next_of_kin_phone = models.CharField(
+        max_length=12,
+        validators=[validate_kenyan_phone],
+        blank=True,
+        null=True
+    )
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     address = models.CharField(max_length=255, blank=True, null=True)
     date_joined = models.DateField(auto_now_add=True)
