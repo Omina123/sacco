@@ -77,7 +77,7 @@ WSGI_APPLICATION = 'SACCO.wsgi.application'
 # --------------------------
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://eldoret_user:mRntB6itarrj0Jj8ay4CRj2pEkRb4TQj@dpg-d7b9fcmdqaus73d60mj0-a.oregon-postgres.render.com/eldoret',
+        default='postgresql://edl_user:QzKxYAjSlduCvzZYKq1ZU3NKXtizym9r@dpg-d7bp4f49c44c73bgu8lg-a.oregon-postgres.render.com/edl',
         conn_max_age=600,
         ssl_require=True
     )
