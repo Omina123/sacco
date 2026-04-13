@@ -26,23 +26,23 @@ from django.db import transaction
 from .utils import send_brevo_email
 from .EmailBackend import EmailBackend
 
-# def register(request):
-#     if request.method == 'POST':
-#         user_form = MemberRegistrationForm(request.POST)
-#         if user_form.is_valid():
-#             user = user_form.save(commit=False)
-#             user.user_type = '4'  # Assign 'Member'
-#             user.save()
+def register(request):
+    if request.method == 'POST':
+        user_form = MemberRegistrationForm(request.POST)
+        if user_form.is_valid():
+            user = user_form.save(commit=False)
+            user.user_type = '4'  # Assign 'Member'
+            user.save()
             
-#             # CRITICAL: Create the empty profile so the user can log in
-#             # and later fill it out via 'update_profile'
-#             Profile.objects.get_or_create(user=user)
+            # CRITICAL: Create the empty profile so the user can log in
+            # and later fill it out via 'update_profile'
+            Profile.objects.get_or_create(user=user)
             
-#             # messages.success(request, "Registration successful! Please login to complete your profile.")
-#             return redirect('succfy')
-#     else:
-#         user_form = MemberRegistrationForm()
-#     return render(request, 'register.html', {'user_form': user_form})
+            # messages.success(request, "Registration successful! Please login to complete your profile.")
+            return redirect('succfy')
+    else:
+        user_form = MemberRegistrationForm()
+    return render(request, 'register.html', {'user_form': user_form})
 
 # # --- LOGIN / LOGOUT ---
 
@@ -55,53 +55,53 @@ from .EmailBackend import EmailBackend
 # from .utils import send_brevo_email
 
 
-def register(request):
-    if request.method == 'POST':
-        form = MemberRegistrationForm(request.POST)
+# def register(request):
+#     if request.method == 'POST':
+#         form = MemberRegistrationForm(request.POST)
 
-        if form.is_valid():
-            try:
-                with transaction.atomic():
-                    # ✅ Create user but don't verify yet
-                    user = form.save(commit=False)
-                    user.user_type = '4'
-                    user.is_verified = False  # 🔥 IMPORTANT
-                    user.generate_otp()  # 🔥 generate OTP here
-                    user.save()
+#         if form.is_valid():
+#             try:
+#                 with transaction.atomic():
+#                     # ✅ Create user but don't verify yet
+#                     user = form.save(commit=False)
+#                     user.user_type = '4'
+#                     user.is_verified = False  # 🔥 IMPORTANT
+#                     user.generate_otp()  # 🔥 generate OTP here
+#                     user.save()
 
-                    # ✅ Create profile
-                    Profile.objects.get_or_create(user=user)
+#                     # ✅ Create profile
+#                     Profile.objects.get_or_create(user=user)
 
-                    # ✅ Store email in session
-                    request.session['verification_email'] = user.email
+#                     # ✅ Store email in session
+#                     request.session['verification_email'] = user.email
 
-                    # ✅ Send OTP email (PROFESSIONAL TEMPLATE)
-                    html_content = f"""
-                    <div style="font-family: Arial; padding: 20px;">
-                        <h2 style="color:#0B1F3A;">Verify Your Account</h2>
-                        <p>Hello {user.first_name},</p>
-                        <p>Your OTP code is:</p>
-                        <h1 style="color:#D4AF37;">{user.otp}</h1>
-                        <p>This code expires soon.</p>
-                        <hr>
-                        <small>St. Peters Parish SACCO</small>
-                    </div>
-                    """
+#                     # ✅ Send OTP email (PROFESSIONAL TEMPLATE)
+#                     html_content = f"""
+#                     <div style="font-family: Arial; padding: 20px;">
+#                         <h2 style="color:#0B1F3A;">Verify Your Account</h2>
+#                         <p>Hello {user.first_name},</p>
+#                         <p>Your OTP code is:</p>
+#                         <h1 style="color:#D4AF37;">{user.otp}</h1>
+#                         <p>This code expires soon.</p>
+#                         <hr>
+#                         <small>St. Peters Parish SACCO</small>
+#                     </div>
+#                     """
 
-                    send_brevo_email(
-                        to_email=user.email,
-                        subject="Account Verification OTP",
-                        html_content=html_content
-                    )
+#                     send_brevo_email(
+#                         to_email=user.email,
+#                         subject="Account Verification OTP",
+#                         html_content=html_content
+#                     )
 
-                    messages.success(request, "OTP sent to your email. Verify your account.")
-                    return redirect('verify_otp')
+#                     messages.success(request, "OTP sent to your email. Verify your account.")
+#                     return redirect('verify_otp')
 
-            except Exception as e:
-                messages.error(request, f"Error: {str(e)}")
+#             except Exception as e:
+#                 messages.error(request, f"Error: {str(e)}")
 
-    else:
-        form = MemberRegistrationForm()
+#     else:
+#         form = MemberRegistrationForm()
 
     return render(request, 'register.html', {'user_form': form})
 def Login(request):
