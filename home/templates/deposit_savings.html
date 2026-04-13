@@ -1,4 +1,4 @@
-{% load static %}
+{% comment %} {% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,143 +8,180 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
             --eldo-deep-green: #14452F;
             --eldo-light-green: #8DC63F;
             --eldo-gold: #FFD700;
+            --mpesa-green: #49B249;
             --light-bg: #f4f7f6;
         }
 
-        body { background: var(--light-bg); }
+        body { 
+            background: var(--light-bg); 
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+        }
 
+        /* Sidebar & Layout */
         .sidebar {
-            height: 100vh;
-            position: fixed;
-            width: 240px;
-            background: var(--eldo-deep-green);
-            padding-top: 20px;
-            color: white;
+            height: 100vh; position: fixed; width: 260px;
+            background: var(--eldo-deep-green); color: white;
+            transition: all 0.3s; z-index: 1050;
         }
 
         .sidebar a {
-            display: block;
-            padding: 12px;
-            color: white;
-            text-decoration: none;
+            display: flex; align-items: center; padding: 14px 25px;
+            color: rgba(255,255,255,0.8); text-decoration: none; transition: 0.2s;
         }
 
-        .sidebar a:hover {
-            background: var(--eldo-light-green);
-            color: black;
+        .sidebar a:hover, .sidebar a.active {
+            background: var(--eldo-light-green); color: var(--eldo-deep-green) !important;
+            font-weight: 600;
         }
 
-        .main-content {
-            margin-left: 240px;
-            padding: 40px;
+        .main-content { margin-left: 260px; padding: 30px; transition: all 0.3s; }
+
+        /* Mobile Header */
+        .mobile-header {
+            display: none; background: var(--eldo-deep-green); 
+            padding: 15px; color: white;
         }
 
-        .card {
-            border-radius: 12px;
-            padding: 30px;
-        }
-
+        /* Card Styling */
+        .card { border: none; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        
         .btn-eldo {
-            background: var(--eldo-deep-green);
-            color: var(--eldo-gold);
-            font-weight: bold;
+            background: var(--eldo-deep-green); color: var(--eldo-gold);
+            font-weight: 700; border-radius: 12px; padding: 12px;
         }
 
-        .btn-eldo:hover {
-            background: var(--eldo-light-green);
-            color: black;
+        .mpesa-badge {
+            background: #e8f5e9; color: var(--mpesa-green);
+            padding: 5px 15px; border-radius: 50px; font-size: 0.8rem; font-weight: 700;
+        }
+
+        /* Form Inputs */
+        input, select {
+            border-radius: 10px !important; padding: 12px !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar { left: -260px; }
+            .sidebar.active { left: 0; }
+            .main-content { margin-left: 0; padding: 20px; }
+            .mobile-header { display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
         }
     </style>
 </head>
 
 <body>
 
-<!-- SIDEBAR -->
-<div class="sidebar">
-    <div class="text-center mb-4">
-        <h4 style="color: var(--eldo-gold);">
-            <i class="fas fa-university"></i> ELDOPOLY
-        </h4>
-    </div>
-
-    <a href="{% url 'member_dashboard' %}" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
-    <a href="{% url 'deposit_savings' %}"><i class="fas fa-piggy-bank"></i> Monthly Savings</a>
-    <a href="{% url 'purchase_shares' %}"><i class="fas fa-chart-pie"></i> Shares</a>
-    <a href="{% url 'apply_loan' %}"><i class="fas fa-file-invoice-dollar"></i> Apply Loan</a>
-    <a href="{% url 'pay_loan' %}"><i class="fas fa-hand-holding-usd"></i> Repay Loan</a>
-    <a href="{% url 'my_loans' %}"><i class="fas fa-exchange-alt"></i> My Loans</a>
-    <a href="{% url 'my_shares' %}"><i class="fas fa-exchange-alt"></i> My Shares</a>
-    <a href="{% url 'my_savings' %}"><i class="fas fa-exchange-alt"></i> My Monthly Savings</a>
-    <hr class="mx-3 text-white-50">
-    <a href="{% url 'Logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+<div class="mobile-header">
+    <h5 class="m-0 fw-bold" style="color: var(--eldo-gold);">ELDOPOLY</h5>
+    <button class="btn text-white p-0" id="sidebarToggle"><i class="fas fa-bars fs-4"></i></button>
 </div>
 
-<!-- MAIN -->
+<div class="sidebar" id="sidebar">
+    <div class="p-4 text-center">
+        <h4 style="color: var(--eldo-gold);" class="fw-bold">ELDOPOLY</h4>
+    </div>
+    <nav class="mt-2">
+         <a href="{% url 'member_dashboard' %}" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="{% url 'deposit_savings' %}"><i class="fas fa-piggy-bank"></i>Xmass Savings</a>
+        <a href="{% url 'purchase_shares' %}"><i class="fas fa-chart-pie"></i> Shares</a>
+        <a href="{% url 'apply_loan' %}"><i class="fas fa-file-invoice-dollar"></i> Apply Loan</a>
+        <a href="{% url 'pay_loan' %}"><i class="fas fa-hand-holding-usd"></i> Repay Loan</a>
+        <a href="{% url 'my_loans' %}"><i class="fas fa-exchange-alt"></i> My Loans</a>
+        <a href="{% url 'member_individual_report'%}"><i class="fas fa-file-alt"></i> My Statement</a>
+        <hr class="mx-3 text-white-50">
+        <a href="{% url 'Logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </nav>
+</div>
+
 <div class="main-content">
-    <div class="container">
-        <div class="col-lg-6 mx-auto">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-6 col-md-8 mx-auto">
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-success rounded-4 border-0 shadow-sm mb-4">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
 
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-info">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-
-            <div class="card shadow">
-
-                <h4 class="text-center mb-4">Deposit Monthly Savings</h4>
-
-                <form method="POST" id="savingsForm">
-                    {% csrf_token %}
-
-                    <!-- AMOUNT -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Amount</label>
-                        {{ form.amount }}
+                <div class="card p-4">
+                    <div class="text-center mb-4">
+                        <div class="mb-2">
+                            <span class="mpesa-badge"><i class="fas fa-mobile-alt me-1"></i> M-PESA PAYMENT</span>
+                        </div>
+                        <h4 class="fw-bold">Deposit Savings</h4>
+                        <p class="text-muted small">Funds will be locked into your savings account for the selected month.</p>
                     </div>
 
-                    <!-- MONTH -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Month</label>
-                        {{ form.month }}
-                    </div>
+                    <form method="POST" id="savingsForm">
+                        {% csrf_token %}
 
-                    <button type="button" class="btn btn-eldo w-100" onclick="showReview()">
-                        Review Deposit
-                    </button>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Deposit Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0">KES</span>
+                                {{ form.amount }}
+                            </div>
+                        </div>
 
-                </form>
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted small text-uppercase">Target Month</label>
+                            {{ form.month }}
+                        </div>
 
+                        <div class="bg-light p-3 rounded-4 mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-info-circle text-success me-3"></i>
+                                <small class="text-dark">An <strong>STK Push</strong> will be sent to your registered phone number upon confirmation.</small>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-eldo w-100 shadow-sm" onclick="showReview()">
+                            Review & Pay via M-Pesa
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- MODAL -->
-<div class="modal fade" id="confirmModal">
-    <div class="modal-dialog">
-        <div class="modal-content p-4">
-
-            <h5 class="mb-3">Confirm Savings Deposit</h5>
-
-            <p>Amount: <strong id="m-amount"></strong></p>
-            <p>Month: <strong id="m-month"></strong></p>
-
-            <small class="text-muted">Please confirm before submitting</small>
-
-            <div class="mt-3 d-flex justify-content-between">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Edit</button>
-                <button type="submit" form="savingsForm" class="btn btn-eldo">
-                    Confirm & Submit
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-5 p-3">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">Confirm Transaction</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-4">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Payment Method:</span>
+                    <span class="fw-bold text-success">M-Pesa</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Savings Month:</span>
+                    <span id="m-month" class="fw-bold"></span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Total to Deduct:</span>
+                    <h4 id="m-amount" class="fw-bold text-dark"></h4>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="submit" form="savingsForm" class="btn btn-eldo w-100 py-3 rounded-4">
+                    Send M-Pesa Prompt
                 </button>
             </div>
-
         </div>
     </div>
 </div>
@@ -152,21 +189,116 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-function showReview() {
-    const amount = document.getElementById("id_amount").value;
-    const month = document.getElementById("id_month").value;
+    // Sidebar Toggle
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('active');
+    });
 
-    if (!amount || !month) {
-        alert("Please fill all fields");
-        return;
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+        const sidebar = document.getElementById('sidebar');
+        const btn = document.getElementById('sidebarToggle');
+        if (window.innerWidth <= 992 && !sidebar.contains(e.target) && !btn.contains(e.target)) {
+            sidebar.classList.remove('active');
+        }
+    });
+
+    function showReview() {
+        // Updated IDs to match standard Django form names
+        const amountField = document.querySelector('input[name="amount"]');
+        const monthField = document.querySelector('input[name="month"]');
+
+        if (!amountField.value || !monthField.value) {
+            alert("Please provide the amount and month.");
+            return;
+        }
+
+        document.getElementById("m-amount").innerText = "KES " + parseFloat(amountField.value).toLocaleString();
+        document.getElementById("m-month").innerText = monthField.value;
+
+        new bootstrap.Modal(document.getElementById('confirmModal')).show();
     }
-
-    document.getElementById("m-amount").innerText = "KES " + amount;
-    document.getElementById("m-month").innerText = month;
-
-    new bootstrap.Modal(document.getElementById('confirmModal')).show();
-}
 </script>
 
+</body>
+</html> {% endcomment %}{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit Savings | Eldopoly SACCO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --eldo-green: #14452F; --eldo-gold: #FFD700; --mpesa-green: #49B249; }
+        body { background: #f4f7f6; font-family: 'Plus Jakarta Sans', sans-serif; }
+        .card { border: none; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .btn-mpesa { background: var(--eldo-green); color: var(--eldo-gold); font-weight: 700; border-radius: 12px; padding: 12px; }
+        .mpesa-badge { background: #e8f5e9; color: var(--mpesa-green); padding: 5px 15px; border-radius: 50px; font-size: 0.8rem; font-weight: 700; }
+    </style>
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card p-4">
+                <div class="text-center mb-4">
+                    <span class="mpesa-badge"><i class="fas fa-mobile-alt me-1"></i> AUTOMATED PAYMENT</span>
+                    <h4 class="fw-bold mt-2">Xmass Savings</h4>
+                </div>
+
+                <form method="POST" id="savingsForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="payment_type" value="savings">
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase">Amount to Save</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light">KES</span>
+                            {{ form.amount }}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-uppercase">For Month</label>
+                        {{ form.month }}
+                    </div>
+
+                    <div class="alert alert-info border-0 rounded-4 small">
+                        <i class="fas fa-info-circle me-2"></i> An STK Push will be sent to your phone.
+                    </div>
+
+                    <button type="button" class="btn btn-mpesa w-100" onclick="confirmPayment()">
+                        Initialize M-Pesa Deposit
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0">
+            <div class="modal-body p-4 text-center">
+                <h5 class="fw-bold">Confirm Deposit?</h5>
+                <p>You are about to deposit <span id="displayAmt" class="fw-bold text-success"></span> via M-Pesa.</p>
+                <button type="submit" form="savingsForm" class="btn btn-mpesa w-100 py-3">Send STK Push Now</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function confirmPayment() {
+        const amt = document.querySelector('input[name="amount"]').value;
+        if(!amt || amt <= 0) return alert("Enter a valid amount");
+        document.getElementById('displayAmt').innerText = "KES " + amt;
+        new bootstrap.Modal(document.getElementById('confirmModal')).show();
+    }
+</script>
 </body>
 </html>

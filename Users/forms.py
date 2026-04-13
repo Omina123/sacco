@@ -1,5 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+
+from home.models import Loan
 from .models import *
 class UserRoleForm(forms.ModelForm):
     class Meta:
@@ -56,22 +58,17 @@ class UserUpdateForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = ['username','first_name', 'last_name'] # The "remaining" fields
+# forms.py
 class LoginForm(forms.Form):
-    Email = forms.CharField(
-        widget=forms.EmailInput(
-            attrs={
-                "placeholder": "Email",
-                "class": "form-control"
-            }
-        ))
-    password = forms.CharField(
-        widget=forms.PasswordInput(
-            attrs={
-                "placeholder": "Password",
-                "class": "form-control"
-            }
-        ))
-
+    # Change label to be more descriptive
+    Email = forms.CharField(label="Email or PF Number", widget=forms.TextInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'e.g. 2024N001 or email@example.com'
+    }))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'Password'
+    }))
 
 class UpdateForm(forms.ModelForm):
     class Meta:
@@ -102,4 +99,12 @@ class PUpdateForm(forms.ModelForm):
             'date_of_birth': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'gender': forms.Select(attrs={'class': 'form-control'}),
             'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address'}),
+        }
+class EditSalaryForm(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ['gross_salary', 'net_salary']
+        widgets = {
+            'gross_salary': forms.NumberInput(attrs={'class': 'form-control'}),
+            'net_salary': forms.NumberInput(attrs={'class': 'form-control'}),
         }

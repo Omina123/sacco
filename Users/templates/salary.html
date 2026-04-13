@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Payroll | Eldopoly SACCO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --eldo-green: #14452F;
+            --eldo-gold: #D4AF37;
+        }
+        body { background-color: #f4f7f6; }
+        .card-header { background-color: var(--eldo-green) !important; color: white; border-bottom: 3px solid var(--eldo-gold); }
+        .btn-success { background-color: var(--eldo-green); border: none; }
+        .btn-success:hover { background-color: #0d2e1f; }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header p-4">
+                    <h4 class="mb-0">Payroll Verification</h4>
+                    <small class="text-white-50">Member: {{ profile.user.get_full_name }}</small>
+                </div>
+
+                <div class="card-body p-4">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-info">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark">Verified Gross Salary (KES)</label>
+                            {{ form.gross_salary }}
+                            {% if form.gross_salary.errors %}
+                                <div class="text-danger small">{{ form.gross_salary.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark">Verified Net Salary (KES)</label>
+                            {{ form.net_salary }}
+                            {% if form.net_salary.errors %}
+                                <div class="text-danger small">{{ form.net_salary.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success p-2 fw-bold text-white">
+                                Save Verified Payroll
+                            </button>
+                            <a href="{% url 'Human_Resource' %}" class="btn btn-light border p-2">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-white text-center py-3">
+                    <p class="small text-muted mb-0">Eldopoly SACCO Management System</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

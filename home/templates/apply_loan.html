@@ -1,106 +1,126 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Apply for Loan | Eldopoly SACCO</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apply for Loan | Eldopoly SACCO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --eldo-deep-green: #14452F;
+            --eldo-light-green: #8DC63F;
+            --eldo-gold: #FFD700;
+            --sidebar-width: 280px;
+            --bg-light: #f8fafb;
+            --glass-white: rgba(255, 255, 255, 0.9);
+        }
 
-<style>
-:root {
-    --eldo-deep-green: #14452F;
-    --eldo-light-green: #8DC63F;
-    --eldo-gold: #FFD700;
-    --sidebar-width: 280px;
-    --bg-light: #f8fafb;
-    --glass-white: rgba(255, 255, 255, 0.9);
-}
+        body, html { 
+            height: 100%; margin: 0; background: var(--bg-light);
+            font-family: 'Plus Jakarta Sans', sans-serif; color: #2D3748;
+        }
 
-body, html {
-    height: 100%; margin: 0; background: var(--bg-light);
-    font-family: 'Plus Jakarta Sans', sans-serif; color: #2D3748; overflow: hidden;
-}
+        .wrapper { display: flex; min-height: 100vh; width: 100%; }
 
-.wrapper { display: flex; height: 100vh; width: 100vw; }
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width); background: var(--eldo-deep-green);
+            flex-shrink: 0; display: flex; flex-direction: column; z-index: 1050;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .sidebar-brand { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar a {
+            padding: 12px 24px; color: rgba(255,255,255,0.6); text-decoration: none;
+            display: flex; align-items: center; gap: 15px; font-weight: 500;
+            transition: 0.2s ease; margin: 4px 12px; border-radius: 12px;
+        }
+        .sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.1); color: var(--eldo-gold); }
 
-.sidebar {
-    width: var(--sidebar-width); background: var(--eldo-deep-green);
-    flex-shrink: 0; display: flex; flex-direction: column; z-index: 1050;
-    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
-}
-.sidebar-brand { padding: 2.5rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.sidebar a {
-    padding: 14px 24px; color: rgba(255,255,255,0.6); text-decoration: none;
-    display: flex; align-items: center; gap: 15px; font-weight: 500;
-    transition: 0.2s ease; margin: 4px 12px; border-radius: 12px;
-}
-.sidebar a:hover, .sidebar a.active { background: rgba(255,255,255,0.1); color: var(--eldo-gold); }
+        .main-container { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; overflow-x: hidden; }
+        .scrollable-content { flex-grow: 1; padding: 1.5rem; }
 
-.main-container { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
-.scrollable-content { flex-grow: 1; overflow-y: auto; padding: 2rem; }
+        /* Cards & Banners */
+        .glass-card {
+            background: var(--glass-white); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 28px;
+            padding: 25px; box-shadow: 0 20px 40px rgba(0,0,0,0.03);
+        }
 
-.glass-card {
-    background: var(--glass-white); backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 28px;
-    padding: 35px; box-shadow: 0 20px 40px rgba(0,0,0,0.03);
-}
+        .borrow-power-banner {
+            background: linear-gradient(135deg, var(--eldo-deep-green) 0%, #1a5a3d 100%);
+            border-radius: 24px; padding: 25px; color: white; margin-bottom: 2rem;
+        }
 
-.borrow-power-banner {
-    background: linear-gradient(135deg, var(--eldo-deep-green) 0%, #1a5a3d 100%);
-    border-radius: 24px; padding: 25px; color: white; margin-bottom: 2rem;
-}
+        .mobile-header {
+            display: none; background: var(--eldo-deep-green); color: white;
+            padding: 15px 20px; align-items: center; justify-content: space-between;
+        }
 
-.custom-slider {
-    -webkit-appearance: none; width: 100%; height: 8px;
-    border-radius: 10px; background: #e2e8f0; outline: none; margin: 15px 0;
-}
-.custom-slider::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none; width: 24px; height: 24px;
-    border-radius: 50%; background: var(--eldo-deep-green); cursor: pointer;
-    border: 3px solid var(--eldo-gold); box-shadow: 0 0 10px rgba(0,0,0,0.15);
-}
+        /* Form Elements */
+        .custom-slider {
+            -webkit-appearance: none; width: 100%; height: 8px;
+            border-radius: 10px; background: #e2e8f0; outline: none; margin: 15px 0;
+        }
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none; width: 24px; height: 24px;
+            border-radius: 50%; background: var(--eldo-deep-green); cursor: pointer;
+            border: 3px solid var(--eldo-gold); box-shadow: 0 0 10px rgba(0,0,0,0.15);
+        }
 
-.guarantor-row {
-    background: #fdfdfd; border: 2px solid #edf2f7; 
-    border-radius: 16px; transition: 0.3s; margin-bottom: 10px;
-}
-.guarantor-row:hover { border-color: var(--eldo-light-green); }
+        .guarantor-row {
+            background: #fdfdfd; border: 2px solid #edf2f7; 
+            border-radius: 16px; transition: 0.3s; margin-bottom: 15px;
+        }
 
-.form-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #718096; }
-.btn-eldo {
-    background: var(--eldo-deep-green); color: var(--eldo-gold);
-    font-weight: 700; border-radius: 16px; padding: 18px; border: none;
-}
-.btn-eldo:disabled { opacity: 0.5; cursor: not-allowed; }
+        .form-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #718096; }
+        .btn-eldo {
+            background: var(--eldo-deep-green); color: var(--eldo-gold);
+            font-weight: 700; border-radius: 16px; padding: 16px; border: none;
+            transition: 0.3s;
+        }
+        .btn-eldo:disabled { background: #cbd5e0; color: white; cursor: not-allowed; }
 
-.breakdown-box { background: #f8fafc; border-radius: 20px; padding: 24px; border: 1px dashed #e2e8f0; }
+        #id_amount, #id_duration_months {
+            border: 1px solid #e2e8f0; background: #f8fafc; font-weight: 800;
+            color: var(--eldo-deep-green); width: 100%; border-radius: 8px; padding: 8px 12px;
+        }
 
-#id_amount, #id_duration_months, #id_Gross_salary, #id_net_salary {
-    border: 1px solid #e2e8f0; background: #f8fafc; font-weight: 800;
-    color: var(--eldo-deep-green); width: 100%; border-radius: 8px; padding: 5px 12px;
-}
-</style>
+        @media (max-width: 992px) {
+            .sidebar { position: fixed; left: -280px; height: 100vh; }
+            .sidebar.active { left: 0; }
+            .mobile-header { display: flex; }
+        }
+    </style>
 </head>
 <body>
 
+<div class="mobile-header">
+    <div class="d-flex align-items-center">
+        <h4 class="fw-bold m-0" style="color: var(--eldo-gold); font-size: 1.2rem;">ELDOPOLY</h4>
+    </div>
+    <button class="btn text-white fs-3 p-0" id="menuToggle"><i class="bi bi-list"></i></button>
+</div>
+
 <div class="wrapper">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand text-center">
             <h3 class="fw-bold m-0" style="color: var(--eldo-gold); letter-spacing: 2px;">ELDOPOLY</h3>
             <span class="small text-white-50">SACCO PORTAL</span>
         </div>
         <nav class="mt-3">
-            <a href="{% url 'member_dashboard' %}" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a href="{% url 'deposit_savings' %}"><i class="fas fa-piggy-bank"></i> Monthly Savings</a>
+             <a href="{% url 'member_dashboard' %}" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a href="{% url 'deposit_savings' %}"><i class="fas fa-piggy-bank"></i>Xmass Savings</a>
             <a href="{% url 'purchase_shares' %}"><i class="fas fa-chart-pie"></i> Shares</a>
             <a href="{% url 'apply_loan' %}"><i class="fas fa-file-invoice-dollar"></i> Apply Loan</a>
             <a href="{% url 'pay_loan' %}"><i class="fas fa-hand-holding-usd"></i> Repay Loan</a>
             <a href="{% url 'my_loans' %}"><i class="fas fa-exchange-alt"></i> My Loans</a>
+            <a href="{% url 'member_individual_report'%}"><i class="fas fa-file-alt"></i> My Statement</a>
             <hr class="mx-3 text-white-50">
             <a href="{% url 'Logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
@@ -110,107 +130,127 @@ body, html {
         <main class="scrollable-content">
             <div class="container-fluid">
                 <div class="col-xl-8 col-lg-10 mx-auto">
-
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 mb-4">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    
+                    <div class="borrow-power-banner shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <p class="mb-1 opacity-75 small fw-bold text-uppercase">Total Borrowing Power </p>
+                                <h2 class="fw-bold m-0">KES {{ global_cap|floatformat:2 }}</h2>
                             </div>
-                        {% endfor %}
-                    {% endif %}
-
-                    {% if form.errors or formset.errors %}
-                    <div class="alert alert-danger rounded-4 mb-4">
-                        <p class="fw-bold mb-1">Please correct the following:</p>
-                        <ul class="mb-0 small">
-                            {% for field, errors in form.errors.items %}<li>{{ field|title }}: {{ errors|striptags }}</li>{% endfor %}
-                            {% for g_form in formset %}{% for field, errors in g_form.errors.items %}
-                                <li>Guarantor Row {{ forloop.parentloop.counter }}: {{ errors|striptags }}</li>
-                            {% endfor %}{% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
-
-                    <div class="borrow-power-banner d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="mb-1 opacity-75 small fw-bold">AVAILABLE CREDIT LIMIT</p>
-                            <h2 class="fw-bold m-0">KES {{ loan_limit|default:"0.00" }}</h2>
+                            <div class="text-end">
+                                <p class="mb-1 opacity-75 small fw-bold text-uppercase">Currently Available</p>
+                                <h4 class="fw-bold m-0 text-eldo-gold">KES {{ loan_limit|floatformat:2 }}</h4>
+                            </div>
                         </div>
-                        <i class="bi bi-shield-check display-5 opacity-25"></i>
+                        <div class="progress" style="height: 10px; background: rgba(255,255,255,0.1); border-radius: 10px;">
+                            <div class="progress-bar bg-warning" role="progressbar" 
+                                 style="width: {% widthratio loan_limit global_cap 100 %}%"></div>
+                        </div>
+                        <p class="small mt-2 mb-0 opacity-75">
+                            * Limit reduced by KES {{ current_exposure|floatformat:2 }} due to active/pending loans.
+                        </p>
                     </div>
 
-                    <div class="glass-card">
+                    {% if active_loan %}
+                    <div class="alert alert-info border-0 rounded-4 shadow-sm mb-4 d-flex align-items-center" style="background: #e1f5fe;">
+                        <i class="bi bi-arrow-up-circle-fill fs-3 me-3 text-primary"></i>
+                        <div>
+                            <h6 class="fw-bold mb-0">Top-Up Request</h6>
+                            <p class="small mb-0">Existing loan balance of <strong>KES {{ current_balance|floatformat:2 }}</strong> will be settled from this new application.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="glass-card mb-5">
                         <form method="POST" id="loanForm">
                             {% csrf_token %}
                             {{ formset.management_form }}
-
-                            <div class="row mb-4">
+                            
+                            <div class="row">
                                 <div class="col-md-6 mb-4">
-                                    <label class="form-label"><i class="bi bi-cash-stack me-2"></i>Loan Amount</label>
-                                    <input type="range" class="custom-slider" id="amount_range" min="1000" max="{{ loan_limit|default:50000 }}" step="500" value="5000">
-                                    {{ form.amount }}
+                                    <label class="form-label"><i class="bi bi-cash-stack me-2"></i>New Total Loan Amount</label>
+                                    <input type="range" class="custom-slider" id="amount_range" 
+                                           min="1000" max="{{ loan_limit }}" step="500" value="{{ current_balance|add:5000 }}">
+                                    <input type="number" name="amount" step="0.01" class="form-control" required id="id_amount">
                                 </div>
                                 <div class="col-md-6 mb-4">
                                     <label class="form-label"><i class="bi bi-calendar-event me-2"></i>Duration (Months)</label>
-                                    <input type="range" class="custom-slider" id="month_range" min="1" max="48" step="1" value="6">
-                                    {{ form.duration_months }}
+                                    <input type="range" class="custom-slider" id="month_range" min="0" max="48" step="1" value="12">
+                                    <select name="duration_months" class="form-control" id="id_duration_months">
+                                        {% for i in "123456789"|make_list %}<option value="{{ forloop.counter }}">{{ forloop.counter }} Months</option>{% endfor %}
+                                        <option value="12" selected>12 Months</option>
+                                        <option value="24">24 Months</option>
+                                        <option value="36">36 Months</option>
+                                        <option value="48">48 Months</option>
+                                    </select>
                                 </div>
-                                <div class="col-md-6 mb-4">
-                                    <label class="form-label">Gross Salary</label>
-                                    {{ form.Gross_salary }}
-                                </div>
-                                <div class="col-md-6 mb-4">
-                                    <label class="form-label">Net Salary</label>
-                                    {{ form.net_salary }}
-                                </div>
-                                <div class="col-12 mb-4">
-                                    <label class="form-label"><i class="bi bi-chat-left-dots me-2"></i>Purpose of Loan</label>
-                                    {{ form.purpose }}
-                                </div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label class="form-label">
+                                    <i class="bi bi-tag me-2"></i>Loan Purpose
+                                </label>
+                                <select name="purpose" id="id_purpose" class="form-control" required>
+                                    <option value="normal Loan">Normal Loan</option>
+                                    <option value="choll fees">School Fees</option>
+                                    <option value="emergency">Emergency</option>
+                                    <option value="personal">Personal</option>
+                                </select>
                             </div>
 
                             <div class="mb-4">
                                 <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
                                     <h5 class="fw-bold m-0 text-eldo-deep-green">Assign 3 Guarantors</h5>
-                                    <span id="math-status" class="badge bg-danger p-2">Shortfall Found</span>
+                                    <span id="math-status" class="badge bg-danger">Shortfall</span>
                                 </div>
 
                                 {% for g_form in formset %}
-                                    <div class="guarantor-row p-3">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-7">
-                                                <label class="small fw-bold text-muted d-block mb-1">Guarantor {{ forloop.counter }}</label>
-                                                {{ g_form.guarantor }}
-                                            </div>
-                                            <div class="col-md-5">
-                                                <label class="small fw-bold text-muted d-block mb-1">Guaranteed KES</label>
-                                                {{ g_form.guaranteed_amount }}
-                                            </div>
-                                            {% for hidden in g_form.hidden_fields %}{{ hidden }}{% endfor %}
+                                <div class="guarantor-row p-3 shadow-sm">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-7 mb-2 mb-md-0">
+                                            <label class="small fw-bold text-muted d-block mb-1">Guarantor {{ forloop.counter }}</label>
+                                            {{ g_form.guarantor }}
                                         </div>
+                                        <div class="col-md-5">
+                                            <label class="small fw-bold text-muted d-block mb-1">Guarantee Amount (KES)</label>
+                                            <input type="number" name="{{ g_form.guaranteed_amount.html_name }}" step="0.01" class="form-control" id="id_{{ g_form.guaranteed_amount.html_name }}">
+                                        </div>
+                                        {{ g_form.id }}
                                     </div>
+                                </div>
                                 {% endfor %}
                             </div>
 
-                            <div class="breakdown-box mb-4">
-                                <h6 class="fw-bold mb-3 text-dark"><i class="bi bi-calculator me-2"></i>Repayment Estimate</h6>
-                                <div class="d-flex justify-content-between mb-2 opacity-75">
-                                    <span>Interest </span>
+                            <div class="breakdown-box mb-4 p-4 bg-light rounded-4 border">
+                                <h6 class="fw-bold mb-3 text-dark small text-uppercase"><i class="bi bi-calculator me-2"></i>Financial Summary</h6>
+                                
+                                <div class="d-flex justify-content-between mb-2 small">
+                                    <span class="text-muted">New Principal</span>
+                                    <span id="display-principal" class="fw-bold">KES 0.00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 small">
+                                    <span class="text-muted">Estimated Interest </span>
                                     <span id="p-interest">KES 0.00</span>
                                 </div>
-                                <div class="d-flex justify-content-between mb-2 opacity-75">
-                                    <span>Insurance </span>
-                                    <span id="p-insurance">KES 0.00</span>
+
+                                {% if active_loan %}
+                                <div class="d-flex justify-content-between mb-2 py-2 border-top border-bottom text-danger small">
+                                    <span class="fw-bold">Existing Loan Payoff</span>
+                                    <span class="fw-bold">- KES {{ current_balance|floatformat:2 }}</span>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
-                                    <span class="fw-bold">Total Estimated Due</span>
+                                <div class="d-flex justify-content-between mb-2 pt-2 text-eldo-deep-green">
+                                    <span class="fw-bold">Net Cash to Member</span>
+                                    <span id="p-net-cash" class="fw-bold fs-5">KES 0.00</span>
+                                </div>
+                                {% endif %}
+
+                                <div class="d-flex justify-content-between align-items-center pt-3 mt-2 border-top">
+                                    <span class="fw-bold">Total Future Liability</span>
                                     <span id="p-total" class="text-success fw-bold fs-4">KES 0.00</span>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-eldo w-100 shadow-lg">
-                                Submit Loan Application
+                            <button type="submit" class="btn btn-eldo w-100 shadow-lg py-3">
+                                <i class="bi bi-send-fill me-2"></i> Submit Application
                             </button>
                         </form>
                     </div>
@@ -226,66 +266,81 @@ body, html {
 
 <script>
 $(document).ready(function() {
+    const currentBalance = parseFloat("{{ current_balance|default:'0' }}");
     const $amtRange = $('#amount_range');
     const $amtInput = $('#id_amount');
     const $monRange = $('#month_range');
     const $monInput = $('#id_duration_months');
-    const $purpose = $('#id_purpose');
+    const $purposeSelect = $('#id_purpose');
 
-    $amtInput.prop('readonly', true);
-    $monInput.prop('readonly', true);
-
-    // Initialize Select2 for guarantors
+    // Init UI
     $('select[name$="-guarantor"]').select2({ width: '100%' });
-
-    // Sync sliders with form fields
     $amtInput.val($amtRange.val());
     $monInput.val($monRange.val());
 
+    // Sync Sliders
     $amtRange.on('input', function() { $amtInput.val($(this).val()); updateCalculations(); });
     $monRange.on('input', function() { $monInput.val($(this).val()); updateCalculations(); });
 
-    $purpose.on('change', function() {
-        if ($purpose.val() !== 'normal Loan') {
-            if (parseInt($monRange.val()) > 12) {
-                $monRange.val(12); $monInput.val(12);
-            }
-            $monRange.attr('max', 12);
+    // Automatic Duration adjustment based on Purpose
+    $purposeSelect.on('change', function() {
+        const selectedPurpose = $(this).val();
+        if (selectedPurpose === "normal Loan") {
+            $monInput.val("48");
+            $monRange.val(48);
         } else {
-            $monRange.attr('max', 48);
+            $monInput.val("12");
+            $monRange.val(12);
         }
         updateCalculations();
     });
 
-    // Validate guarantor coverage
     function validateCoverage() {
         let totalGuaranteed = 0;
         const requestedAmount = parseFloat($amtInput.val()) || 0;
-        $('input[name$="-guaranteed_amount"]').each(function() { totalGuaranteed += parseFloat($(this).val()) || 0; });
+        $('input[name$="-guaranteed_amount"]').each(function() { 
+            totalGuaranteed += parseFloat($(this).val()) || 0; 
+        });
+
         const $status = $('#math-status');
         if (totalGuaranteed >= requestedAmount && requestedAmount > 0) {
-            $status.text("Coverage Ready: KES " + totalGuaranteed.toLocaleString()).removeClass('bg-danger').addClass('bg-success');
+            $status.text("Covered: KES " + totalGuaranteed.toLocaleString()).removeClass('bg-danger').addClass('bg-success');
+            $('button[type="submit"]').prop('disabled', false);
         } else {
             let diff = requestedAmount - totalGuaranteed;
-            $status.text("KES " + diff.toLocaleString() + " Shortfall").removeClass('bg-success').addClass('bg-danger');
+            $status.text("Shortfall: KES " + diff.toLocaleString()).removeClass('bg-success').addClass('bg-danger');
+            $('button[type="submit"]').prop('disabled', true);
         }
     }
-
-    $(document).on('input', 'input[name$="-guaranteed_amount"]', validateCoverage);
 
     function updateCalculations() {
         const principal = parseFloat($amtInput.val()) || 0;
         const months = parseFloat($monInput.val()) || 1;
+        
+        // Basic Interest Math (25.9% p.a Simple Interest)
         const interest = principal * 0.259;
-        const insurance = ((5.03 * months + 3.03) * principal) / 6000;
-        const total = principal + interest + insurance;
+        const insurance =  ((5.03 * months + 3.03) * principal) / 6000;
+        const totalDebt = principal + interest + insurance;
+        const netCash = principal - currentBalance;
 
+        // Update Labels
+        $('#display-principal').text("KES " + principal.toLocaleString());
         $('#p-interest').text("KES " + interest.toLocaleString(undefined,{minimumFractionDigits:2}));
-        $('#p-insurance').text("KES " + insurance.toLocaleString(undefined,{minimumFractionDigits:2}));
-        $('#p-total').text("KES " + total.toLocaleString(undefined,{minimumFractionDigits:2}));
+        $('#p-total').text("KES " + totalDebt.toLocaleString(undefined,{minimumFractionDigits:2}));
+        
+        if ($('#p-net-cash').length) {
+            if (netCash <= 0 && principal > 0) {
+                $('#p-net-cash').text("Increase Amount").addClass('text-danger');
+            } else {
+                $('#p-net-cash').text("KES " + netCash.toLocaleString(undefined,{minimumFractionDigits:2})).removeClass('text-danger');
+            }
+        }
 
         validateCoverage();
     }
+
+    $(document).on('input', 'input[name$="-guaranteed_amount"]', validateCoverage);
+    $('#menuToggle').click(() => $('#sidebar').toggleClass('active'));
 
     updateCalculations();
 });

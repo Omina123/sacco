@@ -25,7 +25,7 @@ class LoanApplicationForm(forms.ModelForm):
 
     class Meta:
         model = Loan
-        fields = ['purpose', 'amount', 'duration_months','Gross_salary','net_salary']
+        fields = ['purpose', 'amount', 'duration_months']
         
 class GuarantorForm(forms.ModelForm):
     class Meta:
@@ -75,9 +75,7 @@ class LoanRepaymentForm(forms.ModelForm):
     member=user_profile,
     status__in=['approved', 'disbursed']
 )
-            
-from django import forms
-from .models import CapitalShare
+
 
 class SharesForm(forms.ModelForm):
     class Meta:

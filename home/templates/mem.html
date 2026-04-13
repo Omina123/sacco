@@ -23,8 +23,10 @@
             background-color: var(--bg-light);
             font-family: 'Plus Jakarta Sans', sans-serif;
             margin: 0;
+            overflow-x: hidden;
         }
 
+        /* Sidebar Styling */
         .sidebar {
             width: var(--sidebar-width);
             height: 100vh;
@@ -32,7 +34,18 @@
             background: var(--eldo-green);
             padding: 1.5rem;
             color: white;
-            z-index: 1000;
+            z-index: 1050;
+            transition: transform 0.3s ease-in-out;
+            overflow-y: auto; /* Makes sidebar scrollable */
+        }
+
+        /* Custom Scrollbar for Sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
         }
 
         .sidebar-brand {
@@ -61,177 +74,175 @@
             color: var(--eldo-gold);
         }
 
+        /* Top Navbar */
         .top-navbar {
             position: fixed;
             left: var(--sidebar-width);
             right: 0;
             height: var(--top-nav-height);
             background: white;
-            padding: 0 2rem;
+            padding: 0 1.5rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             z-index: 900;
+            transition: left 0.3s;
         }
 
         .main-wrapper {
             margin-left: var(--sidebar-width);
             margin-top: var(--top-nav-height);
-            padding: 2.5rem;
+            padding: 2rem;
+            transition: margin-left 0.3s;
         }
 
         .content-card {
             background: white;
-            padding: 2rem;
-            border-radius: 24px;
+            padding: 1.5rem;
+            border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.02);
             border: 1px solid #eee;
         }
 
-        /* Search Bar Styling */
+        /* Mobile Adjustments */
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            .top-navbar {
+                left: 0;
+            }
+            .main-wrapper {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 1040;
+            }
+            .sidebar-overlay.show {
+                display: block;
+            }
+        }
+
         .search-container {
             position: relative;
-            max-width: 400px;
+            max-width: 300px;
             width: 100%;
         }
 
         .search-input {
             border-radius: 12px;
-            padding: 10px 15px 10px 45px;
+            padding: 8px 12px 8px 40px;
             border: 2px solid #eee;
-            font-size: 0.9rem;
-            transition: 0.3s;
-        }
-
-        .search-input:focus {
-            border-color: var(--eldo-gold);
-            box-shadow: 0 0 0 0.25 margin-bottom: 2rem;rem rgba(212, 175, 55, 0.1);
-            outline: none;
         }
 
         .search-icon {
             position: absolute;
-            left: 15px;
+            left: 12px;
             top: 50%;
             transform: translateY(-50%);
             color: #aaa;
         }
 
-        .btn-gold {
-            background: var(--eldo-gold);
-            color: var(--eldo-green);
-            font-weight: 800;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 10px;
-        }
-
-        .btn-gold:hover {
-            background: #b8972f;
-            color: white;
-        }
-
-        .table thead th {
-            border: none;
-            color: #888;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 15px;
-        }
-
-        @media (max-width: 992px) {
-            .sidebar { display: none; }
-            .top-navbar { left: 0; }
-            .main-wrapper { margin-left: 0; }
-        }
+        .btn-gold { background: var(--eldo-gold); color: var(--eldo-green); font-weight: 700; border-radius: 8px; }
+        .btn-xmas { background: #e74c3c; color: white; font-weight: 700; border-radius: 8px; }
     </style>
 </head>
 
 <body>
 
-<aside class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebarMenu">
     <a href="/" class="sidebar-brand"><i class="bi bi-bank2"></i> ELDOPOLY</a>
     <nav>
-        <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
-        <a href="#" class="nav-link-side active"><i class="bi bi-people me-2"></i> Members</a>
-        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-wallet2 me-2"></i> Savings</a>
-        <a href="{% url 'pending_loans' %}" class="nav-link-side"><i class="bi bi-cash-stack me-2"></i> Loans</a>
-        <a href="{% url 'Logout' %}" class="nav-link-side text-danger mt-5"><i class="bi bi-power me-2"></i> Sign Out</a>
+        <div class="small mb-2 ps-3 opacity-50 text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">Main Menu</div>
+        <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side active"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+        <a href="{% url 'Member' %}" class="nav-link-side"><i class="bi bi-people me-2"></i> Members</a>
+        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-piggy-bank me-2"></i> Member Savings</a>
+        
+        <div class="small mb-2 ps-3 mt-4 opacity-50 text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">Management</div>
+        <a href="{% url 'pending_loans' %}" class="nav-link-side"><i class="bi bi-hourglass-split me-2"></i> Pending Standard</a>
+        <a href="{% url 'Xm_approved' %}" class="nav-link-side"><i class="bi bi-gift me-2"></i> Pending Holiday</a>
+        <a href="{% url 'monthly_sacco_report' %}" class="nav-link-side"><i class="bi bi-graph-up me-2"></i> Sacco Report</a>
+        <a href="{% url 'active_loan' %}" class="nav-link-side"><i class="bi bi-check2-circle me-2"></i> Active Loans</a>
+        
+        <div class="small mb-2 ps-3 mt-4 opacity-50 text-uppercase" style="font-size: 0.65rem; letter-spacing: 1px;">System</div>
+        <a href="{% url 'Logout' %}" class="nav-link-side text-danger mt-3"><i class="bi bi-power me-2"></i> Sign Out</a>
     </nav>
 </aside>
 
 <header class="top-navbar">
-    <h5 class="mb-0 fw-bold">Treasury Oversight</h5>
+    <div class="d-flex align-items-center">
+        <button class="btn btn-light d-lg-none me-3" id="toggleSidebar">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+        <h5 class="mb-0 fw-bold d-none d-sm-block">Treasury Oversight</h5>
+    </div>
     
-    <div class="search-container d-none d-md-block">
+    <div class="search-container d-none d-md-block mx-3">
         <i class="bi bi-search search-icon"></i>
-        <input type="text" id="memberSearch" class="form-control search-input" placeholder="Search by name, PF, or phone...">
+        <input type="text" id="memberSearch" class="form-control search-input" placeholder="Search members...">
     </div>
 
-    <div class="d-flex align-items-center gap-3">
-        <div class="text-end">
-            <div class="fw-bold small">{{ request.user.get_full_name|default:request.user.username }}</div>
-            <div class="text-muted small" style="font-size: 0.7rem;">Senior Treasurer</div>
+    <div class="d-flex align-items-center gap-2">
+        <div class="text-end d-none d-sm-block">
+            <div class="fw-bold small lh-1">{{ request.user.username }}</div>
+            <small class="text-muted" style="font-size: 0.7rem;">Treasurer</small>
         </div>
-        <div class="bg-light rounded-circle p-2 border"><i class="bi bi-person-circle text-success"></i></div>
+        <div class="bg-light rounded-circle p-2 border"><i class="bi bi-person text-success"></i></div>
     </div>
 </header>
 
 <main class="main-wrapper">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h3 class="fw-800 mb-0">Sacco Member Directory</h3>
-        <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill">Active System</span>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h3 class="fw-bold mb-0">Member Directory</h3>
+            <p class="text-muted small mb-0">Manage all registered SACCO members and their accounts.</p>
+        </div>
+        <div class="d-md-none">
+            <input type="text" id="memberSearchMobile" class="form-control" placeholder="Search members...">
+        </div>
     </div>
 
     <div class="content-card">
         <div class="table-responsive">
-            <table class="table align-middle" id="memberTable">
-                <thead>
+            <table class="table table-hover align-middle" id="memberTable">
+                <thead class="table-light">
                     <tr>
-                        <th>Name & ID</th>
-                        <th>Phone Number</th>
-                        <th>Membership #</th>
-                        <th>PF Number</th>
-                        <th class="text-end">Actions</th>
+                        <th class="border-0">Member Info</th>
+                        <th class="border-0 d-none d-lg-table-cell">Contact</th>
+                        <th class="border-0">Details</th>
+                        <th class="border-0 text-end">Actions</th>
                     </tr>
                 </thead>
-
                 <tbody>
                     {% for member in members %}
                     <tr class="member-row">
                         <td>
-                            <div class="fw-bold member-name">{{ member.user.get_full_name|default:member.user.username }}</div>
-                            <small class="text-muted">ID: {{ member.id_number|default:"---" }}</small>
+                            <div class="fw-bold member-name text-truncate" style="max-width: 150px;">{{ member.user.get_full_name|default:member.user.username }}</div>
+                            <small class="text-muted member-pf">PF: {{ member.pf_number|default:"---" }}</small>
                         </td>
-                        <td class="member-phone">{{ member.phone_number }}</td>
-                        <td><span class="badge bg-light text-dark border">{{ member.membership_number|default:"Pending" }}</span></td>
-                        <td class="member-pf">{{ member.pf_number|default:"---" }}</td>
-
+                        <td class="d-none d-lg-table-cell">
+                            <div class="small member-phone"><i class="bi bi-telephone me-1"></i>{{ member.phone_number }}</div>
+                            <div class="small text-muted">{{ member.email }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark border">#{{ member.membership_number|default:"N/A" }}</span>
+                        </td>
                         <td class="text-end">
-                            <div class="d-flex justify-content-end gap-2">
-                                <a href="{% url 'treasurer_buy_shares' member.id %}" class="btn btn-gold btn-sm">
-                                    <i class="bi bi-plus-circle me-1"></i> Shares
-                                </a>
-
-                                {% with member.member_loans.all|first as loan %}
-                                    {% if loan %}
-                                        <a href="{% url 'loan_detail' loan.id %}" class="btn btn-primary btn-sm">
-                                            View Loan
-                                        </a>
-                                    {% else %}
-                                        <button class="btn btn-sm btn-outline-secondary" disabled>No Loan</button>
-                                    {% endif %}
-                                {% endwith %}
+                            <div class="btn-group">
+                                <a href="{% url 'treasurer_buy_shares' member.id %}" class="btn btn-gold btn-sm" title="Shares"><i class="bi bi-pie-chart-fill"></i></a>
+                                <a href="{% url 'treasurer_deposit_savings' member.id %}" class="btn btn-xmas btn-sm" title="Xmas"><i class="bi bi-gift-fill"></i></a>
                             </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center py-5">
-                            <i class="bi bi-people text-muted opacity-25" style="font-size: 3rem;"></i>
-                            <p class="text-muted mt-3 fw-600">No registered members found.</p>
                         </td>
                     </tr>
                     {% endfor %}
@@ -241,24 +252,35 @@
     </div>
 </main>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <script>
-    document.getElementById('memberSearch').addEventListener('keyup', function() {
-        let filter = this.value.toLowerCase();
-        let rows = document.querySelectorAll('.member-row');
+    // Sidebar Toggle Logic
+    const toggleBtn = document.getElementById('toggleSidebar');
+    const sidebar = document.getElementById('sidebarMenu');
+    const overlay = document.getElementById('sidebarOverlay');
 
-        rows.forEach(row => {
-            let name = row.querySelector('.member-name').textContent.toLowerCase();
-            let phone = row.querySelector('.member-phone').textContent.toLowerCase();
-            let pf = row.querySelector('.member-pf').textContent.toLowerCase();
-            
-            if (name.includes(filter) || phone.includes(filter) || pf.includes(filter)) {
-                row.style.display = "";
-            } else {
-                row.style.display = "none";
-            }
-        });
+    function toggleMenu() {
+        sidebar.classList.toggle('show');
+        overlay.classList.toggle('show');
+    }
+
+    toggleBtn.addEventListener('click', toggleMenu);
+    overlay.addEventListener('click', toggleMenu);
+
+    // Unified Search Logic
+    const searchInputs = [document.getElementById('memberSearch'), document.getElementById('memberSearchMobile')];
+    
+    searchInputs.forEach(input => {
+        if(input) {
+            input.addEventListener('keyup', function() {
+                let filter = this.value.toLowerCase();
+                let rows = document.querySelectorAll('.member-row');
+
+                rows.forEach(row => {
+                    let text = row.innerText.toLowerCase();
+                    row.style.display = text.includes(filter) ? "" : "none";
+                });
+            });
+        }
     });
 </script>
 

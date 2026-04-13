@@ -209,7 +209,63 @@
             </div>
         </div>
     </div>
+<div class="card shadow-sm border-0 mb-4" style="border-radius: 15px;">
+    <div class="card-header bg-white py-3">
+        <h5 class="mb-0 fw-bold text-eldo-green">
+            <i class="fas fa-gift text-danger me-2"></i> Pending X-Mass Loans
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Member</th>
+                        <th>Amount (KES)</th>
+                        <th>Savings (50% Rule)</th>
+                        <th>Interest (5%)</th>
+                        <th class="text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in pending_xmas_loans %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold">{{ loan.member.user.get_full_name }}</div>
+                            <small class="text-muted">#{{ loan.member.membership_number }}</small>
+                        </td>
+                        <td class="fw-bold text-eldo-green">{{ loan.amount_requested|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                Savings: {{ loan.member.total_savings }}
+                            </span>
+                        </td>
+                        <td class="text-danger fw-bold">
+                            {{ loan.interest_amount|floatformat:2 }}
+                        </td>
+                        <td class="text-center">
 
+                    <a href="{% url 'approve_xmas_loan' loan.id %}" 
+                    class="btn btn-success btn-sm rounded-pill px-3">
+                        <i class="fas fa-check"></i> Approve
+                    </a>
+
+                    <a href="{% url 'reject_xmas_loan' loan.id %}" 
+                    class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                        <i class="fas fa-times"></i> Reject
+                    </a>
+
+                </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted small">No pending holiday loans.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div class="card border-0 shadow-sm rounded-4 mb-5">
         <div class="card-header bg-white p-3 border-0">
             <h5 class="fw-bold mb-0 text-success"><i class="fas fa-clipboard-check me-2"></i> Pending Loan Approvals</h5>
@@ -280,6 +336,7 @@
             </div>
         </div>
     </div>
+
 
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-header bg-white p-3 border-0 d-flex justify-content-between align-items-center">

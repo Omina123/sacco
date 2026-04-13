@@ -34,9 +34,10 @@ class CustomUser(AbstractUser):
         ('2', 'Staff'),
         ('3', 'Treasurer'),
         ('4', 'Member'),
+        ('5', 'Human Resource'),
     )
     user_type = models.CharField(max_length=10, choices=USER_TYPE_CHOICES, default='4')
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, blank=False, null=False)
     is_verified = models.BooleanField(default=False)
     otp = models.CharField(max_length=6, blank=True, null=True)
 
@@ -46,6 +47,9 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+    # def generate_otp(self):
+    #     self.otp = str(random.randint(100000, 999999))
+    #     self.save()
 
 class Profile(models.Model):
     GENDER_CHOICES = (
@@ -56,7 +60,7 @@ class Profile(models.Model):
 
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     phone_number = models.CharField(
-        max_length=12,
+        max_length=12,blank=True, null=True,
         validators=[validate_kenyan_phone]
     )
     id_number = models.CharField(max_length=20)
@@ -72,7 +76,9 @@ class Profile(models.Model):
     # Updated PF Number with flexible year/prefix validation
     pf_number = models.CharField(
         max_length=20, 
-        unique=True,  
+        unique=True,
+        null=True,
+        blank=True,  
         validators=[validate_pf_number]
     )
     
@@ -91,6 +97,9 @@ class Profile(models.Model):
     profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    gross_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    net_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+
 
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username}"

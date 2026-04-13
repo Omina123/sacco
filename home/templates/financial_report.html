@@ -1,0 +1,270 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Statement - {{ request.user.get_full_name }}</title>
+
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'css/bootstrap-icons.css' %}" rel="stylesheet">
+    <link href="{% static 'css/custom.css' %}" rel="stylesheet">
+
+    <style>
+        :root {
+            --eldo-navy: #0B1F3A;
+            --eldo-gold: #D4AF37;
+            --eldo-green: #28a745;
+            --eldo-bg: #f8f9fa;
+        }
+
+        body {
+            background: var(--eldo-bg);
+        }
+
+        .report-container {
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .stat-card {
+            border: none;
+            border-radius: 15px;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .ledger-table thead {
+            background-color: var(--eldo-navy);
+            color: white;
+        }
+
+        .ledger-table th {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 15px;
+        }
+
+        .badge-saving {
+            background-color: #e9f7ef;
+            color: var(--eldo-green);
+            border: 1px solid var(--eldo-green);
+        }
+
+        .badge-share {
+            background-color: #fff9e6;
+            color: var(--eldo-gold);
+            border: 1px solid var(--eldo-gold);
+        }
+
+        .text-navy { color: var(--eldo-navy); }
+        .bg-navy { background-color: var(--eldo-navy); }
+        .text-gold { color: var(--eldo-gold); }
+    </style>
+</head>
+
+<body>
+
+<div class="report-container">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-navy mb-0">Financial Statement</h3>
+            <p class="text-muted">
+                Consolidated report for {{ request.user.get_full_name }}
+            </p>
+        </div>
+
+        <div class="d-print-none">
+            <button onclick="window.print()" class="btn btn-outline-dark me-2">
+                <i class="bi bi-printer me-2"></i>Print
+            </button>
+            <button class="btn bg-navy text-white">
+                <i class="bi bi-download me-2"></i>Export CSV
+            </button>
+        </div>
+    </div>
+
+    <!-- SACCO STATS -->
+    {% if sacco_stats %}
+    <div class="row g-4 mb-5">
+
+        <div class="col-12">
+            <h6 class="text-uppercase fw-bold opacity-50 small">
+                SACCO Treasury Overview
+            </h6>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card stat-card p-3 border-start border-success border-5">
+                <small class="text-muted fw-bold">TOTAL SACCO EQUITY</small>
+                <h3 class="fw-bold">KES {{ sacco_stats.total_equity|floatformat:2 }}</h3>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card stat-card p-3 border-start border-danger border-5">
+                <small class="text-muted fw-bold">LOANS IN CIRCULATION</small>
+                <h3 class="fw-bold text-danger">
+                    KES {{ sacco_stats.total_out|floatformat:2 }}
+                </h3>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card stat-card p-3 bg-navy text-white">
+                <small class="text-gold fw-bold">TOTAL LIQUIDITY</small>
+                <h3 class="fw-bold">
+                    KES {{ sacco_stats.liquidity|floatformat:2 }}
+                </h3>
+            </div>
+        </div>
+
+    </div>
+    {% endif %}
+
+    <!-- MAIN SECTION -->
+    <div class="row g-4">
+
+        <!-- LEFT: LEDGER -->
+        <div class="col-lg-8">
+            <div class="card stat-card">
+
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-navy">
+                        <i class="bi bi-journal-text me-2 text-success"></i>
+                        Contribution History
+                    </h5>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+
+                        <table class="table ledger-table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Period</th>
+                                    <th class="text-end">Amount</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {% for entry in ledger %}
+                                <tr>
+                                    <td class="text-muted small">
+                                        {{ entry.date|date:"d M Y" }}
+                                    </td>
+
+                                    <td>
+                                        {% if "Capital" in entry.type %}
+                                            <span class="badge badge-share">Capital Share</span>
+                                        {% else %}
+                                            <span class="badge badge-saving">Savings</span>
+                                        {% endif %}
+                                    </td>
+
+                                    <td class="fw-bold small">
+                                        {{ entry.month|date:"F Y" }}
+                                    </td>
+
+                                    <td class="text-end fw-bold text-navy">
+                                        {{ entry.amount|floatformat:2 }}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        No records found
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white">
+                    <div class="d-flex justify-content-between">
+                        <strong>Total Savings</strong>
+                        <strong class="text-success">
+                            KES {{ total_savings|floatformat:2 }}
+                        </strong>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="col-lg-4">
+
+            <!-- DEBT CARD -->
+            <div class="card stat-card bg-navy text-white p-4 mb-4">
+                <p class="text-gold fw-bold small mb-1">TOTAL DEBT BALANCE</p>
+                <h2 class="fw-bold">
+                    KES {{ current_balance|floatformat:2 }}
+                </h2>
+
+                <hr class="opacity-25">
+
+                <div class="row text-center">
+                    <div class="col-6 border-end">
+                        <small>Paid</small>
+                        <div class="fw-bold">{{ total_repaid|floatformat:2 }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small>Status</small>
+                        <div class="fw-bold text-gold">Active</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPAYMENT HISTORY -->
+            <div class="card stat-card">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0 fw-bold text-navy">Recent Repayments</h6>
+                </div>
+
+                <div class="list-group list-group-flush">
+                    {% for pay in history|slice:":10" %}
+                    <div class="list-group-item d-flex justify-content-between">
+                        <div>
+                            <div class="fw-bold small">
+                                KES {{ pay.amount_paid }}
+                            </div>
+                            <small class="text-muted">
+                                {{ pay.payment_date|date:"M d, Y" }}
+                            </small>
+                        </div>
+
+                        <span class="badge bg-light text-muted">
+                            {{ pay.reference|default:"TRX"|truncatechars:8 }}
+                        </span>
+                    </div>
+                    {% empty %}
+                    <div class="text-center p-4 text-muted">
+                        No repayments yet
+                    </div>
+                    {% endfor %}
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

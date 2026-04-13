@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    
     <style>
         :root { 
             --eldo-green: #1B5E20; 
@@ -25,11 +24,12 @@
         .sidebar { 
             height: 100vh; position: fixed; width: var(--sidebar-width); 
             background: linear-gradient(180deg, #1B5E20 0%, #123e15 100%); 
-            color: white; display: flex; flex-direction: column; z-index: 1000;
+            color: white; display: flex; flex-direction: column; z-index: 1050;
             box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
         }
         .sidebar-brand { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .nav-menu { padding: 1.5rem 0; flex-grow: 1; }
+        .nav-menu { padding: 1.5rem 0; flex-grow: 1; overflow-y: auto; }
         .sidebar a { 
             display: flex; align-items: center; color: rgba(255,255,255,0.7); 
             padding: 0.8rem 1.5rem; text-decoration: none; transition: 0.3s;
@@ -41,6 +41,19 @@
         .sidebar-footer { padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
         .logout-link { color: #ff6b6b !important; }
 
+        /* Mobile Header */
+        .mobile-nav {
+            display: none;
+            background: var(--eldo-green);
+            padding: 15px 20px;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1100;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         /* Content Area */
         .main-content { margin-left: var(--sidebar-width); padding: 40px; transition: 0.3s; }
         .payment-card { border: none; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow: hidden; }
@@ -48,29 +61,45 @@
         .btn-green:hover { background: #144718; color: var(--eldo-yellow); transform: translateY(-2px); }
         .progress-thin { height: 8px; border-radius: 10px; background: #e9ecef; }
 
-        @media (max-width: 992px) { 
-            .sidebar { width: 80px; } 
-            .sidebar span { display: none; } 
-            .main-content { margin-left: 80px; } 
-            .sidebar a { justify-content: center; margin: 0.2rem 0.5rem; }
-            .sidebar a i { margin-right: 0; }
+        /* Responsive Breakpoints */
+        @media (max-width: 992px) {
+            .mobile-nav { display: flex; }
+            .sidebar { transform: translateX(-100%); width: 280px; }
+            .sidebar.active { transform: translateX(0); }
+            .main-content { margin-left: 0; padding: 20px; }
+            
+            /* Vertical Divider removal on mobile */
+            .border-end { border-end: none !important; border-bottom: 1px solid #dee2e6; margin-bottom: 20px; padding-bottom: 20px; }
+            
+            /* Responsive Font Sizes */
+            h2.display-6 { font-size: 1.75rem; }
+        }
+
+        @media (max-width: 576px) {
+            .main-content { padding: 15px; }
+            .card-body { padding: 1.25rem !important; }
         }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <div class="sidebar-brand">
+<div class="mobile-nav shadow-sm">
+    <h5 class="mb-0 fw-bold"><i class="fas fa-university"></i> ELDOPOLY</h5>
+    <button class="btn text-white p-0" id="sidebarToggle"><i class="fas fa-bars fa-lg"></i></button>
+</div>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-brand d-none d-lg-block">
         <h4 class="fw-bold text-warning mb-0"><i class="fas fa-university"></i> <span>ELDOPOLY</span></h4>
     </div>
     <div class="nav-menu">      
         <a href="{% url 'member_dashboard' %}"><i class="fas fa-th-large"></i> <span>Dashboard</span></a>
-        <a href="{% url 'deposit_savings' %}"><i class="fas fa-piggy-bank"></i> <span>Savings</span></a>
+        <a href="{% url 'deposit_savings' %}"><i class="fas fa-piggy-bank"></i> <span>Xmass Savings</span></a>
         <a href="{% url 'apply_loan' %}"><i class="fas fa-file-invoice-dollar"></i> <span>Apply Loan</span></a>
         <a href="{% url 'pay_loan' %}" class="active"><i class="fas fa-hand-holding-usd"></i> <span>Repay Loan</span></a>
-        <a href="{% url 'my_loans' %}"><i class="fas fa-exchange-alt"></i> My Loans</a>
-        <a href="{% url 'my_shares' %}"><i class="fas fa-exchange-alt"></i> My Shares</a>
-        <a href="{% url 'my_savings' %}"><i class="fas fa-exchange-alt"></i> My Monthly Savings</a>
+        <a href="{% url 'my_loans' %}"><i class="fas fa-exchange-alt"></i> <span>My Loans</span></a>
+        <a href="{% url 'my_shares' %}"><i class="fas fa-exchange-alt"></i> <span>My Shares</span></a>
+        <a href="{% url 'my_savings' %}"><i class="fas fa-exchange-alt"></i> <span>My Monthly Savings</span></a>
     </div>
     <div class="sidebar-footer">
         <a href="{% url 'Logout' %}" class="logout-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
@@ -92,9 +121,9 @@
                     <h2 class="display-6 fw-bold" style="color: var(--eldo-green);">
                         KES {{ next_installment.amount_due|floatformat:2 }}
                     </h2>
-                    <p class="text-muted small"><i class="far fa-calendar-alt"></i> Due Date: <strong>{{ next_installment.due_date|date:"d M, Y" }}</strong></p>
+                    <p class="text-muted small mb-0"><i class="far fa-calendar-alt"></i> Due Date: <strong>{{ next_installment.due_date|date:"d M, Y" }}</strong></p>
                 </div>
-                <div class="col-md-7 px-lg-5">
+                <div class="col-md-7 px-lg-5 mt-3 mt-md-0">
                     <div class="d-flex justify-content-between mb-1 small">
                         <span>Monthly Principal:</span>
                         <span class="fw-bold">KES {{ monthly_principal|floatformat:2 }}</span>
@@ -118,69 +147,65 @@
         </div>
     </div>
 
-    <d<div class="card payment-card mb-4">
-    <div class="row g-0">
-
-        <!-- ✅ M-PESA (VISIBLE TO ALL) -->
-        <div class="col-md-6 p-4 p-lg-5 bg-white">
-            <div class="d-flex align-items-center mb-4">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/1/15/M-PESA_LOGO-01.svg" height="35" class="me-3">
-                <h5 class="fw-bold mb-0">STK Push</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm p-3 text-center h-100">
+                <small class="text-muted fw-bold text-uppercase d-block mb-1">Total</small>
+                <h6 class="fw-bold mb-0">KES {{ total_loan_payable|floatformat:0 }}</h6>
             </div>
-            <form id="mpesaForm" action="{% url 'initiate_stk_push' %}" method="POST">
-                {% csrf_token %}
-                <input type="hidden" name="loan_id" value="{{ active_loan.id }}">
-                <div class="mb-4">
-                    <label class="form-label small fw-bold">Amount to Pay (KES)</label>
-                    <input type="number" name="amount" class="form-control form-control-lg bg-light border-0" value="{{ next_installment.amount_due|floatformat:0 }}">
-                </div>
-                <button type="button" onclick="confirmMpesa()" class="btn btn-green w-100 shadow-sm">
-                    <i class="fas fa-mobile-alt me-2"></i> Pay via M-Pesa
-                </button>
-            </form>
         </div>
-
-        <!-- ✅ MANUAL PAYMENT (ONLY TREASURER) -->
-        {% if request.user.user_type == '3' %}
-        <div class="col-md-6 p-4 p-lg-5 bg-light">
-            <h5 class="fw-bold mb-3">Manual Record</h5>
-            <p class="small text-muted mb-4">Log a cash or bank transfer payment.</p>
-            <form id="manualForm" method="post">
-                {% csrf_token %}
-                {% for field in form %}
-                    <div class="mb-3">
-                        <label class="small fw-bold">{{ field.label }}</label>
-                        {{ field }}
-                    </div>
-                {% endfor %}
-                <button type="button" onclick="confirmManual()" class="btn btn-outline-dark w-100 mt-2">
-                    Record Payment
-                </button>
-            </form>
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm p-3 text-center h-100">
+                <small class="text-muted fw-bold text-uppercase d-block mb-1">Remaining</small>
+                <h6 class="fw-bold mb-0 text-primary">KES {{ remaining_balance|floatformat:0 }}</h6>
+            </div>
         </div>
-        {% endif %}
-
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm p-3 text-center h-100">
+                <small class="text-muted fw-bold text-uppercase d-block mb-1">Status</small>
+                <h6 class="fw-bold mb-0 text-success">{{ active_loan.status|title }}</h6>
+            </div>
+        </div>
     </div>
-</div>
 
-    <div class="row g-3">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm p-3 text-center">
-                <small class="text-muted fw-bold text-uppercase">Total Payable</small>
-                <h5 class="fw-bold mb-0">KES {{ total_loan_payable|floatformat:2 }}</h5>
+    <div class="card payment-card mb-4">
+        <div class="row g-0">
+            <div class="col-md-{% if request.user.user_type == '3' %}6{% else %}12{% endif %} p-4 p-md-5 bg-white">
+                <div class="d-flex align-items-center mb-4">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/1/15/M-PESA_LOGO-01.svg" height="30" class="me-3">
+                    <h5 class="fw-bold mb-0">STK Push</h5>
+                </div>
+                <form id="mpesaForm" action="{% url 'initiate_stk_push' %}" method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="loan_id" value="{{ active_loan.id }}">
+                    <div class="mb-4">
+                        <label class="form-label small fw-bold">Amount to Pay (KES)</label>
+                        <input type="number" name="amount" class="form-control form-control-lg bg-light border-0" value="{{ next_installment.amount_due|floatformat:0 }}">
+                    </div>
+                    <button type="button" onclick="confirmMpesa()" class="btn btn-green w-100 shadow-sm">
+                        <i class="fas fa-mobile-alt me-2"></i> Pay via M-Pesa
+                    </button>
+                </form>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm p-3 text-center">
-                <small class="text-muted fw-bold text-uppercase">Remaining</small>
-                <h5 class="fw-bold mb-0 text-primary">KES {{ remaining_balance|floatformat:2 }}</h5>
+
+            {% if request.user.user_type == '3' %}
+            <div class="col-md-6 p-4 p-md-5 bg-light border-top border-md-top-0">
+                <h5 class="fw-bold mb-3">Manual Record</h5>
+                <p class="small text-muted mb-4">Log a cash or bank transfer payment.</p>
+                <form id="manualForm" method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="small fw-bold">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    <button type="button" onclick="confirmManual()" class="btn btn-outline-dark w-100 mt-2">
+                        Record Payment
+                    </button>
+                </form>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm p-3 text-center">
-                <small class="text-muted fw-bold text-uppercase">Status</small>
-                <h5 class="fw-bold mb-0 text-success">{{ active_loan.status|title }}</h5>
-            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -195,6 +220,20 @@
 </div>
 
 <script>
+    // Sidebar Toggle for Mobile
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+        document.getElementById('sidebar').classList.toggle('active');
+    });
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const toggle = document.getElementById('sidebarToggle');
+        if (!sidebar.contains(event.target) && !toggle.contains(event.target) && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+        }
+    });
+
     function confirmMpesa() {
         const amount = document.querySelector('input[name="amount"]').value;
         Swal.fire({
@@ -215,7 +254,7 @@
 
     function confirmManual() {
         Swal.fire({
-            title: 'payment confirmatio',
+            title: 'Payment Confirmation',
             text: "Double-check the reference number and amount before saving.",
             icon: 'warning',
             showCancelButton: true,

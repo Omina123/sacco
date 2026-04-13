@@ -1,0 +1,208 @@
+{% load static %}
+{% load mathfilters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Cash Flow | Eldopoly SACCO</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --eldo-navy: #0B1F3A;
+            --eldo-gold: #D4AF37;
+            --eldo-green: #28a745;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .text-navy { color: var(--eldo-navy); }
+        .text-gold { color: var(--eldo-gold); }
+        .bg-navy { background-color: var(--eldo-navy); }
+
+        .cash-flow-card {
+            border-radius: 20px;
+            overflow: hidden;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        .progress-container {
+            height: 12px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .activity-row {
+            transition: 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .activity-row:hover {
+            background-color: #f8f9fa !important;
+            border-left: 3px solid var(--eldo-gold);
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-5">
+
+    <div class="card cash-flow-card mb-4">
+
+        <!-- HEADER -->
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-0">
+            <h6 class="mb-0 fw-bold text-navy">
+                <i class="bi bi-clock-history me-2 text-gold"></i>
+                Daily Cash Flow Summary
+            </h6>
+
+            <span class="badge bg-light text-muted small p-2 px-3 rounded-pill border">
+                {{ today|date:"D, d M Y" }}
+            </span>
+        </div>
+
+        <!-- BODY -->
+        <div class="card-body">
+
+            <!-- SUMMARY ROW -->
+            <div class="row text-center g-0">
+
+                <div class="col-md-4 border-end">
+                    <p class="small text-muted mb-1 fw-bold text-uppercase">Inflow</p>
+                    <h4 class="text-success fw-bold mb-0">
+                        KES {{ summary.inflow|floatformat:0 }}
+                    </h4>
+                    <small class="text-muted">Deposits & Repayments</small>
+                </div>
+
+                <div class="col-md-4 border-end">
+                    <p class="small text-muted mb-1 fw-bold text-uppercase">Outflow</p>
+                    <h4 class="text-danger fw-bold mb-0">
+                        KES {{ summary.outflow|floatformat:0 }}
+                    </h4>
+                    <small class="text-muted">Loan Disbursements</small>
+                </div>
+
+                <div class="col-md-4">
+                    <p class="small text-muted mb-1 fw-bold text-uppercase">Net Position</p>
+                    <h4 class="{% if summary.net_flow >= 0 %}text-primary{% else %}text-warning{% endif %} fw-bold mb-0">
+                        KES {{ summary.net_flow|floatformat:0 }}
+                    </h4>
+                    <small class="text-muted">Daily Liquidity Change</small>
+                </div>
+
+            </div>
+
+            <!-- PROGRESS BAR -->
+            <div class="mt-4 px-3">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="text-success fw-bold">
+                        <i class="bi bi-caret-up-fill"></i> Inflow
+                    </span>
+                    <span class="text-danger fw-bold">
+                        Outflow <i class="bi bi-caret-down-fill"></i>
+                    </span>
+                </div>
+
+                <div class="progress-container">
+                    {% with total=summary.inflow|add:summary.outflow %}
+                        {% if total > 0 %}
+                            <div class="progress-bar bg-success"
+                                 style="width: {{ summary.inflow|div:total|mul:100 }}%">
+                            </div>
+                            <div class="progress-bar bg-danger"
+                                 style="width: {{ summary.outflow|div:total|mul:100 }}%">
+                            </div>
+                        {% else %}
+                            <div class="progress-bar bg-light w-100"></div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <p class="text-center text-muted mt-2 mb-0" style="font-size: 0.7rem;">
+                    * Ratio of incoming vs outgoing funds today
+                </p>
+            </div>
+
+        </div>
+
+        <!-- ACTIVITY -->
+        <div class="bg-light p-3">
+
+            <div class="d-flex justify-content-between align-items-center mb-3 px-2">
+                <span class="small fw-bold text-navy text-uppercase">
+                    Live Activity
+                </span>
+
+                {% comment %} <a href="{% url 'transaction_list' %}" class="small text-decoration-none text-gold fw-bold"> {% endcomment %}
+                    Detailed Ledger <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            {% for tx in transactions|slice:":3" %}
+            <div class="d-flex justify-content-between align-items-center mb-2 p-3 bg-white rounded-3 shadow-sm activity-row">
+
+                <div class="d-flex align-items-center">
+                    <div class="rounded-circle p-2 me-3 d-flex align-items-center justify-content-center"
+                         style="width: 35px; height: 35px;
+                         {% if tx.transaction_type == 'loan' %}background:#ffe5e5;{% else %}background:#e9f7ef;{% endif %}">
+
+                        <i class="bi {% if tx.transaction_type == 'loan' %}
+                            bi-arrow-up-right text-danger
+                        {% else %}
+                            bi-arrow-down-left text-success
+                        {% endif %}"></i>
+                    </div>
+
+                    <div>
+                        <span class="d-block small fw-bold text-navy">
+                            {{ tx.get_transaction_type_display }}
+                        </span>
+                        <small class="text-muted">
+                            Ref: {{ tx.reference|truncatechars:12 }}
+                        </small>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <span class="fw-bold {% if tx.transaction_type == 'loan' %}text-danger{% else %}text-success{% endif %}">
+                        {% if tx.transaction_type == 'loan' %}-{% else %}+{% endif %}
+                        {{ tx.amount|floatformat:0 }}
+                    </span>
+                    <br>
+                    <small class="text-muted">
+                        {{ tx.created_at|time:"H:i" }}
+                    </small>
+                </div>
+
+            </div>
+            {% empty %}
+            <div class="text-center py-3">
+                <p class="text-muted small mb-0">No transactions recorded today.</p>
+            </div>
+            {% endfor %}
+
+        </div>
+
+        <!-- FOOTER BAR -->
+        <div style="height: 5px; background: linear-gradient(to right, var(--eldo-gold), var(--eldo-green));"></div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

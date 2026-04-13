@@ -1,0 +1,269 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Approved Christmas Loans | Eldopoly SACCO</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<style>
+    :root {
+        --eldo-green: #14452F;
+        --eldo-gold: #D4AF37;
+        --sidebar-width: 260px;
+        --top-nav-height: 70px;
+        --bg-light: #f4f7f6;
+    }
+
+    body { 
+        background-color: var(--bg-light);
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        margin: 0;
+        overflow-x: hidden;
+    }
+
+    /* --- SIDEBAR --- */
+    .sidebar {
+        width: var(--sidebar-width);
+        height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+        background: var(--eldo-green);
+        z-index: 1100;
+        padding: 1.5rem;
+        color: white;
+        transition: all 0.3s ease;
+        overflow-y: auto;
+    }
+    .sidebar-brand {
+        font-weight: 800;
+        font-size: 1.2rem;
+        color: var(--eldo-gold);
+        padding-bottom: 2rem;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        margin-bottom: 2rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .nav-link-side {
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        padding: 12px 15px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 5px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: 0.2s;
+    }
+    .nav-link-side:hover, .nav-link-side.active { background: rgba(255,255,255,0.1); color: var(--eldo-gold); }
+    .nav-link-side i { font-size: 1.1rem; margin-right: 12px; }
+
+    /* --- TOP NAVBAR --- */
+    .top-navbar {
+        height: var(--top-nav-height);
+        background: white;
+        position: fixed;
+        top: 0;
+        right: 0;
+        left: var(--sidebar-width);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1.5rem;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.03);
+        border-bottom: 1px solid #eee;
+    }
+
+    .main-wrapper {
+        margin-left: var(--sidebar-width);
+        margin-top: var(--top-nav-height);
+        padding: 2.5rem;
+    }
+
+    .report-card { 
+        background: white; 
+        border-radius: 24px; 
+        padding: 2rem; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.03); 
+        border: 1px solid #eee; 
+    }
+
+    .btn-gold { 
+        background: var(--eldo-gold); 
+        color: var(--eldo-green); 
+        border: none; 
+        font-weight: 800; 
+        border-radius: 10px; 
+        padding: 10px 20px; 
+        transition: 0.3s;
+        font-size: 0.85rem;
+    }
+    .btn-gold:hover { background: #b8972f; color: white; transform: translateY(-2px); }
+
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    .progress { background-color: #e9ecef; border-radius: 10px; }
+
+    @media (max-width: 992px) {
+        .sidebar { transform: translateX(-100%); }
+        .top-navbar { left: 0; }
+        .main-wrapper { margin-left: 0; padding: 1rem; }
+    }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+    <div class="sidebar-brand"><i class="bi bi-bank2"></i> ELDOPOLY</div>
+     <nav>
+        <div class="label-text mb-2 ps-3 opacity-50">Main Menu</div>
+        <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side active"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="{% url 'Member' %}" class="nav-link-side"><i class="bi bi-people"></i> Members</a>
+        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-piggy-bank"></i> Member Savings</a>
+        
+        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Loan Management and Reporting</div>
+        <a href="{% url 'pending_loans' %}" class="nav-link-side"><i class="bi bi-hourglass-split"></i> Pending Standard</a>
+        <a href="{% url 'Xm_approved' %}" class="nav-link-side"><i class="bi bi-gift"></i> Pending Holiday</a>
+        <a href="{% url 'monthly_sacco_report' %}" class="nav-link-side"><i class="bi bi-gift"></i> Monthly Sacco Report</a>
+        <a href="{% url 'active_loan' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Active Loans</a>
+        <a href="{% url 'active_xmas_loan' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Active Holiday</a>
+        
+        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Archives</div>
+        <a href="{% url 'approved_loans' %}" class="nav-link-side"><i class="bi bi-archive"></i> Approved History</a>
+        <a href="{% url 'rejected_loans' %}" class="nav-link-side text-danger-emphasis"><i class="bi bi-x-circle"></i> Rejected Loans</a>
+
+        <a href="{% url 'Logout' %}" class="nav-link-side text-danger mt-5"><i class="bi bi-power"></i> Sign Out</a>
+    </nav>
+</aside>
+
+<header class="top-navbar">
+    <div class="d-flex align-items-center">
+        <h5 class="mb-0 fw-800" style="color: #444;">Christmas Loan Approval Pool</h5>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <div class="text-end d-none d-sm-block">
+            <div class="fw-800 small">{{ request.user.get_full_name }}</div>
+            <div class="text-muted" style="font-size: 0.7rem;">Senior Treasurer</div>
+        </div>
+        <div class="bg-light rounded-circle p-2 border" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+            <i class="bi bi-person-fill text-eldo-green"></i>
+        </div>
+    </div>
+</header>
+
+<div class="main-wrapper">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h2 class="fw-800 mb-1">Seasonal Disbursements</h2>
+            <p class="text-muted">Tracking internal approvals (Staff, Admin, Treasurer) for Christmas Loans.</p>
+        </div>
+        <button class="btn btn-dark shadow-sm px-4 fw-bold" onclick="window.print()">
+            <i class="bi bi-file-pdf me-2"></i> EXPORT REPORT
+        </button>
+    </div>
+
+    <div class="report-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th class="py-3 px-3">Member Details</th>
+                        <th class="py-3">Amount Requested</th>
+                        <th class="py-3">Internal Sign-offs</th>
+                        <th class="py-3">Status</th>
+                        <th class="py-3 text-end px-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    {% for loan in approved_loans %}
+    <tr>
+        <td class="px-3">
+            <div class="fw-bold text-eldo-green">{{ loan.member.user.get_full_name }}</div>
+            <div class="text-muted small">Account: #{{ loan.member.id }} | Season: {{ loan.year }}</div>
+        </td>
+        <td>
+            <div class="fw-800">KES {{ loan.amount_requested|floatformat:2 }}</div>
+            <div class="small text-muted">{{ loan.interest_rate }}% Interest</div>
+        </td>
+        <td>
+            <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-grow-1" style="height: 10px; width: 100px;">
+                    {% with count=loan.approval_progress %}
+                    <div class="progress-bar {% if count >= 3 %}bg-success{% else %}bg-warning{% endif %}" 
+                         role="progressbar" 
+                         style="width: {% if count == 1 %}33{% elif count == 2 %}66{% elif count == 3 %}100{% else %}0{% endif %}%">
+                    </div>
+                    {% endwith %}
+                </div>
+                <span class="fw-bold small">{{ loan.approval_progress }}/3</span>
+            </div>
+        </td>
+        <td>
+            {% if loan.is_disbursed %}
+                <span class="status-badge bg-success-subtle text-success">Funded</span>
+            {% elif loan.approval_progress >= 3 %} 
+                <span class="status-badge bg-primary-subtle text-primary">Ready</span>
+            {% else %}
+                <span class="status-badge bg-light text-muted border">In Review</span>
+            {% endif %}
+        </td>
+        <td class="text-end px-3">
+            {% if not loan.is_disbursed %}
+                {% if loan.approval_progress >= 3 %} 
+                    <a href="{% url 'disburse_loan_xmass' loan.id %}" 
+                       class="btn btn-gold shadow-sm"
+                       onclick="return confirm('Disburse KES {{ loan.amount_requested }} to {{ loan.member.user.get_full_name }}?')">
+                        <i class="bi bi-cash-stack me-1"></i> PAY OUT
+                    </a>
+                {% else %}
+                    <button class="btn btn-light btn-sm text-muted border" disabled>
+                        <i class="bi bi-lock-fill me-1"></i> LOCKED
+                    </button>
+                {% endif %}
+            {% else %}
+                <span class="text-success fw-bold small"><i class="bi bi-check-all"></i> DISBURSED</span>
+            {% endif %}
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan="5" class="text-center py-5">
+            <i class="bi bi-clipboard-x fs-1 text-muted d-block mb-2"></i>
+            <span class="text-muted">No fully approved Christmas loans found in the pool.</span>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>    
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

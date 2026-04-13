@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SACCO Financial Ledger</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --sacco-primary: #0d6efd;
+            --sacco-success: #198754;
+            --sacco-warning: #f59e0b;
+        }
+        body { background-color: #f8f9fa; font-family: 'Inter', sans-serif; }
+        .card-stats { border: none; border-radius: 12px; transition: transform 0.2s; }
+        .card-stats:hover { transform: translateY(-5px); }
+        .ledger-table thead { background-color: #212529; color: white; }
+        .badge-saving { background-color: #d1fae5; color: #065f46; }
+        .badge-loan { background-color: #fee2e2; color: #991b1b; }
+        .badge-repayment { background-color: #e0e7ff; color: #3730a3; }
+        .text-money { font-family: 'Courier New', Courier, monospace; fw-bold; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            .card { border: 1px solid #ddd !important; shadow: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div>
+            <h2 class="fw-bold mb-0">Financial Ledger</h2>
+            <p class="text-muted">Global SACCO equity, disbursements, and liquidity tracking.</p>
+        </div>
+        <div class="btn-group">
+            <button onclick="window.print()" class="btn btn-outline-dark">
+                <i class="bi bi-printer"></i> Print Statement
+            </button>
+            <a href="" class="btn btn-success">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card card-stats shadow-sm bg-white p-3">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-primary bg-opacity-10 p-3 rounded text-primary">
+                        <i class="bi bi-bank2 fs-3"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted text-uppercase fw-semibold">Total Savings</small>
+                        <h4 class="mb-0 fw-bold">Ksh {{ total_savings|floatformat:2 }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stats shadow-sm bg-white p-3">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-danger bg-opacity-10 p-3 rounded text-danger">
+                        <i class="bi bi-cash-stack fs-3"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted text-uppercase fw-semibold">Loans Out</small>
+                        <h4 class="mb-0 fw-bold text-danger">Ksh {{ total_loans|floatformat:2 }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stats shadow-sm bg-white p-3">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-success bg-opacity-10 p-3 rounded text-success">
+                        <i class="bi bi-arrow-repeat fs-3"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-muted text-uppercase fw-semibold">Total Repaid</small>
+                        <h4 class="mb-0 fw-bold text-success">Ksh {{ total_repaid|floatformat:2 }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-stats shadow-sm bg-dark p-3 text-white">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0 bg-warning bg-opacity-25 p-3 rounded text-warning">
+                        <i class="bi bi-wallet2 fs-3"></i>
+                    </div>
+                    <div class="ms-3">
+                        <small class="text-white-50 text-uppercase fw-semibold">Current Liquidity</small>
+                        <h4 class="mb-0 fw-bold text-warning">Ksh {{ liquidity|floatformat:2 }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-list-task me-2"></i>Transaction Ledger</h5>
+            <input type="text" id="ledgerSearch" class="form-control form-control-sm w-25 no-print" placeholder="Search member or type...">
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 ledger-table" id="ledgerTable">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Date</th>
+                            <th>Type</th>
+                            <th>Member</th>
+                            <th>Relevant Month</th>
+                            <th class="text-end pe-3">Amount (Ksh)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in ledger %}
+                        <tr>
+                            <td class="ps-3 small text-muted">
+                                {{ entry.date|date:"d M Y" }}<br>
+                                <span style="font-size: 0.75rem;">{{ entry.date|date:"H:i" }}</span>
+                            </td>
+                            <td>
+                                {% if "Saving" in entry.type or "Share" in entry.type %}
+                                    <span class="badge badge-saving border border-success">
+                                        <i class="bi bi-piggy-bank me-1"></i> {{ entry.type }}
+                                    </span>
+                                {% elif "Repayment" in entry.type %}
+                                    <span class="badge badge-repayment border border-primary">
+                                        <i class="bi bi-arrow-left-right me-1"></i> {{ entry.type }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-loan border border-danger">
+                                        <i class="bi bi-send me-1"></i> {{ entry.type }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold text-secondary">{{ entry.member }}</td>
+                            <td>{{ entry.month|date:"F Y" }}</td>
+                            <td class="text-end pe-3 fw-bold text-money">
+                                {% if "Loan Disbursed" in entry.type %}
+                                    <span class="text-danger">- {{ entry.amount|floatformat:2 }}</span>
+                                {% else %}
+                                    <span class="text-success">+ {{ entry.amount|floatformat:2 }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">No transactions found in the system.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('ledgerSearch').addEventListener('keyup', function() {
+        let value = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#ledgerTable tbody tr');
+        rows.forEach(row => {
+            row.style.display = (row.innerText.toLowerCase().indexOf(value) > -1) ? '' : 'none';
+        });
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

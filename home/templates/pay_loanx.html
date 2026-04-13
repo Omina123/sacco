@@ -1,0 +1,205 @@
+{% load static %}
+{% load mathfilters %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repay Xmas Loan | Eldopoly SACCO</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --eldo-deep-green: #14452F;
+            --eldo-light-green: #8DC63F;
+            --eldo-gold: #FFD700;
+            --xmas-red: #d42426;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            background: var(--xmas-red);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 20px;
+        }
+
+        .btn-pay {
+            background: var(--eldo-deep-green);
+            color: var(--eldo-gold);
+            font-weight: 700;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .btn-pay:hover {
+            background: var(--eldo-light-green);
+            color: var(--eldo-deep-green);
+            transform: translateY(-2px);
+        }
+
+        .loan-info-box {
+            background: #fffafa;
+            border: 1px solid #ffe5e5;
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .installment-highlight {
+            background: #e9f5ee;
+            border-left: 4px solid var(--eldo-light-green);
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .mpesa-logo {
+            height: 25px;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+
+            <a href="{% url 'member_dashboard' %}" class="text-decoration-none text-muted small">
+                <i class="fas fa-arrow-left"></i> Dashboard
+            </a>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} mt-3 alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card mt-3">
+                <div class="card-header text-center">
+                    <h4><i class="fas fa-calendar-check"></i> Xmas Loan Payment</h4>
+                    <small>{{ request.user.get_full_name }}</small>
+                </div>
+
+                <div class="card-body">
+
+                    <div class="installment-highlight mb-3">
+                        <strong>Suggested Monthly Payment:</strong><br>
+                        <span class="fs-4 text-success">
+                            KES {{ suggested_installment|floatformat:2 }}
+                        </span>
+                        <button class="btn btn-sm btn-success float-end"
+                                onclick="fillAmount('{{ suggested_installment }}')">
+                            Use
+                        </button>
+                    </div>
+
+                    <div class="loan-info-box mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Total Payable:</span>
+                            <span>KES {{ loan.total_payable|floatformat:2 }}</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Total Paid:</span>
+                            <span>KES {{ loan.total_paid|floatformat:2 }}</span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Remaining Balance:</span>
+                            <span class="text-danger fw-bold">
+                                KES {{ loan.remaining_balance|floatformat:2 }}
+                            </span>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <span>Months Left:</span>
+                            <span class="text-warning fw-bold">
+                                {{ remaining_months }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <small class="text-muted">Repayment Progress</small>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-success"
+                                 role="progressbar"
+                                 style="width: {{ loan.total_paid|div:loan.total_payable|mul:100 }}%">
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{% url 'initiate_stk_push' %}">
+                        {% csrf_token %}
+
+                        <input type="hidden" name="payment_type" value="xmas">
+                        <input type="hidden" name="loan_id" value="{{ loan.id }}">
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Amount to Pay via M-Pesa</label>
+                            <div class="input-group">
+                                <span class="input-group-text">KES</span>
+                                <input type="number"
+                                       name="amount"
+                                       id="amountInput"
+                                       step="0.01"
+                                       class="form-control form-control-lg"
+                                       max="{{ loan.remaining_balance }}"
+                                       required>
+                            </div>
+                        </div>
+
+                        <button type="button"
+                                 class="btn btn-link text-danger p-0 mb-3 text-decoration-none"
+                                 onclick="fillAmount('{{ loan.remaining_balance }}')">
+                            <i class="fas fa-money-bill-wave"></i> Pay Full Balance
+                        </button>
+
+                        <button type="submit" class="btn btn-pay">
+                             <i class="fas fa-mobile-alt"></i> Initiate M-Pesa Payment
+                        </button>
+                    </form>
+
+                </div>
+
+                <div class="card-footer text-center bg-white border-top-0">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/M-PESA_LOGO-01.svg/1200px-M-PESA_LOGO-01.svg.png" 
+                         alt="M-Pesa" class="mpesa-logo">
+                    <small class="text-muted">Secure payment via Safaricom</small>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+function fillAmount(value) {
+    let amount = parseFloat(value);
+    if (!isNaN(amount)) {
+        document.getElementById('amountInput').value = amount.toFixed(2);
+    }
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

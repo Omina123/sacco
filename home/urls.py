@@ -17,7 +17,10 @@ urlpatterns = [
     path ('pay_loan',views.pay_loan, name='pay_loan'),
     path ('staff_dashboard',views.staff_dashboard, name='staff_dashboard'),
     # path('initiate_stk_push_shares',views.initiate_stk_push_shares, name='initiate_stk_push_shares'),
-path('treasury/buy-shares/<int:member_id>/', views.treasurer_purchase_shares, name='treasurer_buy_shares'),
+    path('treasury/buy-shares/<int:member_id>/', views.treasurer_purchase_shares, name='treasurer_buy_shares'),
+    path('treasry/deposit-savings/<int:member_id>/', views.treasurer_deposit_savings, name='treasurer_deposit_savings'),
+
+    path ('treasurer_pay_Xloan/<int:loan_id>/', views.treasurer_pay_Xloan ,name='treasurer_pay_Xloan'),
      path ('treasurer_pay_loan/<int:loan_id>/', views.treasurer_pay_loan ,name='treasurer_pay_loan'),
     path ('approve_loan/<int:loan_id>', views.approve_loan, name='approve_loan'),
      path ('download_receipt/<int:saving_id>', views.download_receipt, name='download_receipt'),
@@ -41,9 +44,23 @@ path('treasury/buy-shares/<int:member_id>/', views.treasurer_purchase_shares, na
     path('calculate_loan_risk', views.calculate_loan_risk, name='calculate_loan_risk'),
     path('calculate_penalty',views.calculate_penalty, name='calculate_penalty'),
     path ('Members', views.Members, name='Member'),
+     path('disburse_loan_xmass/<int:loan_id>', views.disburse_loan_xmass, name='disburse_loan_xmass'),
+     path('Xm_approved', views.Xm_approved,name='Xm_approved'),
         
     # urls.py
 path('respond_guarantor/<int:guarantor_id>/<str:action>/', views.respond_guarantor, name='respond_guarantor'),
 path('loan_detail/<int:loan_id>/', views.loan_detail, name='loan_detail'),
 path ('mpesa_callback/', views.mpesa_callback, name='mpesa_callback'),
+path('Human_Resource',views.Human_Resource,name='Human_Resource'),
+path('apply-xmas-loan/', views.apply_xmas_loan, name='apply_xmas_loan'),
+path('approve-xmas-loan/<int:loan_id>/', views.approve_xmas_loan, name='approve_xmas_loan'),
+path('reject-xmas-loan/<int:loan_id>/', views.reject_xmas_loan, name='reject_xmas_loan'),
+path('pay-xmas/', views.pay_xmas_loan, name='pay_xmas_loan'),
+path('active_xmas_loan',views.active_xmas_loan,name='active_xmas_loan'),
+path('monthly_sacco_report', views.monthly_sacco_report, name='monthly_sacco_report'),
+path('financial_ledger_view', views.financial_ledger_view, name='financial_ledger_view'),
+path('treasurer', views.treasurer, name='treasurer'),
+path ('export_sacco_report_csv',views.export_sacco_report_csv,name='export_sacco_report_csv'),
+
+path('sacco_financial_ledger_view', views.sacco_financial_ledger_view, name='sacco_financial_ledger_view'),
 ]
