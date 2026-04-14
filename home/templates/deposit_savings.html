@@ -248,7 +248,11 @@
                     <span class="mpesa-badge"><i class="fas fa-mobile-alt me-1"></i> AUTOMATED PAYMENT</span>
                     <h4 class="fw-bold mt-2">Xmass Savings</h4>
                 </div>
-
+ {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} py-1 px-3 mb-0 me-3 small shadow-sm">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
                 <form method="POST" id="savingsForm">
                     {% csrf_token %}
                     <input type="hidden" name="payment_type" value="savings">

@@ -183,25 +183,42 @@ def Login(request):
 #     return render(request, 'login.html', {'form': form})
 
 @login_required
+
+
 def update_profile(request):
+    user = request.user
+    profile_instance = user.profile
+
     if request.method == 'POST':
-        # Load both forms with the POST data
-        u_form = UserUpdateForm(request.POST, instance=request.user)
-        p_form = ProfileForm(request.POST, request.FILES, instance=request.user.profile)
+        u_form = UserUpdateForm(request.POST, instance=user)
+        p_form = ProfileForm(request.POST, request.FILES, instance=profile_instance)
 
         if u_form.is_valid() and p_form.is_valid():
-            u_form.save() # Saves first_name, last_name, email
-            
+            # Save user basic info
+            u_form.save()
+
+            # Save profile safely
             profile = p_form.save(commit=False)
-            # Ensure unique fields are handled correctly
-            if not profile.pf_number: profile.pf_number = None
-            if not profile.membership_number: profile.membership_number = None
-            profile.save() # Saves ID, Phone, Address, etc.
-            
+
+            # Handle optional unique fields (avoid empty string issues)
+            profile.pf_number = profile.pf_number or None
+            profile.membership_number = profile.membership_number or None
+
+            # 🔥 IMPORTANT: Reset salary review flag after update
+            if hasattr(profile, 'salary_needs_review'):
+                profile.salary_needs_review = False
+
+            profile.save()
+
+            messages.success(request, "Profile updated successfully.")
             return redirect('member_dashboard')
+
+        else:
+            messages.error(request, "Please correct the errors below.")
+
     else:
-        u_form = UserUpdateForm(instance=request.user)
-        p_form = ProfileForm(instance=request.user.profile)
+        u_form = UserUpdateForm(instance=user)
+        p_form = ProfileForm(instance=profile_instance)
 
     return render(request, 'up.html', {
         'u_form': u_form,
@@ -412,7 +429,7 @@ def add_member(request):
         except Exception as e:
             messages.error(request, f"Error creating account: {str(e)}")
 
-    return render(request, 'add_member.html')
+    return render(request, 'Add_member.html')
 def verify_otp(request):
     if request.method == 'POST':
         otp_entered = request.POST.get('otp')

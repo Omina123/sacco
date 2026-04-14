@@ -15,107 +15,182 @@
             --eldo-green: #1B5E20; 
             --eldo-gold: #D4AF37; 
             --eldo-yellow: #FFD700; 
-            --mpesa-green: #49B249; /* Official M-Pesa Green */
+            --mpesa-green: #49B249;
             --light-bg: #f8f9fa; 
-            --sidebar-width: 260px;
+            --sidebar-width: 280px;
         }
 
-        body { background: var(--light-bg); font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        body { background: var(--light-bg); font-family: 'Inter', sans-serif; }
 
-        /* Sidebar Styles (Unchanged) */
+        /* --- SCROLLABLE SIDEBAR --- */
         .sidebar { 
-            height: 100vh; position: fixed; width: var(--sidebar-width); 
+            height: 100vh; 
+            position: fixed; 
+            width: var(--sidebar-width); 
             background: linear-gradient(180deg, #1B5E20 0%, #123e15 100%); 
-            color: white; display: flex; flex-direction: column; z-index: 1000;
-            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            color: white; 
+            display: flex; 
+            flex-direction: column; 
+            z-index: 1040;
+            transition: all 0.3s ease;
+            /* Key change for scrolling */
+            overflow-y: auto; 
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
         }
-        .sidebar-brand { padding: 2rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .nav-menu { padding: 1.5rem 0; flex-grow: 1; }
-        .sidebar a { 
-            display: flex; align-items: center; color: rgba(255,255,255,0.7); 
-            padding: 0.8rem 1.5rem; text-decoration: none; transition: 0.3s;
-            margin: 0.2rem 1rem; border-radius: 8px; font-weight: 500;
-        }
-        .sidebar a i { width: 25px; font-size: 1.1rem; margin-right: 12px; }
-        .sidebar a:hover { background: rgba(255,255,255,0.1); color: var(--eldo-yellow); }
-        .sidebar a.active { background: var(--eldo-gold); color: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .sidebar-footer { padding: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); }
-        .logout-link { color: #ff6b6b !important; }
 
-        /* Main Content */
-        .main-content { margin-left: var(--sidebar-width); padding: 40px; transition: 0.3s; }
-        .payment-card { border: none; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); transition: 0.3s; }
-        .payment-card:hover { transform: translateY(-5px); }
+        .sidebar::-webkit-scrollbar { width: 5px; }
+        .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
 
-        /* Button Styling */
-        .btn-eldo { background: var(--eldo-green); color: white; border-radius: 12px; padding: 12px; font-weight: 600; border: none; }
-        .btn-eldo:hover { background: #144718; color: var(--eldo-yellow); }
+        .sidebar-brand { padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); position: sticky; top: 0; background: #1B5E20; z-index: 10; }
         
-        .btn-mpesa { background: var(--mpesa-green); color: white; border-radius: 12px; padding: 12px; font-weight: 700; border: none; }
-        .btn-mpesa:hover { background: #3d943d; color: white; box-shadow: 0 5px 15px rgba(73, 178, 73, 0.3); }
+        .nav-menu { padding: 1rem 0; flex-grow: 1; }
+        
+        .label-text { 
+            font-size: 0.7rem; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            color: rgba(255,255,255,0.5); 
+            padding: 1rem 1.5rem 0.5rem; 
+        }
 
-        .input-group-text { border: none; background: #e9ecef; }
-        .form-control { border-radius: 10px; }
+        .sidebar a { 
+            display: flex; align-items: center; color: rgba(255,255,255,0.8); 
+            padding: 0.7rem 1.5rem; text-decoration: none; transition: 0.2s;
+            margin: 0.1rem 1rem; border-radius: 8px; font-size: 0.9rem;
+        }
+        
+        .sidebar a i { width: 20px; margin-right: 12px; font-size: 1.1rem; }
+        .sidebar a:hover { background: rgba(255,255,255,0.1); color: var(--eldo-yellow); }
+        .sidebar a.active { background: var(--eldo-gold); color: white; font-weight: 600; }
 
-        @media (max-width: 992px) { 
-            .sidebar { width: 80px; } 
-            .sidebar span { display: none; } 
-            .main-content { margin-left: 80px; } 
+        /* --- MAIN CONTENT & MOBILE RESPONSIVENESS --- */
+        .main-content { 
+            margin-left: var(--sidebar-width); 
+            padding: 2rem; 
+            transition: all 0.3s ease; 
+        }
+
+        .mobile-header {
+            display: none;
+            background: var(--eldo-green);
+            color: white;
+            padding: 10px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1050;
+        }
+
+        .payment-card { border: none; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+        .info-label { font-size: 0.65rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .amount-display { font-size: 1.1rem; font-weight: 800; color: var(--eldo-green); }
+
+        .btn-eldo { background: var(--eldo-green); color: white; border-radius: 10px; padding: 12px; font-weight: 600; border: none; width: 100%; }
+        .btn-mpesa { background: var(--mpesa-green); color: white; border-radius: 10px; padding: 12px; font-weight: 700; border: none; width: 100%; }
+
+        @media (max-width: 992px) {
+            .mobile-header { display: flex; justify-content: space-between; align-items: center; }
+            .sidebar { left: -100%; }
+            .sidebar.active { left: 0; }
+            .main-content { margin-left: 0; padding: 1.5rem; }
+            .overlay {
+                display: none;
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5); z-index: 1030;
+            }
+            .overlay.show { display: block; }
         }
     </style>
 </head>
 <body>
 
-<div class="sidebar">
-    <div class="sidebar-brand">
+<div class="mobile-header">
+    <h5 class="mb-0 fw-bold">ELDOPOLY</h5>
+    <button class="btn text-white p-0" onclick="toggleSidebar()"><i class="bi bi-list fs-2"></i></button>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-brand text-center">
         <h4 class="fw-bold text-warning mb-0"><i class="fas fa-university"></i> <span>ELDOPOLY</span></h4>
     </div>
-    <div class="nav-menu">      
-        <a href="{% url 'treasurer_dashboard' %}"><i class="fas fa-th-large"></i> <span>Dashboard</span></a>
-        <a href="{% url 'all_savings' %}"><i class="fas fa-piggy-bank"></i> <span>Member Savings</span></a>
-        <a href="{% url 'approved_loans' %}" class="active"><i class="fas fa-check-circle"></i> <span>Approved</span></a>
-        <a href="{% url 'rejected_loans' %}"><i class="fas fa-x-circle"></i> <span>Rejected</span></a>
-    </div>
-    <div class="sidebar-footer">
-        <a href="{% url 'Logout' %}" class="logout-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
+      
+    <div class="nav-menu">
+        <div class="label-text">Main Menu</div>
+         <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side active"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="{% url 'Members' %}" class="nav-link-side"><i class="bi bi-people"></i> Members</a>
+        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-piggy-bank"></i> Member Savings</a>
+        <a href="{% url 'sacco_reportings' %}" class="nav-link-side"><i class="bi bi-graph-up"></i> SACCO Report</a>
+        
+        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Loan Management and Reporting</div>
+        <a href="{% url 'pending_loans' %}" class="nav-link-side"><i class="bi bi-hourglass-split"></i> Pending Standard</a>
+        <a href="{% url 'Xm_approved' %}" class="nav-link-side"><i class="bi bi-gift"></i> Pending Holiday</a>
+        <a href="{% url 'approved_loans' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Approved History</a>
+        <a href="{% url 'Completed_loans' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Completed Loans</a>
+        <a href="{% url 'monthly_sacco_report' %}" class="nav-link-side"><i class="bi bi-gift"></i> Monthly Sacco Report</a>
+        <a href="{% url 'active_loan' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Active Loans</a>
+        <a href="{% url 'active_xmas_loan' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Active Holiday</a>
+        
+        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Archives</div>
+        <a href="{% url 'approved_loans' %}" class="nav-link-side"><i class="bi bi-archive"></i> Approved History</a>
+        <a href="{% url 'rejected_loans' %}" class="nav-link-side text-danger-emphasis"><i class="bi bi-x-circle"></i> Rejected Loans</a>
+
+        <a href="{% url 'Logout' %}" class="nav-link-side text-danger mt-5"><i class="bi bi-power"></i> Sign Out</a>
     </div>
 </div>
 
 <div class="main-content">
-    <div class="mb-4 d-flex justify-content-between align-items-center">
-        <div>
-            <h3 class="fw-bold" style="color: var(--eldo-green);">Process Loan Payment</h3>
-            <p class="text-muted mb-0">Member: <b>{{ loan.member.user.get_full_name }}</b> | Loan ID: #{{ loan.id }}</p>
+    <div class="row mb-4 gy-3 align-items-center">
+        <div class="col-12 col-lg-6">
+            <h3 class="fw-bold mb-1" style="color: var(--eldo-green);">Process Payment</h3>
+            <p class="text-muted small mb-0">Member: <span class="text-dark fw-bold">{{ loan.member.user.get_full_name }}</span></p>
         </div>
-        <div class="text-end">
-            <span class="badge bg-success p-2">Balance: KES {{ loan.amount|floatformat:2 }}</span>
+        <div class="col-12 col-lg-6">
+            <div class="row g-2">
+                <div class="col-6">
+                    <div class="bg-white p-2 p-md-3 rounded-4 shadow-sm border-start border-4 border-danger h-100">
+                        <span class="info-label">Total Payable</span>
+                        <div class="amount-display small text-nowrap">KES {{ loan.total_payable|floatformat:0 }}</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="bg-white p-2 p-md-3 rounded-4 shadow-sm border-start border-4 border-primary h-100">
+                        <span class="info-label">Monthly Due</span>
+                        <div class="amount-display small text-nowrap">KES {{ loan.monthly_installment|floatformat:0 }}</div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="row">
         <div class="col-lg-6 mb-4">
             <div class="card payment-card h-100 bg-white">
-                <div class="card-body p-4 p-xl-5">
+                <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-4">
-                        <div class="bg-light p-3 rounded-circle me-3">
-                            <i class="fas fa-hand-holding-usd text-success fs-4"></i>
+                        <div class="bg-success-subtle p-3 rounded-circle me-3">
+                            <i class="fas fa-cash-register text-success fs-5"></i>
                         </div>
                         <h5 class="fw-bold mb-0">Manual Record</h5>
                     </div>
-                    <p class="small text-muted mb-4">Use this for cash, cheques, or direct bank deposits already received.</p>
                     
                     <form id="manualForm" method="post">
                         {% csrf_token %}
-                        <input type="hidden" name="payment_method" value="manual">
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">AMOUNT RECEIVED</label>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted">COLLECTED AMOUNT</label>
                             <div class="input-group">
-                                <span class="input-group-text">KES</span>
-                                <input type="number" step="0.01" name="amount" class="form-control form-control-lg bg-light border-0" value="{{ loan.amount|floatformat:2 }}" required>
+                                <span class="input-group-text border-0 bg-light">KES</span>
+                                <input type="number" step="0.01" name="amount" class="form-control form-control-lg bg-light border-0" value="{{ loan.monthly_installment|floatformat:2 }}" required>
+                            </div>
+                            <div class="mt-2 d-flex justify-content-between flex-wrap gap-2">
+                                <small class="text-muted">Default: 1 Installment</small>
+                                <small class="text-primary fw-bold" style="cursor: pointer;" onclick="document.getElementsByName('amount')[0].value='{{ loan.total_payable }}'">Pay Full Balance</small>
                             </div>
                         </div>
-                        <button type="button" onclick="confirmManual()" class="btn btn-eldo w-100 mt-2">
-                            <i class="fas fa-save me-2"></i> Record Payment
+                        <button type="button" onclick="confirmManual()" class="btn btn-eldo shadow-sm">
+                            <i class="fas fa-check-double me-2"></i> Confirm Payment
                         </button>
                     </form>
                 </div>
@@ -123,32 +198,31 @@
         </div>
 
         <div class="col-lg-6 mb-4">
-            <div class="card payment-card h-100 bg-white border-top border-5 border-success">
-                <div class="card-body p-4 p-xl-5">
+            <div class="card payment-card h-100 bg-white border-top border-4 border-success">
+                <div class="card-body p-4">
                     <div class="d-flex align-items-center mb-4">
-                        <div class="bg-light p-3 rounded-circle me-3">
-                            <i class="bi bi-phone-vibrate text-success fs-4"></i>
+                        <div class="bg-success-subtle p-3 rounded-circle me-3">
+                            <i class="bi bi-phone-fill text-success fs-5"></i>
                         </div>
-                        <h5 class="fw-bold mb-0">M-Pesa STK Push</h5>
+                        <h5 class="fw-bold mb-0">M-Pesa Direct</h5>
                     </div>
-                    <p class="small text-muted mb-4">Trigger a direct payment prompt to the member's Safaricom line.</p>
                     
                     <form id="mpesaForm" method="post" action="{% url 'pay_loan' %}">
                         {% csrf_token %}
                         <input type="hidden" name="payment_method" value="mpesa">
                         <div class="mb-3">
-                            <label class="form-label small fw-bold">M-PESA PHONE NUMBER</label>
+                            <label class="form-label small fw-bold text-muted">RECIPIENT PHONE</label>
                             <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
-                                <input type="text" name="phone" class="form-control form-control-lg bg-light border-0" placeholder="e.g. 0712345678" required>
+                                <span class="input-group-text border-0 bg-light"><i class="bi bi-telephone"></i></span>
+                                <input type="text" name="phone" class="form-control form-control-lg bg-light border-0" placeholder="07XXXXXXXX" required>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-bold">AMOUNT</label>
-                            <input type="number" name="amount" class="form-control form-control-lg bg-light border-0" value="{{ loan.amount|floatformat:2 }}" readonly>
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted">STK PUSH AMOUNT</label>
+                            <input type="number" name="amount" class="form-control form-control-lg bg-light border-0 fw-bold" value="{{ loan.monthly_installment|floatformat:2 }}" readonly>
                         </div>
-                        <button type="button" onclick="confirmMpesa()" class="btn btn-mpesa w-100 mt-2">
-                            SEND STK PUSH <i class="bi bi-send-fill ms-2"></i>
+                        <button type="button" onclick="confirmMpesa()" class="btn btn-mpesa shadow-sm">
+                            INITIATE STK PUSH <i class="bi bi-arrow-right-short ms-2"></i>
                         </button>
                     </form>
                 </div>
@@ -156,39 +230,43 @@
         </div>
     </div>
 
-    <div class="text-center mt-2">
-        <a href="{% url 'approved_loans' %}" class="text-decoration-none text-muted small"><i class="fas fa-arrow-left me-1"></i> Back to Approved Loans</a>
+    <div class="text-center mt-3">
+        <a href="{% url 'approved_loans' %}" class="btn btn-link text-muted text-decoration-none">
+            <i class="bi bi-arrow-left me-2"></i> Back to History
+        </a>
     </div>
 </div>
 
 <script>
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').classList.toggle('show');
+    }
+
     function confirmManual() {
+        const amt = document.getElementsByName('amount')[0].value;
         Swal.fire({
-            title: 'Confirm Cash Payment',
-            text: "Are you sure you want to manually record this payment?",
+            title: 'Confirm Payment',
+            text: `Record KES ${amt} manually for this loan?`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#1B5E20',
-            confirmButtonText: 'Yes, Record'
+            confirmButtonText: 'Confirm'
         }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('manualForm').submit();
-            }
+            if (result.isConfirmed) document.getElementById('manualForm').submit();
         });
     }
 
     function confirmMpesa() {
         Swal.fire({
-            title: 'Initiate M-Pesa?',
-            text: "A push notification will be sent to the member's phone.",
+            title: 'M-Pesa STK Push',
+            text: "Member will receive a PIN prompt on their phone.",
             icon: 'info',
             showCancelButton: true,
             confirmButtonColor: '#49B249',
             confirmButtonText: 'Send Prompt'
         }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('mpesaForm').submit();
-            }
+            if (result.isConfirmed) document.getElementById('mpesaForm').submit();
         });
     }
 </script>

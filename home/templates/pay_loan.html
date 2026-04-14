@@ -105,7 +105,11 @@
         <a href="{% url 'Logout' %}" class="logout-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
     </div>
 </div>
-
+ {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} py-1 px-3 mb-0 me-3 small shadow-sm">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
 <div class="main-content">
     <div class="mb-4">
         <h3 class="fw-bold" style="color: var(--eldo-green);">Loan Repayment</h3>

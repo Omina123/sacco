@@ -140,7 +140,11 @@ body { background: var(--soft-bg); font-family: 'Inter', sans-serif; color: #2c3
         <a class="nav-link-side text-danger" href="{% url 'Logout' %}"><i class="bi bi-box-arrow-left"></i> Logout</a>
     </nav>
 </div>
-
+ {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} py-1 px-3 mb-0 me-3 small shadow-sm">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
 <div class="top-navbar">
     <div class="d-flex align-items-center">
         <i class="bi bi-shield-check text-success fs-4 me-2"></i>

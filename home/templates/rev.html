@@ -160,7 +160,7 @@ img.empty-state { width: 150px; opacity: 0.5; }
 <!-- Top Navbar -->
 <div class="top-navbar d-flex justify-content-between align-items-center">
     <div class="d-flex align-items-center">
-        <h5 class="fw-bold mb-0 me-4">Treasurer Console</h5>
+        <h5 class="fw-bold mb-0 me-4">AdMIN Console</h5>
         <div class="input-group input-group-sm" style="width: 280px;">
             <span class="input-group-text bg-light border-0"><i class="fas fa-search"></i></span>
             <input type="text" class="form-control bg-light border-0" placeholder="Search by PF or Name...">
@@ -176,7 +176,7 @@ img.empty-state { width: 150px; opacity: 0.5; }
         </div>
     </div>
 </div>
-
+ 
 <div class="content-wrapper">
     <!-- Summary Cards -->
     <div class="row g-4 mb-5">
@@ -217,7 +217,11 @@ img.empty-state { width: 150px; opacity: 0.5; }
             </div>
         </div>
     </div>
-
+{% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} py-1 px-3 mb-0 me-3 small shadow-sm">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
     <!-- Loan Requests Table -->
     <div class="card border-0 shadow-sm rounded-4 mb-5">
         <div class="card-header bg-white p-4 border-0">

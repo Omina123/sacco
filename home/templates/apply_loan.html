@@ -84,6 +84,7 @@
             font-weight: 700; border-radius: 16px; padding: 16px; border: none;
             transition: 0.3s;
         }
+        .btn-eldo:hover { background: #0e3322; }
         .btn-eldo:disabled { background: #cbd5e0; color: white; cursor: not-allowed; }
 
         #id_amount, #id_duration_months {
@@ -114,10 +115,10 @@
             <span class="small text-white-50">SACCO PORTAL</span>
         </div>
         <nav class="mt-3">
-             <a href="{% url 'member_dashboard' %}" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a href="{% url 'deposit_savings' %}"><i class="fas fa-piggy-bank"></i>Xmass Savings</a>
+             <a href="{% url 'member_dashboard' %}"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a href="{% url 'deposit_savings' %}"><i class="fas fa-piggy-bank"></i> Xmass Savings</a>
             <a href="{% url 'purchase_shares' %}"><i class="fas fa-chart-pie"></i> Shares</a>
-            <a href="{% url 'apply_loan' %}"><i class="fas fa-file-invoice-dollar"></i> Apply Loan</a>
+            <a href="{% url 'apply_loan' %}" class="active"><i class="fas fa-file-invoice-dollar"></i> Apply Loan</a>
             <a href="{% url 'pay_loan' %}"><i class="fas fa-hand-holding-usd"></i> Repay Loan</a>
             <a href="{% url 'my_loans' %}"><i class="fas fa-exchange-alt"></i> My Loans</a>
             <a href="{% url 'member_individual_report'%}"><i class="fas fa-file-alt"></i> My Statement</a>
@@ -125,7 +126,11 @@
             <a href="{% url 'Logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
     </aside>
-
+ {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} py-1 px-3 mb-0 me-3 small shadow-sm">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
     <div class="main-container">
         <main class="scrollable-content">
             <div class="container-fluid">
@@ -146,9 +151,6 @@
                             <div class="progress-bar bg-warning" role="progressbar" 
                                  style="width: {% widthratio loan_limit global_cap 100 %}%"></div>
                         </div>
-                        <p class="small mt-2 mb-0 opacity-75">
-                            * Limit reduced by KES {{ current_exposure|floatformat:2 }} due to active/pending loans.
-                        </p>
                     </div>
 
                     {% if active_loan %}
@@ -168,14 +170,14 @@
                             
                             <div class="row">
                                 <div class="col-md-6 mb-4">
-                                    <label class="form-label"><i class="bi bi-cash-stack me-2"></i>New Total Loan Amount</label>
+                                    <label class="form-label"><i class="bi bi-cash-stack me-2"></i>Requested Amount</label>
                                     <input type="range" class="custom-slider" id="amount_range" 
                                            min="1000" max="{{ loan_limit }}" step="500" value="{{ current_balance|add:5000 }}">
                                     <input type="number" name="amount" step="0.01" class="form-control" required id="id_amount">
                                 </div>
                                 <div class="col-md-6 mb-4">
                                     <label class="form-label"><i class="bi bi-calendar-event me-2"></i>Duration (Months)</label>
-                                    <input type="range" class="custom-slider" id="month_range" min="0" max="48" step="1" value="12">
+                                    <input type="range" class="custom-slider" id="month_range" min="1" max="48" step="1" value="12">
                                     <select name="duration_months" class="form-control" id="id_duration_months">
                                         {% for i in "123456789"|make_list %}<option value="{{ forloop.counter }}">{{ forloop.counter }} Months</option>{% endfor %}
                                         <option value="12" selected>12 Months</option>
@@ -185,39 +187,45 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="col-md-6 mb-4">
-                                <label class="form-label">
-                                    <i class="bi bi-tag me-2"></i>Loan Purpose
-                                </label>
+
+                            <div class="col-md-12 mb-4">
+                                <label class="form-label"><i class="bi bi-tag me-2"></i>Loan Purpose</label>
                                 <select name="purpose" id="id_purpose" class="form-control" required>
                                     <option value="normal Loan">Normal Loan</option>
-                                    <option value="choll fees">School Fees</option>
+                                    <option value="school fees">School Fees</option>
                                     <option value="emergency">Emergency</option>
                                     <option value="personal">Personal</option>
                                 </select>
                             </div>
 
                             <div class="mb-4">
-                                <div class="d-flex justify-content-between border-bottom pb-2 mb-3">
-                                    <h5 class="fw-bold m-0 text-eldo-deep-green">Assign 3 Guarantors</h5>
-                                    <span id="math-status" class="badge bg-danger">Shortfall</span>
-                                </div>
-
-                                {% for g_form in formset %}
-                                <div class="guarantor-row p-3 shadow-sm">
-                                    <div class="row align-items-center">
-                                        <div class="col-md-7 mb-2 mb-md-0">
-                                            <label class="small fw-bold text-muted d-block mb-1">Guarantor {{ forloop.counter }}</label>
-                                            {{ g_form.guarantor }}
-                                        </div>
-                                        <div class="col-md-5">
-                                            <label class="small fw-bold text-muted d-block mb-1">Guarantee Amount (KES)</label>
-                                            <input type="number" name="{{ g_form.guaranteed_amount.html_name }}" step="0.01" class="form-control" id="id_{{ g_form.guaranteed_amount.html_name }}">
-                                        </div>
-                                        {{ g_form.id }}
+                                <div class="d-flex justify-content-between border-bottom pb-2 mb-3 align-items-center">
+                                    <h5 class="fw-bold m-0 text-eldo-deep-green">Assign Guarantors (Min 3)</h5>
+                                    <div>
+                                        <span id="math-status" class="badge bg-danger me-2">Shortfall</span>
+                                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill" id="add-guarantor">
+                                            <i class="bi bi-plus-circle me-1"></i> Add
+                                        </button>
                                     </div>
                                 </div>
-                                {% endfor %}
+
+                                <div id="guarantor-container">
+                                    {% for g_form in formset %}
+                                    <div class="guarantor-row p-3 shadow-sm">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-7 mb-2 mb-md-0">
+                                                <label class="small fw-bold text-muted d-block mb-1">Guarantor {{ forloop.counter }}</label>
+                                                {{ g_form.guarantor }}
+                                            </div>
+                                            <div class="col-md-5">
+                                                <label class="small fw-bold text-muted d-block mb-1">Guarantee Amount (KES)</label>
+                                                <input type="number" name="{{ g_form.guaranteed_amount.html_name }}" step="0.01" class="form-control guarantor-amt" id="id_{{ g_form.guaranteed_amount.html_name }}">
+                                            </div>
+                                            {{ g_form.id }}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
                             </div>
 
                             <div class="breakdown-box mb-4 p-4 bg-light rounded-4 border">
@@ -228,9 +236,12 @@
                                     <span id="display-principal" class="fw-bold">KES 0.00</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2 small">
-                                    <span class="text-muted">Estimated Interest </span>
-                                    <span id="p-interest">KES 0.00</span>
+                                    <span class="text-muted">Estimated Interest (25.9%)</span>
+                                    <span id="p-interest" class="fw-bold">KES 0.00</span>
                                 </div>
+                                <div class="d-flex justify-content-between mb-2 small">
+                                    <span class="text-muted">Insurance Fee</span>
+                                    <span id="p-insurance" class="fw-bold">KES 0.00</span> </div>
 
                                 {% if active_loan %}
                                 <div class="d-flex justify-content-between mb-2 py-2 border-top border-bottom text-danger small">
@@ -249,7 +260,7 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-eldo w-100 shadow-lg py-3">
+                            <button type="submit" class="btn btn-eldo w-100 shadow-lg py-3" id="submitBtn">
                                 <i class="bi bi-send-fill me-2"></i> Submit Application
                             </button>
                         </form>
@@ -273,19 +284,23 @@ $(document).ready(function() {
     const $monInput = $('#id_duration_months');
     const $purposeSelect = $('#id_purpose');
 
-    // Init UI
-    $('select[name$="-guarantor"]').select2({ width: '100%' });
+    // Initialize Select2
+    function initSelect2() {
+        $('select[name$="-guarantor"]').select2({ width: '100%' });
+    }
+    initSelect2();
+
     $amtInput.val($amtRange.val());
     $monInput.val($monRange.val());
 
     // Sync Sliders
     $amtRange.on('input', function() { $amtInput.val($(this).val()); updateCalculations(); });
+    $amtInput.on('input', function() { $amtRange.val($(this).val()); updateCalculations(); });
     $monRange.on('input', function() { $monInput.val($(this).val()); updateCalculations(); });
 
-    // Automatic Duration adjustment based on Purpose
+    // Purpose Change Logic
     $purposeSelect.on('change', function() {
-        const selectedPurpose = $(this).val();
-        if (selectedPurpose === "normal Loan") {
+        if ($(this).val() === "normal Loan") {
             $monInput.val("48");
             $monRange.val(48);
         } else {
@@ -295,37 +310,46 @@ $(document).ready(function() {
         updateCalculations();
     });
 
+    // Validate Coverage
     function validateCoverage() {
         let totalGuaranteed = 0;
         const requestedAmount = parseFloat($amtInput.val()) || 0;
-        $('input[name$="-guaranteed_amount"]').each(function() { 
+        
+        $('.guarantor-amt').each(function() { 
             totalGuaranteed += parseFloat($(this).val()) || 0; 
         });
 
         const $status = $('#math-status');
+        const $btn = $('#submitBtn');
+
         if (totalGuaranteed >= requestedAmount && requestedAmount > 0) {
             $status.text("Covered: KES " + totalGuaranteed.toLocaleString()).removeClass('bg-danger').addClass('bg-success');
-            $('button[type="submit"]').prop('disabled', false);
+            $btn.prop('disabled', false);
         } else {
             let diff = requestedAmount - totalGuaranteed;
-            $status.text("Shortfall: KES " + diff.toLocaleString()).removeClass('bg-success').addClass('bg-danger');
-            $('button[type="submit"]').prop('disabled', true);
+            $status.text("Shortfall: KES " + (diff > 0 ? diff : 0).toLocaleString()).removeClass('bg-success').addClass('bg-danger');
+            $btn.prop('disabled', true);
         }
     }
 
+    // Financial Calculations
     function updateCalculations() {
         const principal = parseFloat($amtInput.val()) || 0;
         const months = parseFloat($monInput.val()) || 1;
         
-        // Basic Interest Math (25.9% p.a Simple Interest)
+        // 1. Insurance Calculation
+        const insurance = ((5.03 * months + 3.03) * principal) / 6000;
+        
+        // 2. Interest (25.9% flat)
         const interest = principal * 0.259;
-        const insurance =  ((5.03 * months + 3.03) * principal) / 6000;
+        
         const totalDebt = principal + interest + insurance;
         const netCash = principal - currentBalance;
 
-        // Update Labels
+        // Update UI
         $('#display-principal').text("KES " + principal.toLocaleString());
         $('#p-interest').text("KES " + interest.toLocaleString(undefined,{minimumFractionDigits:2}));
+        $('#p-insurance').text("KES " + insurance.toLocaleString(undefined,{minimumFractionDigits:2}));
         $('#p-total').text("KES " + totalDebt.toLocaleString(undefined,{minimumFractionDigits:2}));
         
         if ($('#p-net-cash').length) {
@@ -335,13 +359,43 @@ $(document).ready(function() {
                 $('#p-net-cash').text("KES " + netCash.toLocaleString(undefined,{minimumFractionDigits:2})).removeClass('text-danger');
             }
         }
-
         validateCoverage();
     }
 
-    $(document).on('input', 'input[name$="-guaranteed_amount"]', validateCoverage);
+    // Add Dynamic Guarantor Field
+    $('#add-guarantor').click(function() {
+        const $totalForms = $('#id_form-TOTAL_FORMS');
+        const count = parseInt($totalForms.val());
+        
+        // Clone the first guarantor row
+        const $newRow = $('.guarantor-row').first().clone();
+        
+        // Update IDs and Names
+        $newRow.find('input, select').each(function() {
+            const oldName = $(this).attr('name');
+            const newName = oldName.replace('-0-', '-' + count + '-');
+            $(this).attr({'name': newName, 'id': 'id_' + newName}).val('');
+        });
+
+        // Update Label
+        $newRow.find('label').first().text('Guarantor ' + (count + 1));
+        
+        // Remove existing Select2 container before appending
+        $newRow.find('.select2-container').remove();
+        
+        $('#guarantor-container').append($newRow);
+        $totalForms.val(count + 1);
+        
+        // Re-init Select2
+        initSelect2();
+        updateCalculations();
+    });
+
+    // Event Delegation for dynamic fields
+    $(document).on('input', '.guarantor-amt', validateCoverage);
     $('#menuToggle').click(() => $('#sidebar').toggleClass('active'));
 
+    // Initial Run
     updateCalculations();
 });
 </script>

@@ -1,0 +1,162 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adjust Loan Amount | Eldopoly SACCO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --eldo-green: #14452F;
+            --eldo-gold: #D4AF37;
+            --light-bg: #f4f7f6;
+        }
+        body { background-color: var(--light-bg); font-family: 'Inter', sans-serif; }
+        
+        .adjustment-card {
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        
+        .card-header {
+            background-color: var(--eldo-green) !important;
+            color: white;
+            border-bottom: 4px solid var(--eldo-gold);
+            padding: 1.5rem;
+        }
+
+        .summary-box {
+            background: #fff9e6;
+            border: 1px dashed var(--eldo-gold);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .form-control-lg {
+            border: 2px solid #eee;
+            font-weight: 700;
+            color: var(--eldo-green);
+        }
+
+        .form-control-lg:focus {
+            border-color: var(--eldo-gold);
+            box-shadow: none;
+        }
+
+        .btn-update {
+            background-color: var(--eldo-green);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-weight: 700;
+            transition: 0.3s;
+        }
+
+        .btn-update:hover {
+            background-color: #0d2e1f;
+            color: var(--eldo-gold);
+        }
+        
+        .text-gold { color: var(--eldo-gold); }
+    </style>
+</head>
+<body>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            
+            <a href="{% url 'approved_loans' %}" class="btn btn-link text-decoration-none text-muted mb-3 p-0">
+                <i class="bi bi-arrow-left"></i> Back to Loan Processing
+            </a>
+
+            <div class="card adjustment-card">
+                <div class="card-header">
+                    <h4 class="mb-0 fw-bold"><i class="bi bi-pencil-square me-2"></i>Adjust Principal Amount</h4>
+                    <p class="mb-0 small opacity-75">Loan ID: {{ loan.loan_number }} | Member: {{ loan.member.user.get_full_name }}</p>
+                </div>
+
+                <div class="card-body p-4">
+                    <div class="alert alert-warning border-0 small mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <strong>Note:</strong> Modifying the amount will automatically update the 3-person approval record to reflect the final disbursed figure.
+                    </div>
+
+                    <form method="POST">
+                        {% csrf_token %}
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted small uppercase">PROPOSED DISBURSEMENT AMOUNT (KES)</label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-white border-end-0"><i class="bi bi-cash-coin text-success"></i></span>
+                                <input type="number" name="amount" id="loanAmount" 
+                                       class="form-control form-control-lg border-start-0" 
+                                       value="{{ loan.amount }}" 
+                                       step="0.01" required>
+                            </div>
+                        </div>
+
+                        <div class="summary-box mb-4">
+                            <h6 class="fw-bold mb-3 small text-uppercase">Projected Impact</h6>
+                            <div class="row text-center">
+                                <div class="col-6 border-end">
+                                    <small class="text-muted d-block">Interest ({{ loan.interest_rate }}%)</small>
+                                    <span class="fw-bold" id="impactInterest">Calculating...</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Total Payable</small>
+                                    <span class="fw-bold text-success" id="impactTotal">Calculating...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-muted small">REASON FOR ADJUSTMENT (OPTIONAL)</label>
+                            <textarea name="remarks" class="form-control bg-light" rows="2" placeholder="e.g., Adjusted based on net salary verification..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-update shadow-sm">
+                                Save Adjusted Amount & Continue
+                            </button>
+                            <a href="{% url 'approved_loans' %}" class="btn btn-light border text-muted">Discard Changes</a>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-footer bg-white border-0 py-3 text-center">
+                    <p class="mb-0 x-small text-muted">Verified by: <strong>{{ request.user.get_full_name }} (Treasurer)</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const amountInput = document.getElementById('loanAmount');
+    const interestDisplay = document.getElementById('impactInterest');
+    const totalDisplay = document.getElementById('impactTotal');
+    
+    // Values passed from Django
+    const rate = parseFloat("{{ loan.interest_rate }}") / 100;
+
+    function updateImpact() {
+        const principal = parseFloat(amountInput.value) || 0;
+        const interest = principal * rate;
+        const total = principal + interest;
+
+        interestDisplay.innerText = "KES " + interest.toLocaleString(undefined, {minimumFractionDigits: 2});
+        totalDisplay.innerText = "KES " + total.toLocaleString(undefined, {minimumFractionDigits: 2});
+    }
+
+    amountInput.addEventListener('input', updateImpact);
+    window.onload = updateImpact; // Run once on load
+</script>
+
+</body>
+</html>

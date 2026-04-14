@@ -1,3 +1,5 @@
+import email
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 
@@ -70,17 +72,25 @@ class LoginForm(forms.Form):
         'placeholder': 'Password'
     }))
 
-class UpdateForm(forms.ModelForm):
-    class Meta:
-        model = CustomUser
-        fields = ['first_name', 'last_name', 'email', 'user_type']
 
-        widgets = {
+class UpdateForm(forms.ModelForm):
+        class Meta:
+            model = CustomUser
+            fields = ['first_name', 'last_name', 'email', 'user_type']
+            widgets = {
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'First Name'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Last Name'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email Address'}),
             'user_type': forms.Select(attrs={'class': 'form-control'}),
         }
+
+        def clean_email(self):
+            email = self.cleaned_data.get('email')
+            # Check if any OTHER user has this email
+        # self.instance is the user object being edited
+            if CustomUser.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+                raise forms.ValidationError("User with this Email already exists.")
+            return email
 
 
 class PUpdateForm(forms.ModelForm):
@@ -100,11 +110,23 @@ class PUpdateForm(forms.ModelForm):
             'gender': forms.Select(attrs={'class': 'form-control'}),
             'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Address'}),
         }
+        def clean_pf_number(self):
+            pf = self.cleaned_data.get('pf_number')
+            if pf and Profile.objects.filter(pf_number=pf).exclude(pk=self.instance.pk).exists():
+                raise forms.ValidationError("This PF Number is already assigned to another member.")
+            return pf
+
+    def clean_membership_number(self):
+        mem_num = self.cleaned_data.get('membership_number')
+        if mem_num and Profile.objects.filter(membership_number=mem_num).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("This Membership Number is already in use.")
+        return mem_num
 class EditSalaryForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['gross_salary', 'net_salary']
+        fields = ['month','gross_salary', 'net_salary']
         widgets = {
-            'gross_salary': forms.NumberInput(attrs={'class': 'form-control'}),
-            'net_salary': forms.NumberInput(attrs={'class': 'form-control'}),
+            'month': forms.DateInput(attrs={'class': 'form-control', 'type': 'month'}), # Allows month-only selection
+            'gross_salary': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0.00'}),
+            'net_salary': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0.00'}),
         }

@@ -141,16 +141,25 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand"><i class="bi bi-bank2"></i> ELDOPOLY</div>
     <nav>
-        <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        <a href="#" class="nav-link-side active"><i class="bi bi-wallet2"></i> Active Loans</a>
-        {% comment %} <a href="{% url 'manage_loan_requests' %}" class="nav-link-side"><i class="bi bi-journal-check"></i> Pending Approvals</a> {% endcomment %}
-        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-people"></i> Member Savings</a>
-        <div style="margin-top: 50px;">
-            <p class="small text-muted px-3 mb-2">REPORTS</p>
-            <a href="{% url 'approved_loans' %}" class="nav-link-side"><i class="bi bi-check-circle"></i> Approved</a>
-            <a href="{% url 'rejected_loans' %}" class="nav-link-side"><i class="bi bi-x-circle"></i> Rejected</a>
-            <a href="{% url 'Logout' %}" class="nav-link-side text-danger"><i class="bi bi-power"></i> Sign Out</a>
-        </div>
+        <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side active"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="{% url 'Members' %}" class="nav-link-side"><i class="bi bi-people"></i> Members</a>
+        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-piggy-bank"></i> Member Savings</a>
+        <a href="{% url 'sacco_reportings' %}" class="nav-link-side"><i class="bi bi-graph-up"></i> SACCO Report</a>
+        
+        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Loan Management and Reporting</div>
+        <a href="{% url 'pending_loans' %}" class="nav-link-side"><i class="bi bi-hourglass-split"></i> Pending Standard</a>
+        <a href="{% url 'Xm_approved' %}" class="nav-link-side"><i class="bi bi-gift"></i> Pending Holiday</a>
+        <a href="{% url 'approved_loans' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Approved History</a>
+        <a href="{% url 'Completed_loans' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Completed Loans</a>
+        <a href="{% url 'monthly_sacco_report' %}" class="nav-link-side"><i class="bi bi-gift"></i> Monthly Sacco Report</a>
+        <a href="{% url 'active_loan' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Active Loans</a>
+        <a href="{% url 'active_xmas_loan' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Active Holiday</a>
+        
+        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Archives</div>
+        <a href="{% url 'approved_loans' %}" class="nav-link-side"><i class="bi bi-archive"></i> Approved History</a>
+        <a href="{% url 'rejected_loans' %}" class="nav-link-side text-danger-emphasis"><i class="bi bi-x-circle"></i> Rejected Loans</a>
+
+        <a href="{% url 'Logout' %}" class="nav-link-side text-danger mt-5"><i class="bi bi-power"></i> Sign Out</a>
     </nav>
 </aside>
 

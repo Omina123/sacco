@@ -43,9 +43,11 @@ urlpatterns = [
     path('disburse_loan/<int:loan_id>', views.disburse_loan, name='disburse_loan'),
     path('calculate_loan_risk', views.calculate_loan_risk, name='calculate_loan_risk'),
     path('calculate_penalty',views.calculate_penalty, name='calculate_penalty'),
-    path ('Members', views.Members, name='Member'),
+    path ('Members', views.Members, name='Members'),
      path('disburse_loan_xmass/<int:loan_id>', views.disburse_loan_xmass, name='disburse_loan_xmass'),
      path('Xm_approved', views.Xm_approved,name='Xm_approved'),
+     path ('sacco_reportings', views.sacco_reportings, name='sacco_reportings'),
+     path('treasurer_edit_loan_amount/<int:loan_id>/', views.treasurer_edit_loan_amount, name='treasurer_edit_loan_amount'),
         
     # urls.py
 path('respond_guarantor/<int:guarantor_id>/<str:action>/', views.respond_guarantor, name='respond_guarantor'),

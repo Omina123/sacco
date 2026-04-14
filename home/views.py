@@ -437,126 +437,165 @@ def calculate_loan_risk(member_profile, requested_amount):
     # Lower score = lower risk
     return risk_score
 @login_required
+
 def apply_loan(request):
     profile = request.user.profile
-    
-    # 1. Basic Eligibility
-    if profile.gross_salary <= 0 or profile.net_salary <= 0:
-        messages.error(request, "Salary details not verified by HR.")
-        return redirect('member_dashboard')
 
-    # 2. Identify Existing Loan for Top-Up
-    # We look for an 'approved' loan that isn't fully paid yet
+    # -------------------------
+    # EXISTING LOAN + LIMIT LOGIC
+    # -------------------------
     active_loan = Loan.objects.filter(member=profile, status='approved').first()
-    
-    # Assume your Loan model has a method or logic to get the remaining balance
-    # If not, you'd calculate (Principal + Interest) - Amount Paid
     current_balance = active_loan.get_remaining_balance() if active_loan else Decimal('0.00')
 
-    # 3. Calculate Global Limits
-    total_savings = CapitalShare.objects.filter(member=profile).aggregate(Sum('amount'))['amount__sum'] or 0
+    total_savings = CapitalShare.objects.filter(member=profile).aggregate(
+        Sum('amount')
+    )['amount__sum'] or Decimal('0.00')
+
     global_cap = Decimal(total_savings) * Decimal('3.5')
-    
-    # Other pending applications (excluding the one we might be replacing)
+
     other_exposure = Loan.objects.filter(
         member=profile,
         status__in=['pending_guarantors', 'pending', 'approved', 'disbursed']
-    ).exclude(id=active_loan.id if active_loan else None).aggregate(Sum('amount'))['amount__sum'] or 0
-    
-    # 3. Final available room for NORMAL loans
-    # Notice we are not subtracting anything from the XmasLoan model here.
-    
-    
-    # Final borrowing room
+    ).exclude(
+        id=active_loan.id if active_loan else None
+    ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
     available_limit = global_cap - Decimal(other_exposure)
 
-    # 4. Formset Setup
+    # -------------------------
+    # FORMSET
+    # -------------------------
     GuarantorFormSet = modelformset_factory(
-        Guarantor, form=GuarantorForm, extra=3, max_num=3, validate_min=True, min_num=3
+        Guarantor,
+        form=GuarantorForm,
+        extra=1,
+        max_num=10,
+        validate_min=True,
+        min_num=2
     )
 
+    # -------------------------
+    # POST REQUEST
+    # -------------------------
+    if request.method == 'POST':
+        form = LoanApplicationForm(request.POST)
+        formset = GuarantorFormSet(request.POST, queryset=Guarantor.objects.none())
+
+        if form.is_valid() and formset.is_valid():
+
+            # -------------------------
+            # SALARY CHECK
+            # -------------------------
+            # if profile.gross_salary <= 0 or profile.net_salary <= 0:
+            #     messages.error(request, "Salary not verified by HR. Please contact HR.")
+            #     return redirect('member_dashboard')
+
+            loan = form.save(commit=False)
+            loan.member = profile
+
+            # -------------------------
+            # AFFORDABILITY CALCULATION
+            # -------------------------
+            P = Decimal(str(loan.amount))
+            M = Decimal(str(loan.duration_months))
+
+            interest = Decimal('0.259') * P
+            insurance = ((Decimal('5.03') * M + Decimal('3.03')) * P) / Decimal('6000')
+
+            total_payable = P + interest + insurance
+            monthly_installment = total_payable / M
+
+            gross = Decimal(profile.gross_salary)
+            net = Decimal(profile.net_salary)
+
+            take_home_limit = gross / Decimal('3')
+
+            # -------------------------
+            # 🚨 1/3 RULE CHECK
+            # -------------------------
+            if (net - monthly_installment) < take_home_limit:
+
+                # Avoid duplicate notifications
+                existing_note = HRNotification.objects.filter(
+                    member=profile,
+                    is_read=False,
+                    message__icontains="1/3 Rule Failure"
+                ).exists()
+
+                if not existing_note:
+                    HRNotification.objects.create(
+                        member=profile,
+                        message=(
+                            f"1/3 Rule Failure: {profile.user.get_full_name()} "
+                            f"(PF: {profile.pf_number}) failed affordability check. "
+                            f"Net: {net:,.2f}, Installment: {monthly_installment:,.2f}, "
+                            f"Required Min Balance: {take_home_limit:,.2f}. "
+                            f"➡ Please update salary."
+                        )
+                    )
+
+                # OPTIONAL: flag profile
+                if hasattr(profile, 'salary_needs_review'):
+                    profile.salary_needs_review = True
+                    profile.save(update_fields=['salary_needs_review'])
+
+                messages.error(
+                    request,
+                    "Loan application failed due to affordability rule. HR has been notified."
+                )
+
+                return redirect('member_dashboard')
+
+            # -------------------------
+            # LIMIT CHECK
+            # -------------------------
+            if P > available_limit:
+                messages.error(
+                    request,
+                    f"Loan exceeds your limit. Available limit is KES {available_limit:,.2f}"
+                )
+                return redirect('member_dashboard')
+
+            # -------------------------
+            # SAVE LOAN + GUARANTORS
+            # -------------------------
+            try:
+                with transaction.atomic():
+                    loan.status = 'pending_guarantors'
+                    loan.save()
+
+                    guarantors = formset.save(commit=False)
+                    for g in guarantors:
+                        g.loan = loan
+                        g.save()
+
+                messages.success(request, "Loan application submitted successfully.")
+                return redirect('member_dashboard')
+
+            except Exception as e:
+                messages.error(request, f"System error: {str(e)}")
+                return redirect('member_dashboard')
+
+    # -------------------------
+    # GET REQUEST
+    # -------------------------
+    else:
+        form = LoanApplicationForm()
+        formset = GuarantorFormSet(queryset=Guarantor.objects.none())
+
+    # -------------------------
+    # CONTEXT
+    # -------------------------
     context = {
         'loan_limit': available_limit,
         'active_loan': active_loan,
         'current_balance': current_balance,
         'total_savings': total_savings,
+        'form': form,
+        'formset': formset
     }
 
-    if request.method == 'POST':
-        form = LoanApplicationForm(request.POST) 
-        formset = GuarantorFormSet(request.POST, queryset=Guarantor.objects.none())
-
-        if form.is_valid() and formset.is_valid():
-            loan = form.save(commit=False)
-            loan.member = profile
-            
-            new_principal = Decimal(loan.amount)
-            months = Decimal(loan.duration_months)
-
-            # --- TOP-UP VALIDATION ---
-            if active_loan:
-                if new_principal <= current_balance:
-                    messages.error(request, f"Top-up amount must be greater than your current balance of KES {current_balance:,.2f}")
-                    return render(request, 'apply_loan.html', context)
-                
-                loan.is_topup = True
-                loan.replaces_loan = active_loan
-                # The 'New Money' the user actually gets
-                disbursement_amount = new_principal - current_balance
-            else:
-                disbursement_amount = new_principal
-
-            # --- SALARY AFFORDABILITY (1/3 RULE) ---
-            gross = Decimal(profile.gross_salary)
-            net = Decimal(profile.net_salary)
-            one_third_floor = gross / Decimal('3')
-            
-            insurance = calculate_insurance(new_principal, months)
-            monthly_payment = (new_principal + (new_principal * Decimal('0.259') * (months/12))) / months
-
-            if (net - monthly_payment) < one_third_floor:
-                messages.error(request, "This loan exceeds the 1/3 salary take-home rule.")
-                return render(request, 'apply_loan.html', context)
-
-            # --- LIMIT CHECK ---
-            if new_principal > available_limit:
-                messages.error(request, f"Max limit is KES {available_limit:,.2f}")
-                return render(request, 'apply_loan.html', context)
-
-            # --- GUARANTOR VALIDATION ---
-            # (Standard unique guarantor and capacity logic here as per previous versions)
-            # ... [Omitted for brevity, but same as previous function] ...
-
-            try:
-                with transaction.atomic():
-                    loan.status = 'pending_guarantors'
-                    # Apply a top-up commission if your SACCO has one (e.g. 5% of balance)
-                    topup_commission = current_balance * Decimal('0.05') if active_loan else 0
-                    
-                    loan.interest = new_principal * Decimal('0.259') 
-                    loan.insurance = insurance + topup_commission
-                    loan.save()
-
-                    # Save Guarantors
-                    instances = formset.save(commit=False)
-                    for instance in instances:
-                        instance.loan = loan
-                        instance.save()
-
-                msg = f"Top-up applied! You will receive KES {disbursement_amount:,.2f} after clearing your old loan."
-                messages.success(request, msg if active_loan else "Loan submitted successfully.")
-                return redirect('member_dashboard')
-            except Exception as e:
-                messages.error(request, f"Error: {str(e)}")
-
-    else:
-        form = LoanApplicationForm()
-        formset = GuarantorFormSet(queryset=Guarantor.objects.none())
-
-    context.update({'form': form, 'formset': formset})
     return render(request, 'apply_loan.html', context)
-
-
 def approve_xmas_loan(request, loan_id):
     loan = get_object_or_404(XmasLoan, id=loan_id)
     user = request.user
@@ -1534,6 +1573,7 @@ def treasurer_purchase_shares(request, member_id):
     })
 @login_required
 @role_required(allowed_roles=['1', '2', '3', '4'])  # Staff, Treasurer, Admin
+
 def member_individual_report(request):
     # Get the profile of the currently logged-in user
     member = request.user.profile 
@@ -1541,6 +1581,7 @@ def member_individual_report(request):
     shares = CapitalShare.objects.filter(member=member).order_by('-date_created')
     total_shares = shares.aggregate(Sum('amount'))['amount__sum'] or 0
     
+    # We fetch loans - the calculated interest/insurance are now stored in the DB
     loans = Loan.objects.filter(member=member).order_by('-application_date')
     
     repayments = LoanRepayment.objects.filter(member=member).order_by('-payment_date')
@@ -1555,38 +1596,101 @@ def member_individual_report(request):
         'total_repaid': total_repaid,
     }
     return render(request, 'member_report.html', context)
+
+def sacco_reportings(request):
+    if getattr(request.user, 'user_type', None) != '3' and not request.user.is_superuser:
+        return redirect('access_denied')
+
+    members = Profile.objects.select_related('user')
+
+    shares = CapitalShare.objects.select_related('member', 'member__user').order_by('-date_created')
+    total_shares = shares.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
+    loans = Loan.objects.select_related('member', 'member__user').order_by('-application_date')
+    total_loans = loans.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
+    repayments = LoanRepayment.objects.select_related('member', 'member__user').order_by('-payment_date')
+    total_repaid = repayments.aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
+
+    # Outstanding = Total Payable - Total Repaid
+    total_payable = sum([loan.total_payable for loan in loans])
+    outstanding_balance = Decimal(total_payable) - Decimal(total_repaid)
+
+    context = {
+        'members': members,
+        'member_count': members.count(),
+        'shares': shares,
+        'total_shares': total_shares,
+        'loans': loans,
+        'total_loans': total_loans,
+        'repayments': repayments,
+        'total_repaid': total_repaid,
+        'outstanding_balance': outstanding_balance,
+    }
+
+    return render(request, 'sacco_reporting.html', context)
 @role_required(allowed_roles=['3', '5'])  # HR Only
 def Members(request):
     # Fetch all members and prefetch related loans for efficiency
     members = Profile.objects.prefetch_related('member_loans')  # ✅ works
     return render(request, 'mem.html', {'members': members})
 
+
+@login_required
 def Human_Resource(request):
-    if getattr(request.user, 'user_type', None) != '5' and not request.user.is_superuser:
-        return redirect('access_denied')
+    # if getattr(request.user, 'user_type', None) != '5' and not request.user.is_superuser:
+    #         return redirect('access_denied')
     query = request.GET.get('q')
-    users = Profile.objects.all().select_related('user')
-    
-    # Dashboard Aggregates
-    total_gross = users.aggregate(Sum('gross_salary'))['gross_salary__sum'] or 0
-    total_net = users.aggregate(Sum('net_salary'))['net_salary__sum'] or 0
-    avg_gross = users.aggregate(Avg('gross_salary'))['gross_salary__avg'] or 0
-    
+
+    # -------------------------
+    # BASE QUERY
+    # -------------------------
+    users = Profile.objects.select_related('user')
+
+    # 🔥 FILTER USERS NEEDING REVIEW FIRST
+    flagged_users = users.filter(salary_needs_review=True)
+
+    # -------------------------
+    # SEARCH
+    # -------------------------
     if query:
         users = users.filter(
-            Q(user__first_name__icontains=query) | 
+            Q(user__first_name__icontains=query) |
             Q(user__last_name__icontains=query) |
             Q(pf_number__icontains=query)
         )
-        
+
+    # -------------------------
+    # HR NOTIFICATIONS (ONLY RELEVANT)
+    # -------------------------
+    notifications = HRNotification.objects.filter(
+        is_read=False
+    ).select_related('member').order_by('-created_at')
+
+    # -------------------------
+    # STATS
+    # -------------------------
+    stats = users.aggregate(
+        total_gross=Sum('gross_salary'),
+        total_net=Sum('net_salary'),
+        avg_gross=Avg('gross_salary')
+    )
+
+    # -------------------------
+    # CONTEXT
+    # -------------------------
     context = {
         'users': users,
-        'total_gross': total_gross,
-        'total_net': total_net,
-        'avg_gross': avg_gross,
+        'flagged_users': flagged_users,  # 🔥 NEW
+        'total_gross': stats['total_gross'] or 0,
+        'total_net': stats['total_net'] or 0,
+        'avg_gross': stats['avg_gross'] or 0,
         'member_count': users.count(),
+        'notifications': notifications,
+        'notification_count': notifications.count(),
+        'flagged_count': flagged_users.count(),  # 🔥 NEW
     }
-        
+
     return render(request, 'hr.html', context)
 # views.py
 
@@ -2013,3 +2117,25 @@ def treasurer(request):
         'summary': summary,
         'transactions': recent_transactions
     })
+@login_required
+@role_required(allowed_roles=['3']) # Treasurer
+def treasurer_edit_loan_amount(request, loan_id):
+    loan = get_object_or_404(Loan, id=loan_id)
+    
+    # Only allow editing if the loan isn't disbursed yet
+    if loan.status == 'disbursed':
+        messages.error(request, "Cannot edit an already disbursed loan.")
+        return redirect('treasurer_dashboard')
+
+    if request.method == "POST":
+        new_amount = Decimal(request.POST.get('amount'))
+        
+        # Logic: If the Treasurer changes the amount, update it.
+        # You might want to log who changed it.
+        loan.amount = new_amount
+        loan.save()
+        
+        messages.success(request, f"Loan amount adjusted to KES {new_amount}")
+        return redirect('treasurer_dashboard')
+
+    return render(request, 'treasurer_edit_loan.html', {'loan': loan})

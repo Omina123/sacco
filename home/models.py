@@ -166,83 +166,85 @@ class LoanPurpose(models.Model):
 # LOANS
 # -------------------------
 class Loan(models.Model):
-
     STATUS = (
-    ('pending', 'Pending'),
-    ('approved', 'Approved'),
-    ('partially_approved', 'Partially Approved'),
-    ('disbursed', 'Disbursed'),
-    ('defaulted', 'Defaulted'),
-    ('completed', 'Completed'),
-    ('rejected', 'Rejected'),
-)
-    purpo=(
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('partially_approved', 'Partially Approved'),
+        ('disbursed', 'Disbursed'),
+        ('defaulted', 'Defaulted'),
+        ('completed', 'Completed'),
+        ('rejected', 'Rejected'),
+    )
+    
+    PURPOSE_CHOICES = (
         ('normal Loan', 'Normal Loan'),
-        ('choll fees', 'Scholl fees'),
+        ('school fees', 'School fees'), # Fixed typo from 'choll'
         ('emergency', 'Emergency'),
         ('personal', 'Personal'),
-        
     )
 
-    member = models.ForeignKey(Profile, on_delete=models.CASCADE,related_name="member_loans")
-
-    purpose = models.CharField(max_length=50, choices=purpo,default='normal Loan')
+    member = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="member_loans")
+    purpose = models.CharField(max_length=50, choices=PURPOSE_CHOICES, default='normal Loan')
     
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    Othes_Guarantor = models.CharField(max_length=56,blank=True,null=True)
-    interest_rate = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('12.00'))  # Default interest rate of 12%
-    insurance= models.DecimalField(max_digits=10,decimal_places=2 , null=True, blank=True)
-    interest= models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    # other_guarantor = models.CharField(max_length=56, blank=True, null=True)
+    interest_rate = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('25.90'))
+    
+    # Stored calculated values
+    insurance = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, editable=False)
+    interest = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, editable=False)
+    
     is_topup = models.BooleanField(default=False)
     replaces_loan = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
 
     duration_months = models.IntegerField(
-        
-        validators=[MinValueValidator(1),
-                    MaxValueValidator(48)])
+        validators=[MinValueValidator(1), MaxValueValidator(48)]
+    )
 
     status = models.CharField(max_length=20, choices=STATUS, default='pending')
     admin_approved = models.BooleanField(default=False)
     staff_approved = models.BooleanField(default=False)
     treasurer_approved = models.BooleanField(default=False)
 
-    # approval_count = models.IntegerField(default=0)
-    
-
     application_date = models.DateTimeField(auto_now_add=True)
-
     approval_date = models.DateTimeField(null=True, blank=True)
     is_disbursed = models.BooleanField(default=False)
     disbursed_at = models.DateTimeField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        """Apply SACCO Formulas: Interest = 0.259P, Insurance = ((5.03M + 3.03)P) / 6000"""
+        P = Decimal(str(self.amount))
+        M = Decimal(str(self.duration_months))
+
+        # 1. Calculate Interest (0.259 * Principal)
+        self.interest = Decimal('0.259') * P
+
+        # 2. Calculate Insurance Formula: ((5.03 * months + 3.03) * Principal) / 6000
+        numerator = (Decimal('5.03') * M + Decimal('3.03')) * P
+        self.insurance = numerator / Decimal('6000')
+
+        super().save(*args, **kwargs)
+
     @property
     def approval_count(self):
-        return sum([
-            self.admin_approved,
-            self.staff_approved,
-            self.treasurer_approved
-        ])
-    @property
-    def insurance_fee(self):
-        """25.9% of the principal loan amount"""
-        return self.amount * Decimal('0.259')
+        return sum([self.admin_approved, self.staff_approved, self.treasurer_approved])
+
     @property
     def total_payable(self):
         """Principal + Interest + Insurance"""
-        # Ensure values aren't None before calculating
-        interest = self.interest if self.interest else Decimal('0.00')
-        insurance = self.insurance if self.insurance else Decimal('0.00')
+        interest = self.interest or Decimal('0.00')
+        insurance = self.insurance or Decimal('0.00')
         return self.amount + interest + insurance
 
     @property
     def monthly_installment(self):
-        """Calculates the fixed monthly payment (Total Payable / Duration)"""
+        """Total Payable / Duration"""
         if self.duration_months and self.duration_months > 0:
             return self.total_payable / Decimal(self.duration_months)
         return Decimal('0.00')
 
-    
     def __str__(self):
-        return f"Loan {self.id} - {self.member}"
+        return f"Loan {self.id} - {self.member.user.get_full_name()}"
 
 
 # -------------------------
@@ -296,7 +298,14 @@ class LoanRepaymentSchedule(models.Model):
             return f"Xmas Loan {self.xmas_loan.id} Installment {self.installment_number}"
         return f"Loan {self.loan.id} Installment {self.installment_number}"
 
+class HRNotification(models.Model):
+    member = models.ForeignKey(Profile, on_delete=models.CASCADE)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-created_at']
 # -------------------------
 # LOAN REPAYMENTS
 # -------------------------

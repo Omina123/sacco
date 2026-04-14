@@ -99,6 +99,8 @@ class Profile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     gross_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     net_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    salary_needs_review = models.BooleanField(default=False)
+    month= models.DateField(null=True, blank=True)
 
 
     def __str__(self):
