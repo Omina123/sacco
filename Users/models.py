@@ -66,13 +66,14 @@ class Profile(models.Model):
     id_number = models.CharField(max_length=20)
     
     # Updated Membership Number with range validation
+
+
     membership_number = models.CharField(
-        max_length=20, 
-        unique=True, 
-        null=True,
-        validators=[validate_membership_range]
-    )
-    
+    max_length=20,
+    unique=True,
+    blank=True,
+    null=True
+)
     # Updated PF Number with flexible year/prefix validation
     pf_number = models.CharField(
         max_length=20, 
@@ -100,8 +101,16 @@ class Profile(models.Model):
     gross_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     net_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     salary_needs_review = models.BooleanField(default=False)
-    month= models.DateField(null=True, blank=True)
+    month = models.DateField()
 
 
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username}"
+    def is_profile_updated(self):
+        required_fields = [
+        self.phone_number,
+        self.address,
+        self.pf_number,
+        
+    ]
+        return all(required_fields)

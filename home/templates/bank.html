@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eldopoly SACCO - Bank Report</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --navy: #001f3f;
+            --gold: #D4AF37;
+            --brand-green: #1B5E20;
+        }
+
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .bg-navy { background-color: var(--navy) !important; }
+        .text-gold { color: var(--gold) !important; }
+        
+        .report-card {
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table thead th {
+            background-color: #f8f9fa;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            color: #666;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .category-header {
+            background-color: #e9ecef !important;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--navy);
+        }
+
+        .total-row {
+            font-size: 1.25rem;
+            background-color: var(--navy) !important;
+            color: white;
+        }
+
+        .signature-space {
+            margin-top: 50px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+            width: 80%;
+        }
+
+        @media print {
+            .no-print { display: none; }
+            body { background-color: white; }
+            .report-card { box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container my-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <a href="javascript:history.back()" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        <button onclick="window.print()" class="btn btn-dark">
+            <i class="fas fa-print"></i> Download PDF / Print
+        </button>
+    </div>
+
+    <div class="card report-card shadow-lg">
+        <div class="card-header bg-navy p-4 text-center">
+            <h2 class="text-white mb-1">ELDOPOLY SACCO LTD</h2>
+            <p class="text-gold mb-0 fw-bold">LOAN PORTFOLIO & BANK FINANCIAL REPORT</p>
+            <small class="text-white-50">Generated on: {{ report_date|date:"F d, Y H:i" }}</small>
+        </div>
+
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Classification</th>
+                        <th>Details</th>
+                        <th class="text-end pe-4">Amount (KES)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="category-header">
+                        <td colspan="3" class="ps-4"><i class="fas fa-vault me-2"></i> 1. Capital Assets</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4">Loan Principal</td>
+                        <td class="text-muted small">Combined outstanding principal (Normal & Xmas)</td>
+                        <td class="text-end pe-4 fw-bold">{{ principal|floatformat:2 }}</td>
+                    </tr>
+
+                    <tr class="category-header">
+                        <td colspan="3" class="ps-4"><i class="fas fa-chart-line me-2"></i> 2. Revenue Streams (Interest)</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4">Normal Loan Interest</td>
+                        <td class="text-muted small">Interest from tiered loans (9.1% - 34.9%)</td>
+                        <td class="text-end pe-4 text-primary">+ {{ normal_interest|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4">Xmas Loan Interest</td>
+                        <td class="text-muted small">Fixed Interest from Christmas Product (9.1%)</td>
+                        <td class="text-end pe-4 text-success">+ {{ xmas_interest|floatformat:2 }}</td>
+                    </tr>
+
+                    <tr class="category-header">
+                        <td colspan="3" class="ps-4"><i class="fas fa-shield-halved me-2"></i> 3. Statutory & Insurance</td>
+                    </tr>
+                    <tr>
+                        <td class="ps-4">Loan Insurance Fund</td>
+                        <td class="text-muted small">Risk mitigation premiums collected</td>
+                        <td class="text-end pe-4 text-info">+ {{ insurance|floatformat:2 }}</td>
+                    </tr>
+                </tbody>
+
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="2" class="ps-4 py-3">GRAND TOTAL PORTFOLIO VALUE</td>
+                        <td class="text-end pe-4 py-3 text-gold">KES {{ grand_total|floatformat:2 }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="card-footer bg-white p-5">
+            <div class="row text-center mt-3">
+                <div class="col-4">
+                    <div class="signature-space mx-auto"></div>
+                    <p class="mb-0 fw-bold">System Administrator</p>
+                    <small class="text-muted">Prepared By</small>
+                </div>
+                <div class="col-4">
+                    <div class="signature-space mx-auto"></div>
+                    <p class="mb-0 fw-bold">SACCO Treasurer</p>
+                    <small class="text-muted">Verified By</small>
+                </div>
+                <div class="col-4">
+                    <div class="signature-space mx-auto"></div>
+                    <p class="mb-0 fw-bold">Chairman</p>
+                    <small class="text-muted">Approved for Reporting</small>
+                </div>
+            </div>
+            
+            <div class="text-center mt-5 no-print">
+                <p class="text-muted small">End of Financial Report &copy; 2026 Eldopoly SACCO Management System</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -5,7 +5,6 @@ from home.de import treasurer_required
 from .forms import *
 import csv
 from django.db.models import Q, Sum, Avg
-
 from django.contrib import messages
 from django.db.models import Sum
 from django.contrib.admin.views.decorators import staff_member_required
@@ -29,6 +28,7 @@ from django.http import JsonResponse
 from .utils import generate_transaction_ref , calculate_insurance # Make sure you have a function to generate unique references
 import json
 from .pamision import role_required
+from Users.models import CustomUser
 def home(request):
     total_members=Profile.objects.count()
     total_loans=Loan.objects.count()
@@ -132,52 +132,489 @@ def mpesa_callback(request):
         print("Callback Error:", e)
         return JsonResponse({"ResultCode": 1, "ErrorMessage": str(e)})
         return JsonResponse({"ResultCode": 1})
-    from django.db import IntegrityError, transaction
+  
 
-def apply_xmas_loan(request):
+
+@login_required
+def approve_share_refund(request, refund_id):
+    refund = get_object_or_404(CapitalShareRefund, id=refund_id)
+    u_type = getattr(request.user, 'user_type', None)
+
+    if refund.status in ['rejected', 'disbursed']:
+        messages.error(request, "This share refund is already finalized.")
+        return redirect('capital_share_refund_queue')
+
+    # 1. Staff Approval
+    if u_type == '2':
+        refund.staff_approved = True
+        refund.status = "partially_approved"
+        messages.success(request, "Staff approval recorded for share refund.")
+
+    # 2. Treasurer Approval
+    elif u_type == '3':
+        if not refund.staff_approved:
+            messages.error(request, "Staff must approve this share refund first.")
+        else:
+            refund.treasurer_approved = True
+            refund.status = "partially_approved"
+            messages.success(request, "Treasurer approval recorded for share refund.")
+
+    # 3. Admin Final Approval
+    elif u_type == '1' or request.user.is_superuser:
+        if not (refund.staff_approved and refund.treasurer_approved):
+            messages.error(request, "Staff and Treasurer must approve first.")
+        else:
+            refund.admin_approved = True
+            refund.status = "approved"
+            messages.success(request, "Share refund fully approved. Ready for disbursement.")
+    
+    else:
+        messages.error(request, "Unauthorized action.")
+
+    refund.save()
+    return redirect('capital_share_refund_queue')
+@login_required
+def reject_share_refund(request, refund_id):
+    refund = get_object_or_404(CapitalShareRefund, id=refund_id)
+    u_type = getattr(request.user, 'user_type', None)
+
+    if u_type not in ['1', '2', '3'] and not request.user.is_superuser:
+        messages.error(request, "Unauthorized.")
+        return redirect('member_dashboard')
+
+    if refund.status in ['disbursed', 'rejected']:
+        messages.warning(request, "This refund is already finalized.")
+    else:
+        refund.status = 'rejected'
+        refund.save()
+        messages.success(request, f"Share refund for {refund.member.user.get_full_name()} has been rejected.")
+
+    return redirect('capital_share_refund_queue')
+@login_required
+@transaction.atomic
+def disburse_share_refund(request, refund_id):
+    # 1. Permission Check
+    if getattr(request.user, 'user_type', None) != '3':
+        messages.error(request, "Only the Treasurer can disburse share refunds and close accounts.")
+        return redirect('capital_share_refund_queue')
+
+    refund = get_object_or_404(CapitalShareRefund, id=refund_id)
+
+    # 2. Validation Checks
+    if not refund.admin_approved:
+        messages.error(request, "Admin final sign-off is required before disbursement.")
+        return redirect('capital_share_refund_queue')
+
+    member = refund.member
+    user = member.user  # To delete later
+
+    try:
+        # 3. Calculate Outstanding Loans (If any)
+        # Assuming you have a Loan model with a status and a method to get balance
+        active_loans = Loan.objects.filter(member=member, status='active')
+        total_loan_debt = sum(loan.total_balance() for loan in active_loans) # Adjust to your loan balance logic
+        
+        processing_fee = 1000
+        gross_shares = refund.amount_requested
+        
+        # 4. Final Calculation
+        total_deductions = total_loan_debt + processing_fee
+        final_payout = gross_shares - total_deductions
+
+        if final_payout < 0:
+            messages.error(request, f"Cannot disburse. Member owes KES {abs(final_payout)} more than their shares.")
+            return redirect('capital_share_refund_queue')
+
+        # 5. Update Capital Share Ledger (Record the Exit)
+        CapitalShare.objects.create(
+            member=member,
+            amount=-(gross_shares),
+            date_received=timezone.now().date(),
+            # remarks=f"Full Exit: Deducted {total_loan_debt} (Loans) & {processing_fee} (Fee)"
+        )
+
+        # 6. Update Refund Status (For audit trails before deletion)
+        refund.status = 'disbursed'
+        refund.net_amount = final_payout
+        refund.date_disbursed = timezone.now()
+        refund.save()
+
+        # 7. THE SYSTEM PURGE (Delete Member and User)
+        # Note: Depending on your foreign keys, this might cascade delete the refund record too.
+        # If you want to keep the record for audit, set member to NULL in CapitalShareRefund first.
+        
+        user_display_name = user.get_full_name()
+        user.delete() # This usually deletes the Member profile too if using OneToOneField
+
+        messages.success(request, 
+            f"Successfully closed account for {user_display_name}. "
+            f"Final Payout: KES {final_payout:,.2f} (Deducted KES {total_loan_debt} in loans & KES 1000 fee)."
+        )
+
+    except Exception as e:
+        messages.error(request, f"Disbursement and Exit failed: {str(e)}")
+        # transaction.atomic will rollback everything above if an error happens here
+
+    return redirect('capital_share_refund_queue')
+def apply_xmas_refund(request):
     profile = request.user.profile
     current_year = timezone.now().year
     
-    # Check if an application already exists for this year
-    existing_loan = XmasLoan.objects.filter(member=profile, year=current_year).first()
+    # 1. Get the member's monthly saving rate (assuming it's consistent)
+    # We look for the most recent contribution to find the 'rate'
+    last_contribution = MonthlyContribution.objects.filter(member=profile).order_by('-month').first()
     
-    # LOGIC: If a loan exists, only allow re-application if it was rejected
-    if existing_loan:
-        if existing_loan.status == 'rejected':
-            # Option: Delete the rejected application to clear the unique constraint
-            existing_loan.delete() 
-        else:
-            # Block application if it's pending, approved, or disbursed
-            messages.warning(request, f"You already have a {existing_loan.get_status_display()} holiday loan for {current_year}.")
-            return redirect('member_dashboard')
+    if not last_contribution:
+        messages.error(request, "You have no saving records to qualify for a refund.")
+        return redirect('member_dashboard')
 
-    # Calculate max limit (3.5x savings)
-    total_savings = MonthlyContribution.objects.filter(member=profile).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-    max_limit = total_savings * Decimal('3.5')
+    # 2. Logic: 500 x 12 (or whatever their monthly rate is)
+    monthly_rate = last_contribution.amount
+    total_eligible_amount = monthly_rate * 12
+
+    # 3. Check if they already applied this year
+    already_applied = XmasRefund.objects.filter(member=profile, year=current_year).exists()
 
     if request.method == 'POST':
+        if already_applied:
+            messages.warning(request, f"You have already applied for your {current_year} Xmas refund.")
+        else:
+            XmasRefund.objects.create(
+                member=profile,
+                amount_requested=total_eligible_amount,
+                year=current_year
+            )
+            messages.success(request, f"Refund request for KES {total_eligible_amount} submitted successfully!")
+        return redirect('member_dashboard')
+
+    context = {
+        'monthly_rate': monthly_rate,
+        'total_eligible_amount': total_eligible_amount,
+        'already_applied': already_applied,
+        'current_year': current_year
+    }
+    return render(request, 'apply_xmas_refund.html', context)
+def cancel_share_refund(request, refund_id):
+    refund = get_object_or_404(CapitalShareRefund, id=refund_id, member=request.user.profile)
+    
+    if refund.is_cancellable:
+        refund.delete() # Or set status to 'cancelled' if you want to keep records
+        messages.success(request, "Your share refund request has been cancelled.")
+    else:
+        messages.error(request, "This refund cannot be cancelled at this stage.")
+        
+    return redirect('member_dashboard')
+
+def apply_share_refund(request):
+    profile = request.user.profile
+    current_year = timezone.now().year
+
+    # prevent multiple active requests
+    existing = CapitalShareRefund.objects.filter(
+        member=profile,
+        year=current_year,
+        status__in=['pending', 'partially_approved', 'approved']
+    ).first()
+
+    if existing:
+        messages.warning(request, "You already have a pending share refund request.")
+        return redirect('member_dashboard')
+
+    # total shares
+    total_shares = CapitalShare.objects.filter(member=profile).aggregate(
+        Sum('amount')
+    )['amount__sum'] or Decimal('0.00')
+
+    if total_shares <= 0:
+        messages.error(request, "You have no capital shares to refund.")
+        return redirect('member_dashboard')
+
+    processing_fee_rate = Decimal('0.05')  # 5%
+
+    if request.method == 'POST':
+        amount = Decimal(request.POST.get('amount'))
+
+        if amount > total_shares:
+            messages.error(request, "You cannot refund more than your total shares.")
+            return redirect('apply_share_refund')
+
+        # CALCULATIONS
+        processing_fee = 1000
+        net_amount = amount - processing_fee
+
+        effective_date = timezone.now() + timedelta(days=90)
+
+        refund = CapitalShareRefund.objects.create(
+            member=profile,
+            amount_requested=amount,
+            reason=request.POST.get('reasons'),
+            
+            net_amount=net_amount,
+            effective_date=effective_date
+        )
+
+        # =========================
+        # NOTIFICATIONS (MEMBER)
+        # =========================
+        messages.success(
+            request,
+            f"Your share refund request has been submitted successfully. "
+            f"Net amount you will receive: KES {net_amount:,.2f}. "
+            f"Processing fee applied: KES {processing_fee:,.2f}. "
+            f"This refund will be effective after 3 months."
+        )
+
+       
+
+        return redirect('member_dashboard')
+
+    return render(request, 'apply_share_refund.html', {
+        'total_shares': total_shares
+    })
+
+
+
+def capital_share_refund_queue(request):
+    user = request.user
+    u_type = getattr(user, 'user_type', None)
+
+    # allow only staff, treasurer, admin
+    if u_type not in ['1', '2', '3']:
+        messages.error(request, "Unauthorized access.")
+        return redirect('member_dashboard')
+
+    refunds = CapitalShareRefund.objects.select_related('member').order_by('-date_applied')
+
+    return render(request, 'capital_share_refund_queue.html', {
+        'refunds': refunds
+    })
+@login_required
+def disburse_xmas_refund(request, refund_id):
+    if request.user.user_type != '3': # Treasurer Check
+        messages.error(request, "Only the Treasurer can disburse funds.")
+        return redirect('manage_refunds_list')
+
+    refund = get_object_or_404(XmasRefund, id=refund_id)
+
+    if not refund.admin_approved:
+        messages.error(request, "Admin approval required before disbursement.")
+        return redirect('manage_refunds_list')
+
+    if refund.status == 'disbursed':
+        messages.warning(request, "This refund has already been processed.")
+        return redirect('manage_refunds_list')
+
+    try:
+        with transaction.atomic():
+            # 1. Update the Refund Status
+            refund.status = 'disbursed'
+            refund.date_disbursed = timezone.now()
+            refund.save()
+
+            # 2. REDUCE SAVINGS: Create a negative contribution entry
+            # This acts as a 'Withdrawal' in your ledger logic
+            MonthlyContribution.objects.create(
+                member=refund.member,
+                amount=-(refund.amount_requested), # Negative amount reduces the SUM
+                month=timezone.now().date(),
+                # You might want to add a 'description' field to your model 
+                # to label this as "Xmas Refund Payout"
+            )
+
+            messages.success(request, f"KES {refund.amount_requested} disbursed and savings updated.")
+            
+    except Exception as e:
+        messages.error(request, f"An error occurred: {str(e)}")
+
+    return redirect('manage_refunds_list')
+@login_required
+def approve_xmas_refund(request, refund_id):
+    refund = get_object_or_404(XmasRefund, id=refund_id)
+    user = request.user
+    u_type = getattr(user, 'user_type', None)
+
+    # ❌ Prevent modifying finalized refunds
+    if refund.status in ['rejected', 'disbursed']:
+        messages.error(request, "This refund is already finalized.")
+        return redirect('manage_refunds_list')
+
+    # ---------------------------------------------------------
+    # 1️⃣ STAFF APPROVAL
+    # ---------------------------------------------------------
+    if u_type == '2':
+        if refund.staff_approved:
+            messages.info(request, "Already approved by staff.")
+            return redirect('manage_refunds_list')
+
+        refund.staff_approved = True
+        refund.status = "partially_approved"
+        refund.save()
+
+        messages.success(request, "Staff approval recorded.")
+        return redirect('manage_refunds_list')
+
+    # ---------------------------------------------------------
+    # 2️⃣ TREASURER APPROVAL
+    # ---------------------------------------------------------
+    elif u_type == '3':
+        if not refund.staff_approved:
+            messages.error(request, "Staff must approve first.")
+            return redirect('manage_refunds_list')
+
+        if refund.treasurer_approved:
+            messages.info(request, "Already approved by Treasurer.")
+            return redirect('manage_refunds_list')
+
+        refund.treasurer_approved = True
+        refund.status = "partially_approved"
+        refund.save()
+
+        messages.success(request, "Treasurer approval recorded.")
+        return redirect('manage_refunds_list')
+
+    # ---------------------------------------------------------
+    # 3️⃣ ADMIN FINAL APPROVAL
+    # ---------------------------------------------------------
+    elif u_type == '1' or user.is_superuser:
+        if not (refund.staff_approved and refund.treasurer_approved):
+            messages.error(request, "Staff and Treasurer must approve first.")
+            return redirect('manage_refunds_list')
+
+        if refund.admin_approved:
+            messages.info(request, "Already approved by Admin.")
+            return redirect('manage_refunds_list')
+
+        refund.admin_approved = True
+        refund.status = "approved"
+        refund.save()
+
+        messages.success(request, "Refund fully approved. Ready for disbursement.")
+        return redirect('manage_refunds_list')
+
+    else:
+        messages.error(request, "Unauthorized action.")
+        return redirect('manage_refunds_list')
+def manage_refunds_list(request):
+    refunds = XmasRefund.objects.all().order_by('-date_applied')
+    # Passing the role string ('1', '2', etc.) to the template
+    user_role = request.user.user_type
+    
+    context = {
+        'refunds': refunds,
+        'user_role': user_role,
+    }
+    return render(request, 'admin_refund_list.html', context)
+def reject_xmas_refund(request, refund_id):
+    refund = get_object_or_404(XmasRefund, id=refund_id)
+    user = request.user
+    u_type = getattr(user, 'user_type', None)
+
+    # Only staff/treasurer/admin can reject
+    if u_type not in ['1', '2', '3'] and not user.is_superuser:
+        messages.error(request, "You are not allowed to reject this refund.")
+        return redirect('member_dashboard')
+
+    # Prevent rejecting finalized
+    if refund.status in ['disbursed', 'rejected']:
+        messages.warning(request, "This refund is already finalized.")
+        return redirect('staff_dashboard')
+
+    refund.status = 'rejected'
+    refund.save()
+
+    messages.success(request, "Refund has been rejected.")
+    return redirect('staff_dashboard')
+def apply_xmas_loan(request):
+    profile = request.user.profile
+
+    # -----------------------------------
+    # TOTAL SHARE-BASED LIMIT (10%)
+    # -----------------------------------
+    total_shares = CapitalShare.objects.filter(member=profile).aggregate(
+        Sum('amount')
+    )['amount__sum'] or Decimal('0.00')
+
+    total_limit = total_shares * Decimal('0.10')
+
+    # -----------------------------------
+    # CURRENT ACTIVE LOANS (TOP-UP LOGIC)
+    # -----------------------------------
+    active_loans = XmasLoan.objects.filter(
+        member=profile
+    ).exclude(status__in=['rejected', 'cleared'])
+
+    # 🔥 BEST METHOD (uses remaining balance)
+    total_borrowed = sum(loan.remaining_balance for loan in active_loans)
+
+    # -----------------------------------
+    # AVAILABLE LIMIT
+    # -----------------------------------
+    available_limit = total_limit - total_borrowed
+
+    if available_limit <= 0:
+        messages.error(
+            request,
+            "You have reached your loan limit. Clear your existing loan to borrow again."
+        )
+        return redirect('member_dashboard')
+
+    # -----------------------------------
+    # HANDLE FORM SUBMISSION
+    # -----------------------------------
+    if request.method == 'POST':
+
+        # ✅ SAFE INPUT HANDLING (FIXED BUG)
+        amount_input = request.POST.get('amount', '').strip()
+
+        if not amount_input:
+            messages.error(request, "Please enter an amount.")
+            return redirect(request.path)
+
         try:
-            amount_input = request.POST.get('amount')
-            amount = Decimal(amount_input)
+            amount = Decimal(str(amount_input))
+        except (InvalidOperation, ValueError):
+            messages.error(request, "Enter a valid numeric amount.")
+            return redirect(request.path)
 
-            if amount > max_limit:
-                messages.error(request, f"Limit Exceeded! Your maximum X-Mass loan is KES {max_limit}")
-            elif amount <= 0:
-                messages.error(request, "Please enter a valid amount.")
-            else:
-                # Using a transaction to ensure database integrity
-                with transaction.atomic():
-                    XmasLoan.objects.create(
-                        member=profile,
-                        amount_requested=amount,
-                        year=current_year
-                    )
-                messages.success(request, "X-Mass Loan request submitted successfully!")
-                return redirect('member_dashboard')
-        except (ValueError, TypeError, DecimalException):
-            messages.error(request, "Please enter a valid numerical amount.")
+        # -----------------------------------
+        # VALIDATIONS
+        # -----------------------------------
+        if amount <= 0:
+            messages.error(request, "Amount must be greater than zero.")
 
-    return render(request, 'xmas.html', {'max_limit': max_limit})
+        elif amount > available_limit:
+            messages.error(
+                request,
+                f"Limit exceeded! You can only borrow up to KES {available_limit:,.2f}"
+            )
+
+        else:
+            # -----------------------------------
+            # CREATE LOAN
+            # -----------------------------------
+            with transaction.atomic():
+                XmasLoan.objects.create(
+                    member=profile,
+                    amount_requested=amount,
+                    interest_rate=Decimal('9.10'),
+                    installments=3,
+                    repayment_period=3
+                )
+
+            messages.success(
+                request,
+                f"Loan applied successfully! Remaining limit: KES {(available_limit - amount):,.2f}"
+            )
+            return redirect('member_dashboard')
+
+    # -----------------------------------
+    # RENDER PAGE
+    # -----------------------------------
+    return render(request, 'xmas.html', {
+        'max_limit': available_limit,
+        'total_limit': total_limit,
+        'borrowed': total_borrowed,
+    })
 def pay_xmas_loan(request):
     current_year = timezone.now().year
 
@@ -228,7 +665,10 @@ def member_dashboard(request):
     savings_list = MonthlyContribution.objects.filter(member=profile).order_by('-created_at')
     shares_list = CapitalShare.objects.filter(member=profile)
     xmas_loans = XmasLoan.objects.filter(member=profile).order_by('-application_date')
-
+    active_refunds = CapitalShareRefund.objects.filter(
+    member=request.user.profile, 
+    status__in=['pending', 'partially_approved', 'approved']
+)
     # 2. NEW: Fetch notifications for this user (where they are a guarantor)
     # Shows requests for loans that are still pending and where they haven't responded yet
     pending_guarantor_requests = Guarantor.objects.filter(
@@ -276,6 +716,7 @@ def member_dashboard(request):
         'total_penalties': running_total_penalties,
         # Pass the new notifications to the template
         'pending_guarantor_requests': pending_guarantor_requests,
+        'active_refunds': active_refunds,
     }
 
     return render(request, 'r_dashboard.html', context)
@@ -403,9 +844,15 @@ def admin_dashboard(request):
     pending_xmas_loans = XmasLoan.objects.filter(
         status__in=['pending', 'partially_approved']
     ).order_by('-application_date')
+    pending_xmas_refunds = XmasRefund.objects.filter(
+        status__in=['pending', 'partially_refunded']
+    )
     approved_loans = Loan.objects.filter(status='approved')
     rejected_loans = Loan.objects.filter(status='rejected')
-    
+    pending_shares_refunds = CapitalShareRefund.objects.filter(
+        status__in =['pending', 'partially_refunded'],
+        treasurer_approved=False
+    ).order_by('-date_applied')
     all_members = Profile.objects.all() 
 
     total_savings_pool = MonthlyContribution.objects.aggregate(Sum('amount'))['amount__sum'] or 0
@@ -421,6 +868,8 @@ def admin_dashboard(request):
         'approved_loans': approved_loans,
         'rejected_loans': rejected_loans,
         'all_members': all_members,
+        'pending_shares_refunds': pending_shares_refunds,
+        'pending_xmas_refunds': pending_xmas_refunds,
     }
     return render(request, 'rev.html', context)
 
@@ -438,33 +887,30 @@ def calculate_loan_risk(member_profile, requested_amount):
     return risk_score
 @login_required
 
+
 def apply_loan(request):
     profile = request.user.profile
 
-    # -------------------------
-    # EXISTING LOAN + LIMIT LOGIC
-    # -------------------------
-    active_loan = Loan.objects.filter(member=profile, status='approved').first()
+    # --- 1. PRE-CHECK DATA ---
+    active_loan = Loan.objects.filter(
+        member=profile, 
+        status__in=['approved', 'disbursed']
+    ).first()
+    
     current_balance = active_loan.get_remaining_balance() if active_loan else Decimal('0.00')
-
-    total_savings = CapitalShare.objects.filter(member=profile).aggregate(
-        Sum('amount')
-    )['amount__sum'] or Decimal('0.00')
-
+    total_savings = CapitalShare.objects.filter(member=profile).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
     global_cap = Decimal(total_savings) * Decimal('3.5')
 
     other_exposure = Loan.objects.filter(
         member=profile,
         status__in=['pending_guarantors', 'pending', 'approved', 'disbursed']
-    ).exclude(
-        id=active_loan.id if active_loan else None
-    ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+    ).exclude(id=active_loan.id if active_loan else None).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
     available_limit = global_cap - Decimal(other_exposure)
 
-    # -------------------------
-    # FORMSET
-    # -------------------------
+    # --- 2. GUARANTOR RESTRICTION ---
+    # Only allow '4' (Member) to be selected as a guarantor.
+    # Exclude Admin, Staff, Treasurer, and HR.
     GuarantorFormSet = modelformset_factory(
         Guarantor,
         form=GuarantorForm,
@@ -474,128 +920,179 @@ def apply_loan(request):
         min_num=2
     )
 
-    # -------------------------
-    # POST REQUEST
-    # -------------------------
     if request.method == 'POST':
         form = LoanApplicationForm(request.POST)
         formset = GuarantorFormSet(request.POST, queryset=Guarantor.objects.none())
 
         if form.is_valid() and formset.is_valid():
-
-            # -------------------------
-            # SALARY CHECK
-            # -------------------------
-            # if profile.gross_salary <= 0 or profile.net_salary <= 0:
-            #     messages.error(request, "Salary not verified by HR. Please contact HR.")
-            #     return redirect('member_dashboard')
-
             loan = form.save(commit=False)
             loan.member = profile
 
-            # -------------------------
-            # AFFORDABILITY CALCULATION
-            # -------------------------
+            # --- 3. DURATION VALIDATION ---
+            # Normal Loan = max 48 months | Everything else = max 12 months
+            duration = int(loan.duration_months)
+            # Assuming your form/model has a 'loan_type' field. Adjust 'normal' to your actual choice value.
+            if loan.loan_type == 'normal':
+                if duration > 48:
+                    messages.error(request, "Normal Loans cannot exceed 48 months.")
+                    return redirect('apply_loan')
+            else:
+                if duration > 12:
+                    messages.error(request, f"{loan.loan_type.title()} Loans cannot exceed 12 months.")
+                    return redirect('apply_loan')
+
+            # --- 4. TIERED INTEREST & AFFORDABILITY MATH ---
             P = Decimal(str(loan.amount))
-            M = Decimal(str(loan.duration_months))
+            M = duration
 
-            interest = Decimal('0.259') * P
-            insurance = ((Decimal('5.03') * M + Decimal('3.03')) * P) / Decimal('6000')
+            if M <= 12: rate = Decimal('0.091')
+            elif M <= 24: rate = Decimal('0.175')
+            elif M <= 36: rate = Decimal('0.259')
+            else: rate = Decimal('0.349')
 
-            total_payable = P + interest + insurance
-            monthly_installment = total_payable / M
+            interest_amt = rate * P
+            insurance_amt = ((Decimal('5.03') * Decimal(M) + Decimal('3.03')) * P) / Decimal('6000')
+            total_payable = P + interest_amt + insurance_amt
+            monthly_installment = total_payable / Decimal(M)
 
             gross = Decimal(profile.gross_salary)
             net = Decimal(profile.net_salary)
-
             take_home_limit = gross / Decimal('3')
 
-            # -------------------------
-            # 🚨 1/3 RULE CHECK
-            # -------------------------
+            # --- 5. 🚨 1/3 RULE & HR NOTIFICATION ---
             if (net - monthly_installment) < take_home_limit:
-
-                # Avoid duplicate notifications
-                existing_note = HRNotification.objects.filter(
+                HRNotification.objects.create(
                     member=profile,
-                    is_read=False,
-                    message__icontains="1/3 Rule Failure"
-                ).exists()
-
-                if not existing_note:
-                    HRNotification.objects.create(
-                        member=profile,
-                        message=(
-                            f"1/3 Rule Failure: {profile.user.get_full_name()} "
-                            f"(PF: {profile.pf_number}) failed affordability check. "
-                            f"Net: {net:,.2f}, Installment: {monthly_installment:,.2f}, "
-                            f"Required Min Balance: {take_home_limit:,.2f}. "
-                            f"➡ Please update salary."
-                        )
-                    )
-
-                # OPTIONAL: flag profile
-                if hasattr(profile, 'salary_needs_review'):
-                    profile.salary_needs_review = True
-                    profile.save(update_fields=['salary_needs_review'])
-
-                messages.error(
-                    request,
-                    "Loan application failed due to affordability rule. HR has been notified."
+                    message=f"FAILED 1/3 RULE: {profile.user.get_full_name()} requested KES {P:,.2f} for {M} months."
                 )
-
+                profile.salary_needs_review = True
+                profile.save()
+                messages.error(request, "Loan rejected: Violates 1/3 salary rule. HR notified. try again after 48 hrs")
                 return redirect('member_dashboard')
 
-            # -------------------------
-            # LIMIT CHECK
-            # -------------------------
+            # --- 6. TOP-UP & LIMITS ---
+            if active_loan:
+                if P <= current_balance:
+                    messages.error(request, f"New loan must exceed current balance of KES {current_balance:,.2f}")
+                    return redirect('apply_loan')
+                loan.is_topup = True
+                loan.replaces_loan = active_loan
+
             if P > available_limit:
-                messages.error(
-                    request,
-                    f"Loan exceeds your limit. Available limit is KES {available_limit:,.2f}"
-                )
+                messages.error(request, f"Exceeds borrowing limit. Max: KES {available_limit:,.2f}")
                 return redirect('member_dashboard')
 
-            # -------------------------
-            # SAVE LOAN + GUARANTORS
-            # -------------------------
+            # --- 7. SAVE ---
             try:
                 with transaction.atomic():
                     loan.status = 'pending_guarantors'
                     loan.save()
-
                     guarantors = formset.save(commit=False)
                     for g in guarantors:
+                        # Double check guarantor type in backend for security
+                        if g.member.user.user_type != '4':
+                            raise ValueError(f"User {g.member.user.get_full_name()} is not a regular Member and cannot guarantee loans.")
                         g.loan = loan
                         g.save()
 
-                messages.success(request, "Loan application submitted successfully.")
+                messages.success(request, "Application submitted to guarantors.")
                 return redirect('member_dashboard')
-
             except Exception as e:
-                messages.error(request, f"System error: {str(e)}")
+                messages.error(request, f"Error: {str(e)}")
                 return redirect('member_dashboard')
 
-    # -------------------------
-    # GET REQUEST
-    # -------------------------
     else:
         form = LoanApplicationForm()
+        # Filter the queryset in the formset to only show '4' (Members)
         formset = GuarantorFormSet(queryset=Guarantor.objects.none())
 
-    # -------------------------
-    # CONTEXT
-    # -------------------------
+    # Update your context to pass the filtered members list for the frontend search
+    eligible_guarantors = Profile.objects.filter(user__user_type='4').exclude(user=request.user)
+
     context = {
         'loan_limit': available_limit,
-        'active_loan': active_loan,
-        'current_balance': current_balance,
-        'total_savings': total_savings,
         'form': form,
-        'formset': formset
+        'formset': formset,
+        'eligible_guarantors': eligible_guarantors
     }
-
     return render(request, 'apply_loan.html', context)
+def approve_xmas_loan(request, loan_id):
+    loan = get_object_or_404(XmasLoan, id=loan_id)
+    user = request.user
+    u_type = getattr(user, 'user_type', None)
+
+    # ❌ Prevent approving finalized loans
+    if loan.status in ['rejected', 'approved']:
+        messages.error(request, "This holiday loan is already finalized.")
+        return redirect('staff_dashboard')
+
+    # ---------------------------------------------------------
+    # 1️⃣ STAFF FIRST (Type '2')
+    # ---------------------------------------------------------
+    if u_type == '2':
+        loan.staff_approved = True
+        loan.status = "partially_approved"
+        loan.save()
+        messages.success(request, "Staff approval recorded.")
+        return redirect('staff_dashboard')
+
+    # ---------------------------------------------------------
+    # 2️⃣ TREASURER SECOND (Type '3')
+    # ---------------------------------------------------------
+    elif u_type == '3':
+        if not loan.staff_approved:
+            messages.error(request, "Wait for Staff to approve this holiday loan first.")
+            return redirect('staff_dashboard')
+
+        loan.treasurer_approved = True
+        loan.status = "partially_approved"
+        loan.save()
+        messages.success(request, "Treasurer approval recorded.")
+        return redirect('treasurer_dashboard')
+
+    # ---------------------------------------------------------
+    # 3️⃣ ADMIN LAST / FINAL (Type '1')
+    # ---------------------------------------------------------
+    elif u_type == '1' or user.is_superuser:
+        if not (loan.staff_approved and loan.treasurer_approved):
+            messages.error(request, "Staff and Treasurer must sign off before final approval.")
+            return redirect('admin_dashboard')
+
+        with transaction.atomic():
+            loan.admin_approved = True
+            loan.status = "approved"
+            loan.approval_date = timezone.now()
+
+            # --- X-MASS CALCULATIONS (Fixed 25.9% Interest, 3 Months) ---
+            principal = Decimal(str(loan.amount_requested))
+            interest_rate = Decimal('0.259') 
+            duration_months = 3
+
+            total_interest = principal * interest_rate
+            total_payable = principal + total_interest
+            monthly_installment = total_payable / Decimal(str(duration_months))
+
+            # --- GENERATE 3-MONTH SCHEDULE ---
+            # Clean old schedules if they exist
+            LoanRepaymentSchedule.objects.filter(loan_id=loan.id, is_xmas=True).delete()
+
+            for i in range(1, duration_months + 1):
+                LoanRepaymentSchedule.objects.create(
+                    xmas_loan=loan,
+                    loan=None,# Link to the Xmas loan
+                    installment_number=i,
+                    due_date=loan.approval_date.date() + relativedelta(months=i),
+                    amount_due=monthly_installment,
+                    is_paid=False,
+                    is_xmas=True # Helpful flag to distinguish from regular loans
+                )
+
+            loan.save()
+
+        messages.success(request, f"X-Mass Loan Fully Approved! Total: KES {total_payable:,.2f}")
+        return redirect('admin_dashboard')
+
+    return redirect('member_dashboard')
 def approve_xmas_loan(request, loan_id):
     loan = get_object_or_404(XmasLoan, id=loan_id)
     user = request.user
@@ -1018,8 +1515,12 @@ def staff_dashboard(request):
         return redirect('login')  # redundant with @login_required but safe
 
     if request.user.user_type != '2' and not request.user.is_superuser:
+        
         return redirect('access_denied')  # Redirect to an access denied page or show message
-
+    pending_shares_refunds = CapitalShareRefund.objects.filter(
+        status__in =['pending'],
+        treasurer_approved=False
+    ).order_by('-date_applied')
     # Your dashboard logic here
     pending_loans = Loan.objects.filter(
         staff_approved=False,
@@ -1030,13 +1531,17 @@ def staff_dashboard(request):
     total_savings_pool = MonthlyContribution.objects.aggregate(Sum('amount'))['amount__sum'] or 0
     total_members = Profile.objects.count()
     total_interest_earned = LoanRepaymentSchedule.objects.filter(is_paid=True).aggregate(Sum('amount_due'))['amount_due__sum'] or 0
-
+    pending_xmas_refunds = XmasRefund.objects.filter(
+        status__in=['pending', 'partially_refunded']
+    )
     context = {
+        'pending_xmas_refunds': pending_xmas_refunds,
         'pending_loans': pending_loans,
         'total_savings_pool': total_savings_pool,
         'total_members': total_members,
         'total_interest_earned': total_interest_earned,
         'pending_xmas_loans': pending_xmas_loans,
+        'pending_shares_refunds': pending_shares_refunds,
     }
 
     return render(request, 'stf.html', context)
@@ -1160,8 +1665,16 @@ def treasurer_dashboard(request):
     pending_xmas_loans = XmasLoan.objects.filter(
         status__in=['pending', 'partially_approved'], 
         treasurer_approved=False
+        
     )
-    # Calculate Liquidity
+    pending_shares_refunds = CapitalShareRefund.objects.filter(
+        status__in =['pending', 'partially_approved'],
+        treasurer_approved=False)
+    pending_xmas_refunds = XmasRefund.objects.filter(
+        status__in=['pending', 'partially_approved']
+    )
+    # Ca
+    # lculate Liquidity
     total_repayments = LoanRepayment.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0')
     
     # Formula: (Money In) - (Money Out)
@@ -1171,6 +1684,7 @@ def treasurer_dashboard(request):
     recent_transactions = Transaction.objects.all().order_by('-created_at')[:10]
 
     context = {
+        'pending_shares_refunds': pending_shares_refunds,
         'pending_xmas_loans': pending_xmas_loans,
         'awaiting_treasurer': awaiting_treasurer,
         'total_savings': total_savings,
@@ -1179,6 +1693,7 @@ def treasurer_dashboard(request):
         'available_cash': available_cash,
         'total_interest': total_interest_earned,
         'recent_transactions': recent_transactions,
+        'pending_xmas_refunds': pending_xmas_refunds,
     }
 
     return render(request, 'treasurer_dashboard.html', context)
@@ -1638,8 +2153,8 @@ def Members(request):
 
 @login_required
 def Human_Resource(request):
-    # if getattr(request.user, 'user_type', None) != '5' and not request.user.is_superuser:
-    #         return redirect('access_denied')
+    if getattr(request.user, 'user_type', None) != '5' and not request.user.is_superuser:
+            return redirect('access_denied')
     query = request.GET.get('q')
 
     # -------------------------
@@ -1666,6 +2181,7 @@ def Human_Resource(request):
     notifications = HRNotification.objects.filter(
         is_read=False
     ).select_related('member').order_by('-created_at')
+      # Mark as read immediately for simplicity
 
     # -------------------------
     # STATS
@@ -1695,6 +2211,56 @@ def Human_Resource(request):
 # views.py
 
 
+
+
+
+def performance_analysis_view(request):
+    # 1. Aggregate Loans by month
+    loan_data = (
+        Loan.objects.filter(is_disbursed=True)
+        .annotate(month=TruncMonth('disbursed_at'))
+        .values('month')
+        .annotate(total=Sum('amount'))
+        .order_by('month')
+    )
+
+    # 2. Aggregate Repayments by month
+    repayment_data = (
+        LoanRepayment.objects.annotate(month=TruncMonth('payment_date'))
+        .values('month')
+        .annotate(total=Sum('amount_paid'))
+        .order_by('month')
+    )
+
+    # 3. Prepare Chart Data
+    labels = []
+    loan_totals = []
+    repayment_totals = []
+
+    # Map months to names (e.g., "Apr 2026")
+    for entry in loan_data:
+        if entry['month']:
+            labels.append(entry['month'].strftime("%b %Y"))
+            loan_totals.append(float(entry['total']))
+
+    for entry in repayment_data:
+        repayment_totals.append(float(entry['total']))
+
+    # 4. Calculate Summary KPIs (Avoids the |sum filter error)
+    total_disbursed = sum(loan_totals)
+    total_repaid = sum(repayment_totals)
+    # Calculate recovery rate as a bonus KPI
+    recovery_rate = (total_repaid / total_disbursed * 100) if total_disbursed > 0 else 0
+
+    context = {
+        'labels': labels,
+        'loan_totals': loan_totals,
+        'repayment_totals': repayment_totals,
+        'total_disbursed': total_disbursed,
+        'total_repaid': total_repaid,
+        'recovery_rate': recovery_rate,
+    }
+    return render(request, 'analysis.html', context)
 def monthly_sacco_report(request):
     month = int(request.GET.get('month', timezone.now().month))
     year = int(request.GET.get('year', timezone.now().year))
@@ -1749,8 +2315,8 @@ def monthly_sacco_report(request):
         # -------------------------------
         xmas_loan = XmasLoan.objects.filter(
             member=profile,
-            status__in=['approved', 'disbursed'],
-            year=year
+            status__in=['approved', 'disbursed']
+           
         ).first()
 
         if xmas_loan:
@@ -1861,7 +2427,7 @@ def monthly_sacco_report(request):
         writer = csv.writer(response)
         writer.writerow([
             'Member Name', 'PF Number',
-            'Savings', 'Shares',
+            'Xmass', 'Capital Shares',
             'Normal Loan', 'Xmas Loan',
             'School Fees', 'Emergency'
         ])
@@ -1870,7 +2436,7 @@ def monthly_sacco_report(request):
             writer.writerow([
                 row['name'],
                 row['pf'],
-                0 if row['savings_status'] else 500,
+                0 if row['savings_status'] else 00,
                 0 if row['shares_status'] else 1000,
                 0 if row['normal_status'] else row['normal_loan'],
                 0 if row['xmas_status'] else row['xmas_loan'],
@@ -1917,57 +2483,71 @@ def export_sacco_report_csv(report_data, month, year):
     return response
 
 
-
 def financial_ledger_view(request):
-    user_profile = request.user.profile  # Get current user's profile
+    user_profile = request.user.profile
     
-    # --- MEMBER SAVINGS LOGIC ---
+    # --- MEMBER SPECIFIC DATA ---
     monthly_savings = MonthlyContribution.objects.filter(member=user_profile)
     capital_shares = CapitalShare.objects.filter(member=user_profile)
     
     total_savings = (monthly_savings.aggregate(Sum('amount'))['amount__sum'] or 0) + \
                     (capital_shares.aggregate(Sum('amount'))['amount__sum'] or 0)
 
-    # Combine for the Ledger Table
+    # Combined Ledger (Historical list of everything the member did)
     ledger_entries = []
     for s in monthly_savings:
         ledger_entries.append({'date': s.created_at, 'type': 'Monthly Saving', 'amount': s.amount, 'month': s.month})
     for c in capital_shares:
         ledger_entries.append({'date': c.date_created, 'type': 'Capital Share', 'amount': c.amount, 'month': c.month})
     
-    # Sort ledger by date descending
     ledger_entries = sorted(ledger_entries, key=lambda x: x['date'], reverse=True)
 
-    # --- MEMBER LOAN LOGIC ---
     repayments = LoanRepayment.objects.filter(member=user_profile).order_by('-payment_date')
     total_repaid = repayments.aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
     
+    # Active Debt Calculation
     active_loans = Loan.objects.filter(member=user_profile, status='disbursed').aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
     active_xmas = XmasLoan.objects.filter(member=user_profile, is_disbursed=True).aggregate(Sum('amount_requested'))['amount_requested__sum'] or Decimal('0.00')
-    
     current_loan_balance = (active_loans + active_xmas) - total_repaid
 
-    # --- TREASURER GLOBAL LOGIC (Only for Admin/Staff/Treasurer) ---
-    sacco_stats = {}
+    # --- TREASURER CASH FLOW LOGIC (Global Overview) ---
+    cashflow_stats = {}
     if request.user.user_type in ['1', '2', '3']:
-        t_monthly = MonthlyContribution.objects.aggregate(Sum('amount'))['amount__sum'] or 0
-        t_shares = CapitalShare.objects.aggregate(Sum('amount'))['amount__sum'] or 0
-        t_loans = Loan.objects.filter(status='disbursed').aggregate(Sum('amount'))['amount__sum'] or 0
-        t_xmas = XmasLoan.objects.filter(is_disbursed=True).aggregate(Sum('amount_requested'))['amount_requested__sum'] or 0
-        t_repaid = LoanRepayment.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+        # INFLOWS
+        in_savings = MonthlyContribution.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+        in_shares = CapitalShare.objects.aggregate(Sum('amount'))['amount__sum'] or 0
+        in_repayments = LoanRepayment.objects.aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+        in_reg_fees = RegistrationFee.objects.filter(paid=True).aggregate(Sum('amount'))['amount__sum'] or 0
         
-        sacco_stats = {
-            'total_equity': t_monthly + t_shares,
-            'total_out': t_loans + t_xmas,
-            'liquidity': (t_monthly + t_shares + t_repaid) - (t_loans + t_xmas)
+        total_inflow = in_savings + in_shares + in_repayments + in_reg_fees
+
+        # OUTFLOWS
+        out_loans = Loan.objects.filter(status='disbursed').aggregate(Sum('amount'))['amount__sum'] or 0
+        out_xmas = XmasLoan.objects.filter(status='disbursed').aggregate(Sum('amount_requested'))['amount_requested__sum'] or 0
+        out_expenses = Expense.objects.aggregate(Sum('amount_spent'))['amount_spent__sum'] or 0
+        out_refunds = CapitalShareRefund.objects.filter(status='disbursed').aggregate(Sum('amount_requested'))['amount_requested__sum'] or 0
+        
+        total_outflow = out_loans + out_xmas + out_expenses + out_refunds
+
+        cashflow_stats = {
+            'total_in': total_inflow,
+            'total_out': total_outflow,
+            'net_cash': total_inflow - total_outflow,
+            'expense_ratio': (out_expenses / total_inflow * 100) if total_inflow > 0 else 0,
+            'breakdown': {
+                'expenses': out_expenses,
+                'refunds': out_refunds,
+                'repayments': in_repayments
+            }
         }
 
     context = {
         'total_savings': total_savings,
         'ledger': ledger_entries,
         'current_balance': current_loan_balance,
+        'total_repaid': total_repaid,
         'history': repayments,
-        'sacco_stats': sacco_stats,
+        'cashflow_stats': cashflow_stats,
     }
     return render(request, 'financial_report.html', context)
 
@@ -1993,114 +2573,132 @@ def get_daily_financial_summary():
         'outflow': outflow,
         'net_flow': inflow - outflow
     }
+from datetime import datetime, date
+
+# ... (inside your sacco_financial_ledger_view) ...
+
+# ---------------------------------------------------------
+# 3. SORTING & TOTALS
+# ---------------------------------------------------------
+
+# Helper function to ensure we are comparing apples to apples (date vs date)
+def normalize_date(d):
+    if isinstance(d, datetime):
+        return d.date()
+    return d
+
+# Update the sorting line to use the helper
+
 
 def sacco_financial_ledger_view(request):
+    # ---------------------------------------------------------
+    # 1. FETCH ALL FINANCIAL DATA (ENTIRE SACCO)
+    # ---------------------------------------------------------
+    # Savings & Shares
+    monthly_savings = MonthlyContribution.objects.all().select_related('member__user')
+    capital_shares = CapitalShare.objects.all().select_related('member__user')
+    
+    # Loans (Disbursed only)
+    loans = Loan.objects.filter(status='disbursed').select_related('member__user')
+    xmas_loans = XmasLoan.objects.filter(is_disbursed=True).select_related('member__user')
+    
+    # Repayments (From your updated Schedule model)
+    paid_schedules = LoanRepaymentSchedule.objects.filter(is_paid=True).select_related(
+        'loan__member__user', 'xmas_loan__member__user'
+    )
 
-    # -------------------------------
-    # 🔹 ALL SAVINGS (WHOLE SACCO)
-    # -------------------------------
-    monthly_savings = MonthlyContribution.objects.all()
-    capital_shares = CapitalShare.objects.all()
-
-    total_monthly = monthly_savings.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-    total_shares = capital_shares.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-
-    total_savings = total_monthly + total_shares
-
-    # -------------------------------
-    # 🔹 LEDGER ENTRIES (GLOBAL)
-    # -------------------------------
     ledger_entries = []
 
-    # Savings
+    # ---------------------------------------------------------
+    # 2. MAP DATA TO LEDGER COLUMNS
+    # ---------------------------------------------------------
+    # Process Savings/Shares (Column: RCVD)
     for s in monthly_savings:
         ledger_entries.append({
             'date': s.created_at,
-            'type': 'Monthly Saving',
-            'member': s.member.user.username,
-            'amount': s.amount,
-            'month': s.month
+            'member': s.member.user.get_full_name(),
+            'acc': s.member.membership_number,
+            'type': 'Monthly Contribution',
+            'share_rcvd': s.amount,
+            'loan_amt': 0, 'loan_repaid': 0, 'int_paid': 0
         })
 
-    # Shares
     for c in capital_shares:
         ledger_entries.append({
             'date': c.date_created,
+            'member': c.member.user.get_full_name(),
+            'acc': c.member.membership_number,
             'type': 'Capital Share',
-            'member': c.member.user.username,
-            'amount': c.amount,
-            'month': c.month
+            'share_rcvd': c.amount,
+            'loan_amt': 0, 'loan_repaid': 0, 'int_paid': 0
         })
 
-    # -------------------------------
-    # 🔹 LOAN DISBURSEMENTS
-    # -------------------------------
-    loans = Loan.objects.filter(status='disbursed')
-    xmas_loans = XmasLoan.objects.filter(is_disbursed=True)
-
-    total_loans = loans.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-    total_xmas = xmas_loans.aggregate(Sum('amount_requested'))['amount_requested__sum'] or Decimal('0.00')
-
-    # Add loans to ledger
+    # Process Disbursements (Column: LOANED)
     for l in loans:
         ledger_entries.append({
             'date': l.disbursed_at,
+            'member': l.member.user.get_full_name(),
+            'acc': l.member.membership_number,
             'type': 'Loan Disbursed',
-            'member': l.member.user.username,
-            'amount': l.amount,
-            'month': l.disbursed_at
+            'share_rcvd': 0,
+            'loan_amt': l.amount,
+            'loan_repaid': 0, 'int_paid': 0
         })
 
     for xl in xmas_loans:
         ledger_entries.append({
             'date': xl.disbursement_date,
+            'member': xl.member.user.get_full_name(),
+            'acc': xl.member.membership_number,
             'type': 'Xmas Loan Disbursed',
-            'member': xl.member.user.username,
-            'amount': xl.amount_requested,
-            'month': xl.disbursement_date
+            'share_rcvd': 0,
+            'loan_amt': xl.amount_requested,
+            'loan_repaid': 0, 'int_paid': 0
         })
 
-    # -------------------------------
-    # 🔹 REPAYMENTS
-    # -------------------------------
-    repayments = LoanRepayment.objects.all()
-
-    total_repaid = repayments.aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
-
-    for r in repayments:
+    # Process Repayments (Columns: REPAID & INTEREST PAID)
+    for sched in paid_schedules:
+        # Determine the correct member based on loan type
+        member_obj = sched.xmas_loan.member if sched.is_xmas else sched.loan.member
+        
         ledger_entries.append({
-            'date': r.payment_date,
-            'type': 'Loan Repayment',
-            'member': r.member.user.username,
-            'amount': r.amount_paid,
-            'month': r.payment_date
+            'date': sched.date_paid or sched.due_date,
+            'member': member_obj.user.get_full_name(),
+            'acc': member_obj.membership_number,
+            'type': f"Repayment (Inst. {sched.installment_number})",
+            'share_rcvd': 0,
+            'loan_amt': 0,
+            'loan_repaid': sched.principal_amount, # Principal part
+            'int_paid': sched.interest_amount,     # Interest part
         })
 
-    # -------------------------------
-    # 🔹 SORT LEDGER
-    # -------------------------------
-    ledger_entries = sorted(ledger_entries, key=lambda x: x['date'] or 0, reverse=True)
+    # ---------------------------------------------------------
+    # 3. SORTING & TOTALS
+    # ---------------------------------------------------------
+    # Sort entire SACCO history by newest first
+    ledger_entries = sorted(
+    ledger_entries, 
+    key=lambda x: normalize_date(x['date']) if x['date'] else date.min, 
+    reverse=True
+)
 
-    # -------------------------------
-    # 🔹 SACCO CORE FINANCIALS
-    # -------------------------------
-    total_equity = total_savings
-    total_out_loans = total_loans + total_xmas
-
-    liquidity = (total_savings + total_repaid) - total_out_loans
-
-    # -------------------------------
-    # 🔹 ACTIVE LOAN BALANCE
-    # -------------------------------
-    total_loan_balance = total_out_loans - total_repaid
+    # Calculate Summary Totals
+    total_savings = (monthly_savings.aggregate(Sum('amount'))['amount__sum'] or 0) + \
+                    (capital_shares.aggregate(Sum('amount'))['amount__sum'] or 0)
+    
+    total_out = (loans.aggregate(Sum('amount'))['amount__sum'] or 0) + \
+                (xmas_loans.aggregate(Sum('amount_requested'))['amount_requested__sum'] or 0)
+                
+    total_repaid = paid_schedules.aggregate(Sum('principal_amount'))['principal_amount__sum'] or 0
+    total_interest = paid_schedules.aggregate(Sum('interest_amount'))['interest_amount__sum'] or 0
 
     context = {
-        'total_savings': total_savings,
-        'total_loans': total_out_loans,
-        'total_repaid': total_repaid,
-        'loan_balance': total_loan_balance,
-        'liquidity': liquidity,
         'ledger': ledger_entries,
+        'total_savings': total_savings,
+        'total_out': total_out,
+        'total_repaid': total_repaid,
+        'total_interest': total_interest,
+        'liquidity': (total_savings + total_repaid + total_interest) - total_out
     }
 
     return render(request, 'sacco_financial_report.html', context)
@@ -2139,3 +2737,255 @@ def treasurer_edit_loan_amount(request, loan_id):
         return redirect('treasurer_dashboard')
 
     return render(request, 'treasurer_edit_loan.html', {'loan': loan})
+
+
+from .balance import BalanceSheetService
+def balance_sheet_view(request):
+    # Get the year from the query parameters, default to current year
+    current_year = timezone.now().year
+    year = request.GET.get('year', current_year)
+    
+    try:
+        year = int(year)
+    except ValueError:
+        year = current_year
+
+    # Generate the formal balance sheet data using the service
+    report_data = BalanceSheetService.generate_balance_sheet(year)
+    
+    # Range for the year selector dropdown
+    year_range = range(current_year - 5, current_year + 1)
+
+    return render(request, 'balance_sheet.html', {
+        'report': report_data,
+        'year_range': year_range,
+        'selected_year': year
+    })
+
+@login_required
+def my_statement(request):
+    # Get the member profile for the logged-in user
+    # try:
+    #     member = request.user.Profile  # Assuming a OneToOneField from Member to User
+    # except AttributeError:
+    #     # If user is admin/staff without a member profile
+    #     return redirect('member_dashboard')
+    start_month = int(request.GET.get('start_month', 1))
+    end_month = int(request.GET.get('end_month', timezone.now().month))
+    user =request.user
+    member = get_object_or_404(Profile, user=user)
+    year = 2026
+    monthly_stats = []
+    
+    # 1. Calculate Balances Brought Forward (before 2026)
+    # This matches the "Bal. b/d" row on your card
+    initial_shares = CapitalShare.objects.filter(
+        member=member, 
+        date_created__year__lt=year
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    # 2. Get monthly activity for the current year
+    running_share_bal = initial_shares
+    
+    # We loop through months 1 to 12
+    for m in range(1, 13):
+        shares = CapitalShare.objects.filter(
+            member=member, 
+           date_created__year=year, 
+           date_created__month=m
+        )
+        
+        received = shares.filter(amount__gt=0).aggregate(Sum('amount'))['amount__sum'] or 0
+        withdrawn = abs(shares.filter(amount__lt=0).aggregate(Sum('amount'))['amount__sum'] or 0)
+        
+        running_share_bal += (received - withdrawn)
+        
+        # Only add to list if there was activity or it's a past month
+        if m <= timezone.now().month:
+            monthly_stats.append({
+                'date': datetime(year, m, 1),
+                'share_received': received if received > 0 else "",
+                'share_withdrawn': withdrawn if withdrawn > 0 else "",
+                'running_share_bal': running_share_bal,
+                # Add loan logic here similarly
+            })
+
+    context = {
+        'member': member,
+        'monthly_stats': monthly_stats,
+        'initial_shares': initial_shares,
+        'current_shares': running_share_bal,
+        'today': timezone.now(),
+        'start_month': start_month,
+        'end_month': end_month,
+    }
+    return render(request, 'statement_template.html', context)
+
+def add_expense_view(request):
+    if request.method == 'POST':
+        form = ExpenseForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Commit=False allows us to attach the user profile before saving
+            expense = form.save(commit=False)
+            expense.recorded_by = request.user.profile 
+            expense.save()
+            
+            messages.success(request, f"Expense for {expense.get_expense_type_display()} recorded successfully!")
+            return redirect('treasurer_dashboard') # Redirect to your ledger
+    else:
+        form = ExpenseForm()
+    
+    return render(request, 'add_expense.html', {'form': form})
+
+from django import template
+
+register = template.Library()
+
+@register.filter
+def replace(value, arg):
+    """
+    Usage: {{ value|replace:"_, " }} 
+    Replaces the first part of the argument with the second part.
+    """
+    if len(arg.split(',')) != 2:
+        return value
+    
+    old, new = arg.split(',')
+    return value.replace(old, new)
+def sacco_report(request, year=None, month=None):
+    # Default to current month if not provided
+    today = timezone.now()
+    report_year = year or today.year
+    report_month = month or today.month
+    
+    # --- FILTERS ---
+    # Monthly Contribution uses 'month' field (DateField)
+    # Expense uses 'date_spent' (DateField)
+    # Loans use 'application_date' (DateTimeField)
+    
+    # 1. TOTAL SAVINGS THIS MONTH
+    monthly_savings = MonthlyContribution.objects.filter(
+        month__year=report_year, month__month=report_month
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    monthly_shares = CapitalShare.objects.filter(
+        month__year=report_year, month__month=report_month
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+    # 2. LOANS DISBURSED THIS MONTH
+    normal_loans = Loan.objects.filter(
+        status='disbursed', 
+        disbursed_at__year=report_year, 
+        disbursed_at__month=report_month
+    )
+    total_normal_disbursed = normal_loans.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_normal_interest = normal_loans.aggregate(Sum('interest'))['interest__sum'] or 0
+    
+    xmas_loans = XmasLoan.objects.filter(
+        is_disbursed=True,
+        disbursement_date__year=report_year,
+        disbursement_date__month=report_month
+    )
+    total_xmas_disbursed = xmas_loans.aggregate(Sum('amount_requested'))['amount_requested__sum'] or 0
+    total_xmas_interest = total_xmas_disbursed * Decimal('0.091')
+
+    # 3. LOAN REPAYMENTS RECEIVED THIS MONTH
+    repayments = LoanRepayment.objects.filter(
+        payment_date__year=report_year,
+        payment_date__month=report_month
+    ).aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+
+    # 4. EXPENDITURE THIS MONTH
+    expenses_list = Expense.objects.filter(
+        date_spent__year=report_year,
+        date_spent__month=report_month
+    )
+    total_expenses = expenses_list.aggregate(Sum('amount_spent'))['amount_spent__sum'] or 0
+    
+    # Per Expenditure Breakdown
+    expense_breakdown = expenses_list.values('expense_type').annotate(total=Sum('amount_spent'))
+
+    # 5. FINAL CALCULATION
+    total_inflow = monthly_savings + monthly_shares + repayments
+    net_cash_flow = total_inflow - (total_normal_disbursed + total_xmas_disbursed + total_expenses)
+
+    context = {
+        'report_date': datetime(int(report_year), int(report_month), 1),
+        'savings': monthly_savings + monthly_shares,
+        'repayments': repayments,
+        'loans_out': total_normal_disbursed + total_xmas_disbursed,
+        'interest_earned': total_normal_interest + total_xmas_interest,
+        'expenses': total_expenses,
+        'expense_breakdown': expense_breakdown,
+        'net_flow': net_cash_flow,
+        'inflow': total_inflow,
+    }
+    
+    return render(request, 'sacco.html', context)
+
+from django.shortcuts import render
+from datetime import datetime
+from .service import SaccoReportService
+
+def Bank_Statement(request):
+    # Get year from user input, default to current year
+    current_year = datetime.now().year
+    year = request.GET.get('year', current_year)
+    
+    try:
+        year = int(year)
+    except ValueError:
+        year = current_year
+
+    report_data = SaccoReportService.generate_annual_report(year)
+    
+    # Generate list of years for the selection dropdown (e.g., last 5 years)
+    year_range = range(current_year - 5, current_year + 1)
+    
+    return render(request, 'financial_audit.html', {
+        'report': report_data,
+        'year_range': year_range,
+        'selected_year': year
+    })
+
+import datetime
+def bank_financial_report(request):
+    # --- 1. NORMAL LOANS ---
+    # Summing fields already stored in the Loan model (Principal, Interest, Insurance)
+    normal_stats = Loan.objects.filter(is_disbursed=True).aggregate(
+        principal=Sum('amount'),
+        interest=Sum('interest'),
+        insurance=Sum('insurance')
+    )
+    
+    normal_interest = normal_stats['interest'] or Decimal('0.00')
+    normal_principal = normal_stats['principal'] or Decimal('0.00')
+    normal_insurance = normal_stats['insurance'] or Decimal('0.00')
+
+    # --- 2. XMAS LOANS ---
+    # Calculating interest based on your 9.1% fixed rate logic
+    xmas_principal = XmasLoan.objects.filter(is_disbursed=True).aggregate(
+        total=Sum('amount_requested'))['total'] or Decimal('0.00')
+    
+    xmas_interest = xmas_principal * Decimal('0.091')
+
+    # --- 3. CONSOLIDATED TOTALS ---
+    total_principal = normal_principal + xmas_principal
+    
+    # We keep them separate for the context, but sum them for the grand total
+    total_interest_combined = normal_interest + xmas_interest
+    
+    grand_total = total_principal + total_interest_combined + normal_insurance
+
+    context = {
+        # Individual Interests (Separated)
+        'normal_interest': normal_interest,
+        'xmas_interest': xmas_interest,
+        
+        # Totals
+        'principal': total_principal,
+        'insurance': normal_insurance,
+        'grand_total': grand_total,
+        'report_date': datetime.datetime.now(),
+    }
+    return render(request, 'bank.html', context)

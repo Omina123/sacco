@@ -87,7 +87,7 @@
     
     <div class="nav flex-column">
         <a href="#" class="nav-link active"><i class="bi bi-grid-1x2 me-2"></i> Payroll Overview</a>
-        <a href="{% url 'admin_dashboard' %}" class="nav-link"><i class="bi bi-arrow-left-circle me-2"></i> Admin Panel</a>
+        <a href="{% url 'Human_Resource' %}" class="nav-link"><i class="bi bi-arrow-left-circle me-2"></i> Admin Panel</a>
         <div class="mt-auto">
             <a href="{% url 'Logout' %}" class="nav-link text-danger mt-5">
                 <i class="bi bi-box-arrow-right me-2"></i> Sign Out
@@ -147,24 +147,24 @@
 
     <!-- STATS -->
     <div class="row g-3 mb-4">
-        <div class="col-md-3">
+        {% comment %} <div class="col-md-3">
             <div class="card stat-card p-3">
                 <small>Total Members</small>
                 <h5>{{ member_count }}</h5>
-            </div>
-        </div>
+            </div> {% endcomment %}
+        {% comment %} </div>
         <div class="col-md-3">
             <div class="card stat-card p-3">
                 <small>Total Gross</small>
                 <h5>KES {{ total_gross|floatformat:0 }}</h5>
             </div>
-        </div>
-        <div class="col-md-3">
+        </div> {% endcomment %}
+        {% comment %} <div class="col-md-3">
             <div class="card stat-card p-3">
                 <small>Average Salary</small>
                 <h5>KES {{ avg_gross|floatformat:0 }}</h5>
             </div>
-        </div>
+        </div> {% endcomment %}
         <div class="col-md-3">
             <div class="card stat-card p-3">
                 <small>Needs Review</small>
@@ -251,5 +251,59 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // --- SIDEBAR LOGIC ---
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('sidebar-overlay').classList.toggle('show');
+    }
+
+    const collapseBtn = document.getElementById('collapse-btn');
+    if (collapseBtn) {
+        collapseBtn.addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.getElementById('top-nav').classList.toggle('full-width');
+            document.getElementById('main-content').classList.toggle('full-width');
+        });
+    }
+
+    // --- SEARCH FUNCTIONALITY ---
+    const memberSearch = document.getElementById('memberSearch');
+    if (memberSearch) {
+        memberSearch.addEventListener('keyup', function() {
+            let filter = this.value.toLowerCase();
+            let rows = document.querySelectorAll('.table tbody tr');
+
+            rows.forEach(row => {
+                // Ensure the row has enough columns before searching
+                let name = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase() || "";
+                let pf = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || "";
+                let id = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || "";
+
+                if (name.includes(filter) || pf.includes(filter) || id.includes(filter)) {
+                    row.style.display = ""; 
+                } else {
+                    row.style.display = "none"; 
+                }
+            });
+        });
+    }
+
+    // --- POPUP MESSAGING ---
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if messages %}
+            {% for message in messages %}
+                Swal.fire({
+                    icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}",
+                    title: "{{ message.tags|capfirst }}",
+                    text: "{{ message }}",
+                    confirmButtonColor: "#1B5E20", // Matches Eldopoly Green
+                    timer: 4000
+                });
+            {% endfor %}
+        {% endif %}
+    });
+</script>
 </body>
 </html>

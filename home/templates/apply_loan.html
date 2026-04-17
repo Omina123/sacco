@@ -87,9 +87,17 @@
         .btn-eldo:hover { background: #0e3322; }
         .btn-eldo:disabled { background: #cbd5e0; color: white; cursor: not-allowed; }
 
-        #id_amount, #id_duration_months {
+        #id_amount, #id_duration_months, #id_purpose {
             border: 1px solid #e2e8f0; background: #f8fafc; font-weight: 800;
             color: var(--eldo-deep-green); width: 100%; border-radius: 8px; padding: 8px 12px;
+        }
+
+        .duration-badge {
+            font-size: 0.7rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-top: 5px;
+            display: inline-block;
         }
 
         @media (max-width: 992px) {
@@ -126,15 +134,20 @@
             <a href="{% url 'Logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
     </aside>
- {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} py-1 px-3 mb-0 me-3 small shadow-sm">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
+
     <div class="main-container">
         <main class="scrollable-content">
             <div class="container-fluid">
                 <div class="col-xl-8 col-lg-10 mx-auto">
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm rounded-4 mb-4" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
                     
                     <div class="borrow-power-banner shadow-sm">
                         <div class="d-flex justify-content-between align-items-start mb-3">
@@ -153,54 +166,42 @@
                         </div>
                     </div>
 
-                    {% if active_loan %}
-                    <div class="alert alert-info border-0 rounded-4 shadow-sm mb-4 d-flex align-items-center" style="background: #e1f5fe;">
-                        <i class="bi bi-arrow-up-circle-fill fs-3 me-3 text-primary"></i>
-                        <div>
-                            <h6 class="fw-bold mb-0">Top-Up Request</h6>
-                            <p class="small mb-0">Existing loan balance of <strong>KES {{ current_balance|floatformat:2 }}</strong> will be settled from this new application.</p>
-                        </div>
-                    </div>
-                    {% endif %}
-
                     <div class="glass-card mb-5">
                         <form method="POST" id="loanForm">
                             {% csrf_token %}
                             {{ formset.management_form }}
                             
                             <div class="row">
+                                <div class="col-md-12 mb-4">
+                                    <label class="form-label"><i class="bi bi-tag me-2"></i>Loan Type</label>
+                                    <select name="purpose" id="id_purpose" class="form-control" required>
+                                        <option value="normal">Normal Loan (Max 48 Months)</option>
+                                        <option value="school fees">School Fees (Max 12 Months)</option>
+                                        <option value="emergency">Emergency (Max 12 Months)</option>
+                                        <option value="personal">Personal (Max 12 Months)</option>
+                                    </select>
+                                </div>
+
                                 <div class="col-md-6 mb-4">
                                     <label class="form-label"><i class="bi bi-cash-stack me-2"></i>Requested Amount</label>
                                     <input type="range" class="custom-slider" id="amount_range" 
-                                           min="1000" max="{{ loan_limit }}" step="500" value="{{ current_balance|add:5000 }}">
-                                    <input type="number" name="amount" step="0.01" class="form-control" required id="id_amount">
+                                           min="0" max="{{ loan_limit }}" step="500" value="0">
+                                    <input type="number" name="amount" step="0.01" class="form-control" required id="id_amount" max="{{ loan_limit }}">
                                 </div>
+                                
                                 <div class="col-md-6 mb-4">
-                                    <label class="form-label"><i class="bi bi-calendar-event me-2"></i>Duration (Months)</label>
+                                    <label class="form-label"><i class="bi bi-calendar-event me-2"></i>Duration</label>
                                     <input type="range" class="custom-slider" id="month_range" min="1" max="48" step="1" value="12">
-                                    <select name="duration_months" class="form-control" id="id_duration_months">
-                                        {% for i in "123456789"|make_list %}<option value="{{ forloop.counter }}">{{ forloop.counter }} Months</option>{% endfor %}
-                                        <option value="12" selected>12 Months</option>
-                                        <option value="24">24 Months</option>
-                                        <option value="36">36 Months</option>
-                                        <option value="48">48 Months</option>
-                                    </select>
+                                    <select name="duration_months" class="form-control" id="id_duration_months"></select>
+                                    <div id="duration-warning" class="duration-badge bg-info-subtle text-info border border-info">
+                                        Policy: Max 48 Months
+                                    </div>
                                 </div>
                             </div>
 
-                            <div class="col-md-12 mb-4">
-                                <label class="form-label"><i class="bi bi-tag me-2"></i>Loan Purpose</label>
-                                <select name="purpose" id="id_purpose" class="form-control" required>
-                                    <option value="normal Loan">Normal Loan</option>
-                                    <option value="school fees">School Fees</option>
-                                    <option value="emergency">Emergency</option>
-                                    <option value="personal">Personal</option>
-                                </select>
-                            </div>
-
-                            <div class="mb-4">
+                            <div class="mb-4 mt-3">
                                 <div class="d-flex justify-content-between border-bottom pb-2 mb-3 align-items-center">
-                                    <h5 class="fw-bold m-0 text-eldo-deep-green">Assign Guarantors (Min 3)</h5>
+                                    <h5 class="fw-bold m-0 text-eldo-deep-green">Guarantors (Min 2)</h5>
                                     <div>
                                         <span id="math-status" class="badge bg-danger me-2">Shortfall</span>
                                         <button type="button" class="btn btn-sm btn-outline-success rounded-pill" id="add-guarantor">
@@ -208,13 +209,14 @@
                                         </button>
                                     </div>
                                 </div>
+                                <p class="text-muted small mb-3"><i class="bi bi-info-circle me-1"></i> Only regular Members can guarantee. Staff/HR are restricted.</p>
 
                                 <div id="guarantor-container">
                                     {% for g_form in formset %}
                                     <div class="guarantor-row p-3 shadow-sm">
                                         <div class="row align-items-center">
                                             <div class="col-md-7 mb-2 mb-md-0">
-                                                <label class="small fw-bold text-muted d-block mb-1">Guarantor {{ forloop.counter }}</label>
+                                                <label class="small fw-bold text-muted d-block mb-1">Select Member</label>
                                                 {{ g_form.guarantor }}
                                             </div>
                                             <div class="col-md-5">
@@ -232,27 +234,17 @@
                                 <h6 class="fw-bold mb-3 text-dark small text-uppercase"><i class="bi bi-calculator me-2"></i>Financial Summary</h6>
                                 
                                 <div class="d-flex justify-content-between mb-2 small">
-                                    <span class="text-muted">New Principal</span>
-                                    <span id="display-principal" class="fw-bold">KES 0.00</span>
+                                    <span class="text-muted">Applied Interest Rate</span>
+                                    <span id="p-rate-badge" class="badge bg-info">0.0%</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2 small">
-                                    <span class="text-muted">Estimated Interest (25.9%)</span>
+                                    <span class="text-muted">Interest Amount</span>
                                     <span id="p-interest" class="fw-bold">KES 0.00</span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2 small">
                                     <span class="text-muted">Insurance Fee</span>
-                                    <span id="p-insurance" class="fw-bold">KES 0.00</span> </div>
-
-                                {% if active_loan %}
-                                <div class="d-flex justify-content-between mb-2 py-2 border-top border-bottom text-danger small">
-                                    <span class="fw-bold">Existing Loan Payoff</span>
-                                    <span class="fw-bold">- KES {{ current_balance|floatformat:2 }}</span>
+                                    <span id="p-insurance" class="fw-bold">KES 0.00</span>
                                 </div>
-                                <div class="d-flex justify-content-between mb-2 pt-2 text-eldo-deep-green">
-                                    <span class="fw-bold">Net Cash to Member</span>
-                                    <span id="p-net-cash" class="fw-bold fs-5">KES 0.00</span>
-                                </div>
-                                {% endif %}
 
                                 <div class="d-flex justify-content-between align-items-center pt-3 mt-2 border-top">
                                     <span class="fw-bold">Total Future Liability</span>
@@ -277,40 +269,103 @@
 
 <script>
 $(document).ready(function() {
-    const currentBalance = parseFloat("{{ current_balance|default:'0' }}");
+    const loanLimit = parseFloat("{{ loan_limit|default:'0' }}");
     const $amtRange = $('#amount_range');
     const $amtInput = $('#id_amount');
     const $monRange = $('#month_range');
     const $monInput = $('#id_duration_months');
     const $purposeSelect = $('#id_purpose');
+    const $durationWarning = $('#duration-warning');
 
-    // Initialize Select2
+    // 1. POPULATE DURATION & LOGIC (48 vs 12)
+    function rebuildDurationOptions(maxMonths) {
+        const currentVal = $monInput.val() || 12;
+        $monInput.empty();
+        for (let i = 1; i <= maxMonths; i++) {
+            $monInput.append(`<option value="${i}">${i} Months</option>`);
+        }
+        $monRange.attr('max', maxMonths);
+        // Ensure current selection doesn't exceed new max
+        const newVal = currentVal > maxMonths ? maxMonths : currentVal;
+        $monInput.val(newVal);
+        $monRange.val(newVal);
+        
+        $durationWarning.text(`Policy: Max ${maxMonths} Months`);
+        updateCalculations();
+    }
+
+    $purposeSelect.on('change', function() {
+        const type = $(this).val();
+        if (type === 'normal') {
+            rebuildDurationOptions(48);
+        } else {
+            rebuildDurationOptions(12);
+        }
+    });
+
+    // Initial load - default to Normal Loan 48
+    rebuildDurationOptions(48);
+
     function initSelect2() {
-        $('select[name$="-guarantor"]').select2({ width: '100%' });
+        $('select[name$="-guarantor"]').select2({ 
+            width: '100%',
+            placeholder: "Search for a member..."
+        });
     }
     initSelect2();
 
-    $amtInput.val($amtRange.val());
-    $monInput.val($monRange.val());
-
-    // Sync Sliders
-    $amtRange.on('input', function() { $amtInput.val($(this).val()); updateCalculations(); });
-    $amtInput.on('input', function() { $amtRange.val($(this).val()); updateCalculations(); });
-    $monRange.on('input', function() { $monInput.val($(this).val()); updateCalculations(); });
-
-    // Purpose Change Logic
-    $purposeSelect.on('change', function() {
-        if ($(this).val() === "normal Loan") {
-            $monInput.val("48");
-            $monRange.val(48);
-        } else {
-            $monInput.val("12");
-            $monRange.val(12);
-        }
+    // 2. AMOUNT SYNC
+    $amtRange.on('input', function() {
+        $amtInput.val($(this).val());
         updateCalculations();
     });
 
-    // Validate Coverage
+    $amtInput.on('input', function() {
+        let val = parseFloat($(this).val()) || 0;
+        if (val > loanLimit) val = loanLimit;
+        $(this).val(val);
+        $amtRange.val(val);
+        updateCalculations();
+    });
+
+    // 3. DURATION SYNC
+    $monRange.on('input', function() {
+        $monInput.val($(this).val());
+        updateCalculations();
+    });
+
+    $monInput.on('change', function() {
+        $monRange.val($(this).val());
+        updateCalculations();
+    });
+
+    function updateCalculations() {
+        const principal = parseFloat($amtInput.val()) || 0;
+        const months = parseInt($monInput.val()) || 0;
+        
+        let rate = 0;
+        let rateLabel = "0.0%";
+
+        if (months > 0) {
+            if (months <= 12) { rate = 0.091; rateLabel = "9.1%"; }
+            else if (months <= 24) { rate = 0.175; rateLabel = "17.5%"; }
+            else if (months <= 36) { rate = 0.259; rateLabel = "25.9%"; }
+            else { rate = 0.349; rateLabel = "34.9%"; }
+        }
+
+        const interest = principal * rate;
+        const insurance = months > 0 ? ((5.03 * months + 3.03) * principal) / 6000 : 0;
+        const totalDebt = principal + interest + insurance;
+
+        $('#p-rate-badge').text(rateLabel);
+        $('#p-interest').text("KES " + interest.toLocaleString(undefined,{minimumFractionDigits:2}));
+        $('#p-insurance').text("KES " + insurance.toLocaleString(undefined,{minimumFractionDigits:2}));
+        $('#p-total').text("KES " + totalDebt.toLocaleString(undefined,{minimumFractionDigits:2}));
+        
+        validateCoverage();
+    }
+
+    // 4. GUARANTOR VALIDATION
     function validateCoverage() {
         let totalGuaranteed = 0;
         const requestedAmount = parseFloat($amtInput.val()) || 0;
@@ -319,86 +374,44 @@ $(document).ready(function() {
             totalGuaranteed += parseFloat($(this).val()) || 0; 
         });
 
+        const shortfall = requestedAmount - totalGuaranteed;
         const $status = $('#math-status');
-        const $btn = $('#submitBtn');
+        const $submitBtn = $('#submitBtn');
 
         if (totalGuaranteed >= requestedAmount && requestedAmount > 0) {
-            $status.text("Covered: KES " + totalGuaranteed.toLocaleString()).removeClass('bg-danger').addClass('bg-success');
-            $btn.prop('disabled', false);
+            $status.text("Covered").removeClass('bg-danger').addClass('bg-success');
+            $submitBtn.prop('disabled', false);
         } else {
-            let diff = requestedAmount - totalGuaranteed;
-            $status.text("Shortfall: KES " + (diff > 0 ? diff : 0).toLocaleString()).removeClass('bg-success').addClass('bg-danger');
-            $btn.prop('disabled', true);
+            $status.text("Shortfall: KES " + (shortfall > 0 ? shortfall : 0).toLocaleString());
+            $status.removeClass('bg-success').addClass('bg-danger');
+            $submitBtn.prop('disabled', true);
         }
     }
 
-    // Financial Calculations
-    function updateCalculations() {
-        const principal = parseFloat($amtInput.val()) || 0;
-        const months = parseFloat($monInput.val()) || 1;
-        
-        // 1. Insurance Calculation
-        const insurance = ((5.03 * months + 3.03) * principal) / 6000;
-        
-        // 2. Interest (25.9% flat)
-        const interest = principal * 0.259;
-        
-        const totalDebt = principal + interest + insurance;
-        const netCash = principal - currentBalance;
+    $(document).on('input', '.guarantor-amt', validateCoverage);
 
-        // Update UI
-        $('#display-principal').text("KES " + principal.toLocaleString());
-        $('#p-interest').text("KES " + interest.toLocaleString(undefined,{minimumFractionDigits:2}));
-        $('#p-insurance').text("KES " + insurance.toLocaleString(undefined,{minimumFractionDigits:2}));
-        $('#p-total').text("KES " + totalDebt.toLocaleString(undefined,{minimumFractionDigits:2}));
-        
-        if ($('#p-net-cash').length) {
-            if (netCash <= 0 && principal > 0) {
-                $('#p-net-cash').text("Increase Amount").addClass('text-danger');
-            } else {
-                $('#p-net-cash').text("KES " + netCash.toLocaleString(undefined,{minimumFractionDigits:2})).removeClass('text-danger');
-            }
-        }
-        validateCoverage();
-    }
-
-    // Add Dynamic Guarantor Field
     $('#add-guarantor').click(function() {
         const $totalForms = $('#id_form-TOTAL_FORMS');
         const count = parseInt($totalForms.val());
-        
-        // Clone the first guarantor row
         const $newRow = $('.guarantor-row').first().clone();
         
-        // Update IDs and Names
         $newRow.find('input, select').each(function() {
             const oldName = $(this).attr('name');
-            const newName = oldName.replace('-0-', '-' + count + '-');
-            $(this).attr({'name': newName, 'id': 'id_' + newName}).val('');
+            if(oldName) {
+                const newName = oldName.replace('-0-', '-' + count + '-');
+                $(this).attr({'name': newName, 'id': 'id_' + newName}).val('');
+            }
         });
 
-        // Update Label
-        $newRow.find('label').first().text('Guarantor ' + (count + 1));
-        
-        // Remove existing Select2 container before appending
+        $newRow.find('label').first().text('Select Member');
         $newRow.find('.select2-container').remove();
-        
         $('#guarantor-container').append($newRow);
         $totalForms.val(count + 1);
-        
-        // Re-init Select2
         initSelect2();
-        updateCalculations();
     });
 
-    // Event Delegation for dynamic fields
-    $(document).on('input', '.guarantor-amt', validateCoverage);
     $('#menuToggle').click(() => $('#sidebar').toggleClass('active'));
-
-    // Initial Run
-    updateCalculations();
 });
 </script>
-
 </body>
 </html>

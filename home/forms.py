@@ -107,3 +107,33 @@ class SavingsForm(forms.ModelForm):
 #     class Meta:
 #         model= LoanSetting
 #         fields='__all__'
+
+
+class CapitalShareRefundForm(forms.ModelForm):
+    class Meta:
+        model = CapitalShareRefund
+        fields = ['amount_requested', 'reason']
+
+    def clean_amount_requested(self):
+        amount = self.cleaned_data['amount_requested']
+        if amount <= 0:
+            raise forms.ValidationError("Amount must be greater than 0")
+        return amount
+from django import forms
+from .models import Expense
+
+class ExpenseForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+        fields = [
+            'expense_type', 'amount_spent', 'date_spent', 
+            'payment_method', 'description', 'receipt_image'
+        ]
+        widgets = {
+            'expense_type': forms.Select(attrs={'class': 'form-select'}),
+            'amount_spent': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0.00'}),
+            'date_spent': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'payment_method': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'receipt_image': forms.FileInput(attrs={'class': 'form-control'}),
+        }

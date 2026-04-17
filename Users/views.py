@@ -1,5 +1,5 @@
 from django.shortcuts import get_object_or_404, render, redirect
-
+from home.models import NormalShares,RegistrationFee
 from .forms import *
 from .EmailBackend import EmailBackend
 from django.contrib.auth import authenticate, login,logout
@@ -25,7 +25,15 @@ from.forms import *
 from django.db import transaction
 from .utils import send_brevo_email
 from .EmailBackend import EmailBackend
-
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.contrib import messages
+from home.models import HRNotification
+from .forms import MembershipSetupForm
+from .models import Profile
+from .utils import generate_membership_number
+ 
 def register(request):
     if request.method == 'POST':
         user_form = MemberRegistrationForm(request.POST)
@@ -145,45 +153,8 @@ def Login(request):
     else:
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
-#     if request.method == 'POST':
-#         form = LoginForm(request.POST)
-#         if form.is_valid():
-#             email = form.cleaned_data['Email']
-#             password = form.cleaned_data['password']
-
-#             user = authenticate(request, username=email, password=password)
-            
-#             if user is not None:
-#                 if not user.is_verified:
-#                     messages.error(request, "Your account is not verified. Please verify OTP first.")
-#                     request.session['verification_email'] = user.email
-#                     return redirect('verify_otp')
-#                 login(request, user)  # ONLY once
-                
-#                 profile = user.profile
-
-#                 # Redirect based on user type
-#                 if profile.id_number and profile.phone_number:
-#                     if user.is_superuser or user.user_type == '1':
-#                         return redirect('admin_dashboard')
-#                     elif user.user_type == '2':
-#                         return redirect('staff_dashboard')
-#                     elif user.user_type == '3':
-#                         return redirect('treasurer_dashboard')
-#                     elif user.user_type == '5':
-#                         return redirect('Human_Resource')
-#                     else:
-#                         return redirect('member_dashboard')
-#                 else:
-#                     return redirect('update_profile')
-#             else:
-#                 form.add_error(None, "Invalid email or password")
-#     else:
-#         form = LoginForm()
-#     return render(request, 'login.html', {'form': form})
 
 @login_required
-
 
 def update_profile(request):
     user = request.user
@@ -202,7 +173,7 @@ def update_profile(request):
 
             # Handle optional unique fields (avoid empty string issues)
             profile.pf_number = profile.pf_number or None
-            profile.membership_number = profile.membership_number or None
+            # profile.membership_number = profile.membership_number or None
 
             # 🔥 IMPORTANT: Reset salary review flag after update
             if hasattr(profile, 'salary_needs_review'):
@@ -230,9 +201,9 @@ def Logout(request):
 
 def edit_user_role(request, user_id):
     # Only allow actual Admins (type '1') to access this view
-    # if request.user.user_type != '1' and not request.user.is_superuser:
-    #     messages.error(request, "Unauthorized access.")
-    #     return redirect('member_dashboard')
+    if request.user.user_type != '1' and not request.user.is_superuser:
+        messages.error(request, "Unauthorized access.")
+        return redirect('access_denied')
 
     target_user = get_object_or_404(CustomUser, id=user_id)
     
@@ -259,15 +230,24 @@ def access_denied(request):
     return render(request, '403.html', status=403)
 def succfy(request):
     return render(request, "ht.html")
- 
 def edit_salary(request, user_id):
-    # Fetch the profile of the user HR wants to update
     profile = get_object_or_404(Profile, id=user_id)
 
     if request.method == "POST":
         form = EditSalaryForm(request.POST, instance=profile)
         if form.is_valid():
-            form.save()
+            profile = form.save(commit=False)
+            
+            # Ensure salary review is marked complete
+            profile.salary_needs_review = False
+            profile.save()
+
+            # Mark related notifications as read
+            HRNotification.objects.filter(
+                member=profile,
+                is_read=False
+            ).update(is_read=True)
+
             messages.success(request, f"Salaries for {profile.user.get_full_name()} updated.")
             return redirect('Human_Resource')
     else:
@@ -472,3 +452,53 @@ def resend_otp(request):
         messages.error(request, "User not found.")
         
     return redirect('verify_otp')
+ # adjust if different
+
+
+
+
+
+@login_required
+def complete_membership(request):
+    profile = request.user.profile
+
+    # if already completed → skip
+    if profile.membership_number:
+        return redirect('member_dashboard')
+
+    if request.method == "POST":
+        form = MembershipSetupForm(request.POST)
+        if form.is_valid():
+            contribution = form.cleaned_data['monthly_contribution']
+
+            # simulate payment success (replace with mpesa later)
+            registration_fee_amount = 500
+            payment_successful = True
+
+            if payment_successful:
+                # ✅ 1. Assign membership number
+                profile.membership_number = generate_membership_number()
+                profile.save()
+
+                # ✅ 2. Save capital share (ONE TIME)
+                NormalShares.objects.create(
+                    member=profile,
+                    amount=contribution
+                )
+
+                # ✅ 3. Save registration fee
+                RegistrationFee.objects.update_or_create(
+                    member=profile,
+                    defaults={
+                        'amount': registration_fee_amount,
+                        'paid': True,
+                        'paid_at': timezone.now()
+                    }
+                )
+
+                messages.success(request, "Membership completed successfully!")
+                return redirect('member_dashboard')
+    else:
+        form = MembershipSetupForm()
+
+    return render(request, 'setup.html', {'form': form})

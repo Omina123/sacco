@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record Expense - Eldopoly SACCO</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --eldo-navy: #0B1F3A;
+            --eldo-gold: #D4AF37;
+            --eldo-bg: #f4f7f6;
+        }
+
+        body {
+            background-color: var(--eldo-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar-custom {
+            background-color: var(--eldo-navy);
+            border-bottom: 3px solid var(--eldo-gold);
+        }
+
+        .expense-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            margin-top: 50px;
+        }
+
+        .card-header-custom {
+            background-color: var(--eldo-navy);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .btn-save {
+            background-color: var(--eldo-navy);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .btn-save:hover {
+            background-color: #162e4f;
+            color: var(--eldo-gold);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--eldo-navy);
+            font-size: 0.9rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+        }
+
+        .form-control:focus {
+            border-color: var(--eldo-gold);
+            box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25);
+        }
+
+        .input-group-text {
+            background-color: #e9ecef;
+            color: var(--eldo-navy);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-dark navbar-custom px-4 py-2">
+        <a class="navbar-brand fw-bold" href="#">
+            <i class="bi bi-shield-check text-gold me-2"></i>ELDOPOLY SACCO
+        </a>
+        <div class="text-white small d-none d-md-block">
+            Treasurer Portal: {{ request.user.get_full_name }}
+        </div>
+    </nav>
+
+    <div class="container pb-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+                
+                <div class="card expense-card">
+                    <div class="card-header-custom">
+                        <h4 class="mb-0">Record Expenditure</h4>
+                        <p class="small mb-0 opacity-75">Enter details for office or operational costs</p>
+                    </div>
+
+                    <div class="card-body p-4 p-md-5 bg-white">
+                        
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+
+                        <form method="POST" enctype="multipart/form-data">
+                            {% csrf_token %}
+
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Category</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-tag"></i></span>
+                                        {{ form.expense_type }}
+                                    </div>
+                                    <div class="text-danger small">{{ form.expense_type.errors }}</div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Amount Spent</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">KES</span>
+                                        {{ form.amount_spent }}
+                                    </div>
+                                    <div class="text-danger small">{{ form.amount_spent.errors }}</div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label">Date of Expense</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-calendar-event"></i></span>
+                                        {{ form.date_spent }}
+                                    </div>
+                                    <div class="text-danger small">{{ form.date_spent.errors }}</div>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label">Payment Method</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
+                                        {{ form.payment_method }}
+                                    </div>
+                                    <div class="text-danger small">{{ form.payment_method.errors }}</div>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label">Description / Narrative</label>
+                                    {{ form.description }}
+                                    <div class="text-danger small">{{ form.description.errors }}</div>
+                                </div>
+
+                                <div class="col-12">
+                                    <label class="form-label">Attach Receipt (Optional)</label>
+                                    <div class="input-group">
+                                        {{ form.receipt_image }}
+                                    </div>
+                                    <small class="text-muted">Max file size: 5MB (Image format)</small>
+                                    <div class="text-danger small">{{ form.receipt_image.errors }}</div>
+                                </div>
+
+                                <div class="col-12 mt-4">
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="btn btn-save">
+                                            <i class="bi bi-check-circle me-2"></i>Post to Ledger
+                                        </button>
+                                        <a href="{% url 'financial_ledger_view' %}" class="btn btn-outline-secondary">
+                                            Cancel & Go Back
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4 text-muted small">
+                    &copy; 2026 Eldopoly SACCO Management System. All rights reserved.
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

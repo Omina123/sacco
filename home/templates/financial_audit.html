@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Audit Report | Eldopoly SACCO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .report-header { background-color: #f8f9fa; padding: 20px; border-bottom: 3px solid #0d6efd; }
+        .table-section { margin-top: 30px; }
+        .bg-sacco { background-color: #0d6efd; color: white; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body class="bg-light">
+
+<div class="container my-5 bg-white shadow-sm p-5">
+    
+    <div class="no-print mb-4 p-3 border rounded bg-light">
+        <form method="GET" class="row g-3 align-items-center">
+            <div class="col-auto">
+                <label for="year" class="col-form-label fw-bold">Select Fiscal Year:</label>
+            </div>
+            <div class="col-auto">
+                <select name="year" id="year" class="form-select">
+                    {% for y in year_range %}
+                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Update Report</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="report-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-0">ELDOPOLY SACCO</h2>
+            <p class="text-muted">ANNUAL FINANCIAL STATEMENT - YEAR {{ report.year }}</p>
+        </div>
+        <button onclick="window.print()" class="btn btn-outline-secondary no-print">Print Statement</button>
+    </div>
+
+    <div class="table-section">
+        <h5 class="bg-sacco p-2">OPERATIONAL EXPENDITURE</h5>
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>PARTICULARS</th>
+                    <th class="text-end">AMOUNT (KES)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in report.expenses %}
+                <tr>
+                    <td>{{ item.expense_type|title|dictsort:"expense_type" }}</td>
+                    <td class="text-end">{{ item.total|floatformat:2 }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="2" class="text-center">No expenses found for this year.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <h5 class="bg-sacco p-2">INFLOWS & EQUITY</h5>
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <td>Monthly Contributions</td>
+                        <td class="text-end">{{ report.total_contributions|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Loan Repayments Recovered</td>
+                        <td class="text-end text-success">+ {{ report.total_repayments|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Registration Fees</td>
+                        <td class="text-end">{{ report.total_reg_fees|floatformat:2 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="col-md-6">
+            <h5 class="bg-sacco p-2">REFUNDS & DISBURSEMENTS</h5>
+            <table class="table table-bordered">
+                <tbody>
+                    <tr>
+                        <td>Loans Issued to Members</td>
+                        <td class="text-end text-danger">- {{ report.loan_stats.total_disbursed|default:0|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Capital Share Refunds</td>
+                        <td class="text-end">- {{ report.refunds.capital_shares|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Xmas Fund Payouts</td>
+                        <td class="text-end">- {{ report.refunds.xmas_fund|floatformat:2 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-4 p-3 border rounded bg-dark text-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">NET CASH POSITION</h4>
+        <h3 class="mb-0">KES {{ report.net_cash_flow|floatformat:2 }}</h3>
+    </div>
+
+    <div class="mt-5 pt-3 border-top text-center text-muted small">
+        <p>This is an automated audit report. Please reconcile with bank statement (bank.pdf) for accuracy.</p>
+    </div>
+</div>
+
+</body>
+</html>

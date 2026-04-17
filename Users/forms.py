@@ -121,12 +121,23 @@ class PUpdateForm(forms.ModelForm):
         if mem_num and Profile.objects.filter(membership_number=mem_num).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError("This Membership Number is already in use.")
         return mem_num
+from django import forms
+from .models import Profile
+
 class EditSalaryForm(forms.ModelForm):
     class Meta:
         model = Profile
-        fields = ['month','gross_salary', 'net_salary']
+        fields = ['gross_salary', 'net_salary', 'month']
         widgets = {
-            'month': forms.DateInput(attrs={'class': 'form-control', 'type': 'month'}), # Allows month-only selection
-            'gross_salary': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0.00'}),
-            'net_salary': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '0.00'}),
+            'month': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'  # This triggers the browser date picker
+            }),
+            'gross_salary': forms.NumberInput(attrs={'class': 'form-control'}),
+            'net_salary': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+class MembershipSetupForm(forms.Form):
+    monthly_contribution = forms.DecimalField(
+        min_value=100,
+        max_value=100000
+    )

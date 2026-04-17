@@ -298,6 +298,159 @@ body { background: var(--soft-bg); font-family: 'Inter', sans-serif; color: #2c3
         </div>
     </div>
 </div>
+<div class="data-table-card">
+        <div class="p-4 bg-white d-flex justify-content-between align-items-center">
+            <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-warning"></i>Xmass Refunds</h5>
+            <button class="btn btn-sm btn-light border text-muted px-3 rounded-pill">View All</button>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">Member Details</th>
+                       
+                        <th>Amount</th>
+                        <th>Duration</th>
+                        <th>Approval Flow</th>
+                        <th class="text-center">Quick Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in pending_xmas_refunds%}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold">{{ loan.member.user.get_full_name|default:loan.member.user.username }}</div>
+                            <small class="text-muted">ID: #{{ loan.id|stringformat:"05d" }}</small>
+                        </td>
+                        
+                        <td><span class="fw-bold">KES {{ loan.amount_requested|floatformat:2 }}</span></td>
+                        <td>{{ loan.duration_months }} Months</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <span class="progress-pill {% if loan.admin_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-person-badge"></i> Admin</span>
+                                <span class="progress-pill {% if loan.staff_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-person-check"></i> Staff</span>
+                                <span class="progress-pill {% if loan.treasurer_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-cash-coin"></i> Treasurer</span>
+                            </div>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'approve_xmas_refund' loan.id %}" class="btn btn-success">Approve</a>
+                            <a href="{% url 'reject_xmas_refund' loan.id %}" class="btn btn-danger">Reject</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="py-4">
+                                <i class="bi bi-inbox text-light display-1"></i>
+                                <p class="text-muted mt-3 italic">Queue is clear. No pending Xmas found.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+      
+    <div class="content-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h5 class="fw-800 mb-0"><i class="bi bi-safe2 text-primary me-2"></i>Capital Share Refund Queue</h5>
+                <p class="text-muted small">Equity Withdrawals (90-day cycle)</p>
+            </div>
+            <span class="badge bg-navy text-gold rounded-pill px-3 py-2">{{ pending_shares_refunds.count }} REQUESTS</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Net Payout</th>
+                        <th>Effective Date</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for refund in pending_shares_refunds %}
+                    <tr>
+                        <td>
+                            <div class="fw-700 text-dark">{{ refund.member.user.get_full_name }}</div>
+                            <div class="text-muted small">ID: {{ refund.member.membership_number }}</div>
+                        </td>
+                        <td class="fw-800 text-primary">KES {{ refund.net_amount|floatformat:2 }}</td>
+                        <td>
+                            <span class="{% if refund.effective_date <= today %}text-success fw-bold{% else %}text-warning{% endif %}">
+                                {{ refund.effective_date|date:"d M Y" }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if refund.status == 'pending' %}
+                                <span class="badge bg-light text-dark border">Pending</span>
+                            {% elif refund.status == 'partially_approved' %}
+                                <span class="badge bg-info-subtle text-info border border-info">In Review</span>
+                            {% elif refund.status == 'approved' %}
+                                <span class="badge bg-success-subtle text-success border border-success">Ready</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="btn-group shadow-sm rounded-3">
+                                {% if request.user.user_type == '2' and not refund.staff_approved %}
+                                    <a href="{% url 'approve_share_refund' refund.id %}" class="btn btn-success btn-sm px-3">Verify</a>
+                                {% elif request.user.user_type == '3' %}
+                                    {% if not refund.treasurer_approved and refund.staff_approved %}
+                                        <a href="{% url 'approve_share_refund' refund.id %}" class="btn btn-success btn-sm px-3">Approve</a>
+                                    {% elif refund.admin_approved and refund.status != 'disbursed' %}
+                                        <button class="btn btn-primary btn-sm px-3" data-bs-toggle="modal" data-bs-target="#disburseShare{{ refund.id }}">Pay</button>
+                                    {% endif %}
+                                {% elif request.user.user_type == '1' and refund.treasurer_approved and not refund.admin_approved %}
+                                    <a href="{% url 'approve_share_refund' refund.id %}" class="btn btn-dark btn-sm px-3">Sign-off</a>
+                                {% endif %}
+                                <a href="{% url 'reject_share_refund' refund.id %}" class="btn btn-outline-danger btn-sm px-2"><i class="bi bi-x-lg"></i></a>
+                            </div>
+
+                            <div class="modal fade" id="disburseShare{{ refund.id }}" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow-lg rounded-4 text-start">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h6 class="fw-800 mb-0">Confirm Disbursement</h6>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body py-4">
+                                            <p class="text-muted small mb-4">Payout for <strong>{{ refund.member.user.get_full_name }}</strong>. This reduces their capital shares ledger.</p>
+                                            <div class="p-3 bg-light rounded-3">
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted small">Gross Request</span>
+                                                    <span class="fw-bold">KES {{ refund.amount_requested|floatformat:2 }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <span class="text-muted small">Processing Fee</span>
+                                                    <span class="text-danger">- KES 1,000.00</span>
+                                                </div>
+                                                <hr>
+                                                <div class="d-flex justify-content-between fw-800">
+                                                    <span>NET TOTAL</span>
+                                                    <span class="text-success">KES {{ refund.net_amount|floatformat:2 }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0 pt-0">
+                                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                                            <a href="{% url 'disburse_share_refund' refund.id %}" class="btn btn-primary rounded-pill px-4 shadow">Pay Now</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center py-5 text-muted small">No share refund requests.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
