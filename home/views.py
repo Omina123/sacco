@@ -2924,12 +2924,12 @@ def sacco_report(request, year=None, month=None):
     return render(request, 'sacco.html', context)
 
 from django.shortcuts import render
-from datetime import datetime
+import datetime
 from .service import SaccoReportService
 
 def Bank_Statement(request):
     # Get year from user input, default to current year
-    current_year = datetime.now().year
+    current_year = datetime.datetime.now().year
     year = request.GET.get('year', current_year)
     
     try:
@@ -2948,7 +2948,7 @@ def Bank_Statement(request):
         'selected_year': year
     })
 
-import datetime
+
 def bank_financial_report(request):
     # --- 1. NORMAL LOANS ---
     # Summing fields already stored in the Loan model (Principal, Interest, Insurance)
