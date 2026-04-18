@@ -2622,12 +2622,38 @@ from datetime import datetime, date
 # ---------------------------------------------------------
 
 # Helper function to ensure we are comparing apples to apples (date vs date)
-def normalize_date(d):
-    if isinstance(d, datetime):
-        return d.date()
-    return d
+from django.db.models import Sum
+from datetime import date, datetime
+import datetime as dt_module  # The classes
+import datetime as dt_module # Rename the module import
+from datetime import date, datetime
 
-# Update the sorting line to use the helper
+def normalize_date(val):
+    """
+    Bulletproof date normalization for Python 3.14.
+    Returns a datetime.date object for sorting.
+    """
+    if val is None:
+        return date.min
+
+    # 1. If it's already a date but NOT a datetime
+    if type(val) is date:
+        return val
+
+    # 2. If it has a .date() method (works for datetime objects)
+    if hasattr(val, 'date'):
+        return val.date()
+    
+    # 3. If it's a string, try to parse it
+    if isinstance(val, str):
+        try:
+            # Handle standard Django/ISO format
+            return datetime.strptime(val[:10], '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            return date.min
+
+    # 4. Fallback
+    return date.min
 
 
 def sacco_financial_ledger_view(request):
@@ -2716,11 +2742,10 @@ def sacco_financial_ledger_view(request):
     # 3. SORTING & TOTALS
     # ---------------------------------------------------------
     # Sort entire SACCO history by newest first
-    ledger_entries = sorted(
-    ledger_entries, 
-    key=lambda x: normalize_date(x['date']) if x['date'] else date.min, 
-    reverse=True
-)
+    ledger_entries.sort(
+        key=lambda x: normalize_date(x.get('date')), 
+        reverse=True
+    )
 
     # Calculate Summary Totals
     total_savings = (monthly_savings.aggregate(Sum('amount'))['amount__sum'] or 0) + \
