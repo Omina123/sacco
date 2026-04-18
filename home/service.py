@@ -9,62 +9,54 @@ from .models import (
 class SaccoReportService:
     @staticmethod
     def generate_annual_report(year):
-        # 1. Operational Expenses (Grouped by EXPENSE_TYPES)
-        expense_summary = Expense.objects.filter(date_spent__year=year).values(
-            'expense_type'
-        ).annotate(total=Sum('amount_spent')).order_by('-total')
+        # 1. Operational Expenses (Detailed for the table)
+        # We fetch individual expenses to show dates and specific descriptions
+        expenses = Expense.objects.filter(date_spent__year=year).order_by('-date_spent')
+        total_expenses = expenses.aggregate(Sum('amount_spent'))['amount_spent__sum'] or Decimal('0.00')
 
         # 2. Member Equity & Contributions
         total_contributions = MonthlyContribution.objects.filter(
             month__year=year
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         total_reg_fees = RegistrationFee.objects.filter(
             paid=True, paid_at__year=year
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
-        # 3. Loan Portfolio Metrics
-        loan_stats = Loan.objects.filter(application_date__year=year).aggregate(
+        # 3. Loan Portfolio
+        loan_stats = Loan.objects.filter(
+            application_date__year=year, 
+            status__in=['approved', 'disbursed']
+        ).aggregate(
             total_disbursed=Sum('amount'),
-            total_insurance_charged=Sum('insurance'),
-            total_interest_expected=Sum('interest')
+            total_interest=Sum('interest')
         )
+        total_disbursed = loan_stats['total_disbursed'] or Decimal('0.00')
 
         total_repayments = LoanRepayment.objects.filter(
             payment_date__year=year
-        ).aggregate(Sum('amount_paid'))['amount_paid__sum'] or 0
+        ).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
 
-        # 4. Refunds & Exits
-        share_refunds = CapitalShareRefund.objects.filter(
-            date_applied__year=year, status='disbursed'
-        ).aggregate(Sum('amount_requested'))['amount_requested__sum'] or 0
-
-        xmas_payouts = XmasRefund.objects.filter(
-            date_applied__year=year, status='disbursed'
-        ).aggregate(Sum('amount_requested'))['amount_requested__sum'] or 0
-
-        # 5. Bank/Cash Position (Derived from Transactions)
-        # Note: This assumes 'deposit' and 'repayment' are inflows, 'loan' and 'shares' (refunds) are outflows
+        # 4. Cash Flow Logic (CORRECTED)
+        # Inflows: Contributions + Repayments + Reg Fees + Shares
         inflows = Transaction.objects.filter(
             created_at__year=year, 
-            transaction_type__in=['deposit', 'repayment']
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
+            transaction_type__in=['deposit', 'repayment', 'shares', 'registration']
+        ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
+        # Outflows: Loans + Expenses + Refunds
         outflows = Transaction.objects.filter(
             created_at__year=year, 
-            transaction_type__in=['loan', 'shares']
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
+            transaction_type__in=['loan', 'expense', 'refund']
+        ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 
         return {
             'year': year,
-            'expenses': expense_summary,
+            'expenses': expenses,
+            'total_expenses': total_expenses,
             'total_contributions': total_contributions,
             'total_reg_fees': total_reg_fees,
-            'loan_stats': loan_stats,
+            'total_disbursed': total_disbursed,
             'total_repayments': total_repayments,
-            'refunds': {
-                'capital_shares': share_refunds,
-                'xmas_fund': xmas_payouts
-            },
             'net_cash_flow': inflows - outflows
         }

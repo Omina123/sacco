@@ -84,5 +84,8 @@ path('disburse_share_refund/<int:refund_id>/', views.disburse_share_refund, name
  path ('bank_financial_report', views.bank_financial_report, name='bank_financial_report'), 
 
      path('performance_analysis/', views.performance_analysis_view, name='performance_analysis'),
+     path ('update_savings_goal', views.update_savings_goal, name='update_savings_goal'),
+     path('api/note-details/<str:note_id>/', views.get_note_details, name='note_details'),
+     path('member_loan_details_view/<int:profile_id>/', views.member_loan_details_view, name='member_loan_details_view'),
 
 ]

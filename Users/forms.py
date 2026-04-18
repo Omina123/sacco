@@ -121,8 +121,6 @@ class PUpdateForm(forms.ModelForm):
         if mem_num and Profile.objects.filter(membership_number=mem_num).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError("This Membership Number is already in use.")
         return mem_num
-from django import forms
-from .models import Profile
 
 class EditSalaryForm(forms.ModelForm):
     class Meta:

@@ -627,8 +627,7 @@
                         <th class="ps-4">Member Personal Info</th>
                         <th>PF Number</th>
                         <th>ID / Passport</th>
-                        <th>Savings</th>
-                        <th>Shares Units</th>
+                        
                         <th>Join Date</th>
                         <th class="text-center">Action</th>
                     </tr>
@@ -647,15 +646,15 @@
                         </td>
                         <td><span class="badge bg-navy text-gold">{{ member.pf_number }}</span></td>
                         <td>{{ member.id_number }}</td>
-                        <td class="fw-bold text-success">KES {{ member.total_savings|default:"0.00" }}</td>
-                        <td class="text-primary fw-600">{{ member.total_shares|default:"0" }} Units</td>
+                        
+                       
                         <td class="small">{{ member.user.date_joined|date:"M Y" }}</td>
                         <td class="text-center">
                             <div class="dropdown">
                                 <button class="btn btn-light btn-sm rounded-circle shadow-sm" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
                                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow">
                                     <li><a class="dropdown-item py-2" href="{% url 'update_user' member.user.id %}"><i class="fas fa-edit me-2 text-warning"></i> Modify Account</a></li>
-                                    <li><a class="dropdown-item py-2" href="#"><i class="fas fa-history me-2 text-primary"></i> View Statements</a></li>
+                                    <li><a class="dropdown-item py-2" href="{% url 'member_loan_details_view' member.user.id %}"><i class="fas fa-history me-2 text-primary"></i> Member Loans Details</a></li>
                                     <li><a class="dropdown-item py-2" href="#"><i class="fas fa-file-invoice me-2 text-info"></i> Tax Certs</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item py-2 text-danger" href="{% url 'delete_member' member.user.id %}"><i class="fas fa-user-slash me-2"></i> Suspend Member</a></li>

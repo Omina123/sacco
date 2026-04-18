@@ -118,8 +118,8 @@
             <thead>
                 <tr>
                     <th rowspan="2" style="width: 55px;">DATE</th>
-                    <th colspan="2">CASH</th>
-                    <th colspan="3">SHARE CAPITAL / DEPOSITS</th>
+                    <th colspan="2">Capital shares(500)</th>
+                    <th colspan="3">Normal share</th>
                     <th colspan="3">CHRISTMAS SAVINGS</th>
                     <th colspan="3">LOANS</th>
                     <th colspan="2">INTEREST</th>
@@ -181,6 +181,7 @@
                 </tr>
             </tfoot>
         </table>
+        {% comment %} <a href="{%url ''%}" {% endcomment %}
         
         <div class="mt-4 row text-muted fw-bold" style="font-size: 10px;">
             <div class="col-6 text-uppercase">Report Generated on: {{ today|date:"d F Y" }}</div>

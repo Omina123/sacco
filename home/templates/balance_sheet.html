@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,30 +6,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Statement of Financial Position | {{ report.year }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         body { background-color: #f4f4f4; font-family: 'Times New Roman', Times, serif; }
-        .balance-sheet-container { background: white; padding: 60px; margin: 40px auto; max-width: 900px; box-shadow: 0 0 10px rgba(0,0,0,0.1); border: 1px solid #ddd; }
+        .balance-sheet-container { 
+            background: white; 
+            padding: 60px; 
+            margin: 40px auto; 
+            max-width: 900px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+            border: 1px solid #ddd; 
+        }
         .header-title { text-transform: uppercase; font-weight: bold; margin-bottom: 5px; }
         .table th, .table td { padding: 8px 4px; vertical-align: middle; border: none; }
         .border-double-bottom { border-bottom: 3px double #000 !important; }
         .border-single-bottom { border-bottom: 1px solid #000 !important; }
         .note-column { text-align: center; width: 10%; }
         .amount-column { text-align: right; width: 25%; }
-        @media print { .no-print { display: none; } body { background: white; margin: 0; } .balance-sheet-container { box-shadow: none; border: none; margin: 0; padding: 20px; } }
+        
+        /* Interactive Elements */
+        .note-link { 
+            color: #0d6efd; 
+            text-decoration: underline; 
+            cursor: pointer; 
+            font-weight: bold;
+        }
+        .note-link:hover { color: #0a58ca; }
+
+        /* Modal Table Styling */
+        .detail-table thead { background-color: #f8f9fa; position: sticky; top: 0; }
+        .modal-body { max-height: 60vh; overflow-y: auto; }
+        .amt-in { color: #198754; }
+        .amt-out { color: #dc3545; }
+
+        @media print { 
+            .no-print { display: none; } 
+            body { background: white; margin: 0; } 
+            .balance-sheet-container { box-shadow: none; border: none; margin: 0; padding: 20px; } 
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="no-print mt-4 p-3 bg-white border rounded text-center">
+    <div class="no-print mt-4 p-3 bg-white border rounded text-center shadow-sm">
         <form method="GET" class="d-inline-flex align-items-center">
-            <label class="me-2 fw-bold">Select Fiscal Year:</label>
-            <select name="year" class="form-select form-select-sm w-auto me-2" onchange="this.form.submit()">
+            <label class="me-2 fw-bold">Fiscal Year:</label>
+            <select name="year" class="form-select form-select-sm w-auto me-3" onchange="this.form.submit()">
                 {% for y in year_range %}
                 <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
                 {% endfor %}
             </select>
-            <button type="button" onclick="window.print()" class="btn btn-sm btn-outline-secondary">Print PDF</button>
+            <button type="button" onclick="window.print()" class="btn btn-sm btn-dark px-3 me-2">
+                <i class="bi bi-printer"></i> Print PDF
+            </button>
+            <small class="text-muted fst-italic">Click on Note numbers to see detailed breakdown.</small>
         </form>
     </div>
 
@@ -51,12 +83,12 @@
                 <tr><td colspan="3" class="fw-bold pt-3">Current assets</td></tr>
                 <tr>
                     <td>Cash and cash equivalent</td>
-                    <td class="note-column">7</td>
+                    <td class="note-column"><span class="note-link" data-note="7">7</span></td>
                     <td class="amount-column">{{ report.assets.cash|floatformat:2 }}</td>
                 </tr>
                 <tr>
                     <td>Loans to members</td>
-                    <td class="note-column">9</td>
+                    <td class="note-column"><span class="note-link" data-note="9">9</span></td>
                     <td class="amount-column border-single-bottom">{{ report.assets.loans|floatformat:2 }}</td>
                 </tr>
                 <tr class="fw-bold">
@@ -68,17 +100,17 @@
                 <tr><td colspan="3" class="fw-bold pt-4">Liabilities</td></tr>
                 <tr>
                     <td>Members' deposits</td>
-                    <td class="note-column">12</td>
+                    <td class="note-column"><span class="note-link" data-note="12">12</span></td>
                     <td class="amount-column">{{ report.liabilities.deposits|floatformat:2 }}</td>
                 </tr>
                 <tr>
                     <td>Trade and accrued expenses</td>
-                    <td class="note-column">13</td>
+                    <td class="note-column"><span class="note-link" data-note="13">13</span></td>
                     <td class="amount-column">{{ report.liabilities.accrued|floatformat:2 }}</td>
                 </tr>
                 <tr>
                     <td>Interest on deposits payable</td>
-                    <td class="note-column">14</td>
+                    <td class="note-column"><span class="note-link" data-note="14">14</span></td>
                     <td class="amount-column border-single-bottom">{{ report.liabilities.interest|floatformat:2 }}</td>
                 </tr>
                 <tr class="fw-bold">
@@ -90,12 +122,12 @@
                 <tr><td colspan="3" class="fw-bold pt-4">Shareholders' funds</td></tr>
                 <tr>
                     <td>Share capital</td>
-                    <td class="note-column">16</td>
+                    <td class="note-column"><span class="note-link" data-note="16">16</span></td>
                     <td class="amount-column">{{ report.equity.shares|floatformat:2 }}</td>
                 </tr>
                 <tr>
                     <td>Reserves</td>
-                    <td class="note-column">17</td>
+                    <td class="note-column"><span class="note-link" data-note="17">17</span></td>
                     <td class="amount-column border-single-bottom">{{ report.equity.reserves|floatformat:2 }}</td>
                 </tr>
                 <tr class="fw-bold">
@@ -119,6 +151,87 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade no-print" id="noteDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Detail Breakdown - Note <span id="modalNoteId"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <table class="table table-striped table-hover mb-0 detail-table">
+                    <thead>
+                        <tr>
+                            <th class="ps-3">Date</th>
+                            <th>Description</th>
+                            <th class="text-end pe-3">Amount (Ksh)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="noteDetailContent">
+                        </tbody>
+                </table>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const noteLinks = document.querySelectorAll('.note-link');
+        const detailModal = new bootstrap.Modal(document.getElementById('noteDetailModal'));
+        const contentArea = document.getElementById('noteDetailContent');
+        const noteLabel = document.getElementById('modalNoteId');
+
+        noteLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                const noteId = this.getAttribute('data-note');
+                const selectedYear = "{{ selected_year }}";
+                
+                noteLabel.innerText = noteId;
+                contentArea.innerHTML = `<tr><td colspan="3" class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary"></div> Fetching financial records...</td></tr>`;
+                
+                detailModal.show();
+
+                // Replace the URL with your Django URL name or actual path
+                fetch(`/api/note-details/${noteId}/?year=${selectedYear}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        contentArea.innerHTML = '';
+                        
+                        if (!data.results || data.results.length === 0) {
+                            contentArea.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">No records found for this note in {{ selected_year }}.</td></tr>';
+                            return;
+                        }
+
+                        data.results.forEach(item => {
+                            const amountClass = item.type === 'out' ? 'amt-out' : 'amt-in';
+                            const symbol = item.type === 'out' ? '-' : '+';
+                            
+                            contentArea.innerHTML += `
+                                <tr>
+                                    <td class="ps-3 small">${item.date}</td>
+                                    <td><span class="fw-bold">${item.desc}</span></td>
+                                    <td class="text-end pe-3 fw-bold ${amountClass}">
+                                        ${symbol} ${item.amount.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    })
+                    .catch(err => {
+                        contentArea.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-danger fst-italic">Error loading details. Please check connection.</td></tr>';
+                    });
+            });
+        });
+    });
+</script>
 
 </body>
 </html>

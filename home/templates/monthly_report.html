@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,6 +14,8 @@
         .status-badge { font-size: 0.6rem; padding: 2px 6px; }
         .table td { font-size: 0.85rem; }
         .table-responsive { border-radius: 8px; }
+        .text-paid { color: #198754; font-weight: bold; }
+        .text-missed { color: #dc3545; font-weight: bold; }
     </style>
 </head>
 <body class="bg-light">
@@ -30,7 +33,7 @@
                     <label class="small fw-bold d-block">Month</label>
                     <select name="month" class="form-select form-select-sm">
                         {% for m_val, m_name in months_choices %}
-                            <option value="{{ m_val }}" {% if month == m_val %}selected{% endif %}>{{ m_name }}</option>
+                            <option value="{{ m_val }}" {% if m_val == month %}selected{% endif %}>{{ m_name }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -38,7 +41,7 @@
                     <label class="small fw-bold d-block">Year</label>
                     <select name="year" class="form-select form-select-sm">
                         {% for y in years %}
-                            <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+                            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -71,11 +74,9 @@
                         <th rowspan="2" style="width: 12%;">Total Paid</th>
                     </tr>
                     <tr class="table-secondary text-dark">
-                        <th>Xmass savings
-                        </th>
-                        <th>Capital Shares</th>
+                        <th>Savings Goal</th>
+                        <th>Capital Shares (1000)</th>
                         <th>Normal</th>
-                        
                         <th>Xmas</th>
                         <th>School</th>
                         <th>Emergency</th>
@@ -90,47 +91,72 @@
                         </td>
 
                         <td class="text-center">
-                            <div class="fw-bold text-success">{{ row.savings_amt|floatformat:0 }}</div>
-                            <span class="badge status-badge {% if row.savings_status %}bg-success{% else %}bg-danger{% endif %}">
-                                {% if row.savings_status %}PAID{% else %}NOT PAID{% endif %}
-                            </span>
+                            <div class="fw-bold text-success">{% if row.savings_paid > 0 %}Ksh {{ row.savings_paid }}{% endif %}</div>
+                            {% if row.savings_status %}
+                                <span class="badge status-badge bg-success">PAID</span>
+                            {% else %}
+                                <span class="badge status-badge bg-danger">NOT PAID</span>
+                                <div class="text-muted" style="font-size: 0.6rem;">Goal: {{ row.savings_target }}</div>
+                            {% endif %}
                         </td>
 
                         <td class="text-center border-end">
-                            <div class="fw-bold text-success">{{ row.shares_amt|floatformat:0 }}</div>
-                            <span class="badge status-badge {% if row.shares_status %}bg-success{% else %}bg-danger{% endif %}">
-                                {% if row.shares_status %}PAID{% else %}NOT PAID{% endif %}
-                            </span>
+                            <div class="fw-bold text-success">{% if row.shares_paid > 0 %}Ksh {{ row.shares_paid }}{% endif %}</div>
+                            {% if row.shares_status %}
+                                <span class="badge status-badge bg-success">PAID</span>
+                            {% else %}
+                                <span class="badge status-badge bg-danger">NOT PAID</span>
+                                <div class="text-muted" style="font-size: 0.6rem;">Due: 1000</div>
+                            {% endif %}
                         </td>
 
                         <td class="text-center bg-loans">
-                            <div class="small fw-bold">{{ row.normal_loan|floatformat:0 }}</div>
-                            <i class="bi {% if row.normal_status %}bi-check-circle-fill text-success{% else %}bi-x-circle text-danger{% endif %}"></i>
+                            <div class="small fw-bold">{% if row.normal_paid > 0 %}{{ row.normal_paid }}{% else %}0{% endif %}</div>
+                            {% if row.normal_status %}
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                                <i class="bi bi-x-circle text-danger"></i>
+                                {% if row.normal_target > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.normal_target }}</div>{% endif %}
+                            {% endif %}
                         </td>
+
                         <td class="text-center bg-loans">
-                            <div class="small fw-bold">{{ row.xmas_loan|floatformat:0 }}</div>
-                            <i class="bi {% if row.xmas_status %}bi-check-circle-fill text-success{% else %}bi-x-circle text-danger{% endif %}"></i>
+                            <div class="small fw-bold">{% if row.xmas_paid > 0 %}{{ row.xmas_paid }}{% else %}0{% endif %}</div>
+                            {% if row.xmas_status %}
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                                <i class="bi bi-x-circle text-danger"></i>
+                                {% if row.xmas_target > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.xmas_target }}</div>{% endif %}
+                            {% endif %}
                         </td>
+
                         <td class="text-center bg-loans">
-                            <div class="small fw-bold">{{ row.scholl_fees|floatformat:0 }}</div>
-                            <i class="bi {% if row.school_status %}bi-check-circle-fill text-success{% else %}bi-x-circle text-danger{% endif %}"></i>
+                            <div class="small fw-bold">{% if row.school_paid > 0 %}{{ row.school_paid }}{% else %}0{% endif %}</div>
+                            {% if row.school_status %}
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                                <i class="bi bi-x-circle text-danger"></i>
+                                {% if row.school_target > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.school_target }}</div>{% endif %}
+                            {% endif %}
                         </td>
+
                         <td class="text-center bg-loans">
-                            <div class="small fw-bold">{{ row.emergency|floatformat:0 }}</div>
-                            <i class="bi {% if row.emergency_status %}bi-check-circle-fill text-success{% else %}bi-x-circle text-danger{% endif %}"></i>
+                            <div class="small fw-bold">{% if row.emergency_paid > 0 %}{{ row.emergency_paid }}{% else %}0{% endif %}</div>
+                            {% if row.emergency_status %}
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                                <i class="bi bi-x-circle text-danger"></i>
+                                {% if row.emergency_target > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.emergency_target }}</div>{% endif %}
+                            {% endif %}
                         </td>
 
                         <td class="text-center fw-bold bg-white text-primary">
-                            Ksh {{ row.total_paid|floatformat:0 }}
+                            Ksh {{ row.total_actual_paid|floatformat:2 }}
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">
-                            <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
-                            <p class="mb-0">No transaction records found for <strong>{{ month }}/{{ year }}</strong>.</p>
-                            <small>Try selecting a different month or check the database.</small>
-                        </td>
+                        <td colspan="8" class="text-center py-5 text-muted">No member records found for this period.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

@@ -107,7 +107,7 @@
     <a href="{% url 'pay_loan' %}"><i class="fas fa-hand-holding-usd"></i> Repay Loan</a>
     <a href="{% url 'my_loans' %}"><i class="fas fa-exchange-alt"></i> My Loans</a>
     <a href="{% url 'my_statement' %}"><i class="fas fa-file-alt"></i> My Statement</a>
-    <a href="{% url 'member_individual_report' %}"><i class="fas fa-book"></i> My  Ledger</a>
+    <a href="{% url 'member_individual_report' %}"><i class="fas fa-book"></i> My Ledger</a>
     
     <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#refundSubmenu" role="button" aria-expanded="false">
         <span><i class="fas fa-undo-alt"></i> Refunds</span>
@@ -186,6 +186,25 @@
     </script>
     {% endfor %}
 
+    <div class="card shadow-sm border-0 rounded-4 p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h6 class="text-uppercase text-muted fw-bold small mb-0">Monthly Savings Target</h6>
+            <button class="btn btn-sm btn-link p-0 text-success text-decoration-none" onclick="updateGoal()">
+                <i class="fas fa-pencil-alt"></i> Set Goal
+            </button>
+        </div>
+        <h3 class="fw-bold mb-1">KES {{ saving_target|floatformat:0 }}</h3>
+        
+        <div class="progress mt-2" style="height: 8px;">
+            <div class="progress-bar bg-success" role="progressbar" 
+                 style="width: {{ progress_pct }}%"></div>
+        </div>
+        <div class="d-flex justify-content-between mt-1">
+            <span class="small text-muted">Saved: KES {{ current_month_savings|floatformat:2 }}</span>
+            <span class="small fw-bold text-success">{{ progress_pct|floatformat:0 }}%</span>
+        </div>
+    </div>
+
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow-lg text-white" 
@@ -205,28 +224,6 @@
         </div>
     </div>
 
-    {% for loan in my_loans %}
-    {% if loan.status == 'pending' and "All 3 guarantors" in loan.remarks %}
-    <div class="alert alert-success d-flex align-items-center rounded-4 border-0 shadow-sm mb-4" 
-         style="background-color: #e6fffa; border-left: 5px solid #047481 !important;">
-        <i class="fas fa-check-circle me-3 fs-4 text-success"></i>
-        <div class="text-dark">
-            <small class="d-block fw-bold text-uppercase opacity-50">Loan Update</small>
-            {{ loan.remarks }}
-        </div>
-    </div>
-    {% endif %}
-    {% endfor %}
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0" role="alert">
-                <i class="fas fa-bell me-2"></i> {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
-
     {% if pending_guarantor_requests %}
     <div class="row mb-4">
         <div class="col-12">
@@ -240,7 +237,7 @@
                                 <span class="fw-bold">{{ g.loan.member.user.get_full_name }}</span> 
                                 wants you to guarantee <span class="text-eldo-green fw-bold">KES {{ g.guaranteed_amount|floatformat:2 }} of KES {{ g.loan.amount|floatformat:2 }}</span>.
                             </p>
-                            <small class="text-muted">Purpose: {{ g.loan.purpose}}</small>
+                            <small class="text-muted">Purpose: {{ g.loan.purpose }}</small>
                         </div>
                         <div class="d-flex gap-2">
                             <a href="{% url 'respond_guarantor' g.id 'accept' %}" class="btn btn-success btn-sm px-3 fw-bold">Accept</a>
@@ -282,9 +279,10 @@
     </div>
 
     {% if xmas_loans %}
-    <div class="card card-table mb-4" style="border-top: 5px solid #7317e4;">
+    <div class="card card-table mb-4" style="border-top: 5px solid #57a003;">
         <div class="card-header d-flex justify-content-between align-items-center" style="background: #57a003; color: white;">
             <span><i class="fas fa-holly-berry me-2 text-warning"></i> My Quick Loan Portfolio</span>
+            <span class="badge bg-white text-success rounded-pill px-3">{{ active_xmas_count }} Active</span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -346,7 +344,7 @@
     <div class="card card-table mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span><i class="fas fa-layer-group me-2"></i> My Loan Portfolio</span>
-            <a href="{% url 'apply_loan' %}" class="btn btn-sm btn-eldo px-3">New Loan / Top-Up</a>
+            <span class="badge bg-warning text-dark rounded-pill px-3 me-2">{{ active_normal_count }} Active</span>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -362,53 +360,56 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for l in loans %}
-                        <tr>
-                            <td class="ps-4">
-                                <div class="fw-bold text-eldo-green">
-                                    {{ l.purpose }}
-                                    {% if l.is_topup %}
-                                        <span class="badge bg-info text-white ms-1" style="font-size: 0.65rem;">TOP-UP</span>
-                                    {% endif %}
-                                </div>
-                                <small class="text-muted">Applied: {{ l.application_date|date:"d M, Y" }}</small>
-                            </td>
-                            <td class="text-success fw-bold">KES {{ l.total_paid|floatformat:0 }}</td>
-                            <td class="text-danger fw-bold">KES {{ l.remaining_balance|floatformat:0 }}</td>
-                            <td>
-                                {% if l.penalty_due > 0 %}
-                                    <span class="text-warning fw-bold"><i class="fas fa-exclamation-triangle me-1"></i>KES {{ l.penalty_due|floatformat:0 }}</span>
-                                {% else %}
-                                    <span class="text-muted small">None</span>
+                    {% for l in loans %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-eldo-green">
+                                {{ l.purpose }}
+                                {% if l.is_topup %}
+                                    <span class="badge bg-info text-white ms-1" style="font-size: 0.65rem;">TOP-UP</span>
                                 {% endif %}
-                            </td>
-                            <td class="text-center">
-                                <span class="badge rounded-pill {% if l.status == 'approved' or l.status == 'disbursed' %}bg-success{% elif l.status == 'pending_guarantors' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                                    {{ l.get_status_display }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center" style="min-width: 80px;">
-                                    <small class="fw-bold me-2">{{ l.approval_count }}/3</small>
-                                    <div class="progress flex-grow-1" style="height: 6px;">
-                                        <div class="progress-bar bg-success" style="width: {% widthratio l.approval_count 3 100 %}%"></div>
+                            </div>
+                            <small class="text-muted">Applied: {{ l.application_date|date:"d M, Y" }}</small>
+                        </td>
+                        <td class="text-success fw-bold">KES {{ l.total_paid|floatformat:0 }}</td>
+                        <td class="text-danger fw-bold">KES {{ l.remaining_balance|floatformat:0 }}</td>
+                        <td>
+                            {% if l.penalty_due > 0 %}
+                                <span class="text-warning fw-bold"><i class="fas fa-exclamation-triangle me-1"></i>KES {{ l.penalty_due|floatformat:0 }}</span>
+                            {% else %}
+                                <span class="text-muted small">None</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge rounded-pill {% if l.status == 'approved' or l.status == 'disbursed' %}bg-success{% elif l.status == 'pending_guarantors' %}bg-warning text-dark{% elif l.status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ l.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center" style="min-width: 80px;">
+                                <small class="fw-bold me-2">
+                                    {% if l.status == 'disbursed' or l.status == 'approved' %}3{% else %}{{ l.approval_count|default:0 }}{% endif %}/3
+                                </small>
+                                <div class="progress flex-grow-1" style="height: 6px;">
+                                    <div class="progress-bar bg-success" 
+                                        style="width: {% if l.status == 'disbursed' or l.status == 'approved' %}100{% else %}{% widthratio l.approval_count|default:0 3 100 %}{% endif %}%">
                                     </div>
                                 </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="6" class="text-center py-5">
-                                <i class="fas fa-folder-open display-6 text-muted d-block mb-3"></i>
-                                <p class="text-muted">You don't have any loan applications yet.</p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <i class="fas fa-folder-open display-6 text-muted d-block mb-3"></i>
+                            <p class="text-muted">You don't have any loan applications yet.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                                </table>
+                            </div>
+                        </div>
 
     <div class="row g-4">
         <div class="col-12 col-lg-7">
@@ -455,6 +456,24 @@
 </div>
 
 <script>
+    function updateGoal() {
+        let goal = prompt("Enter your monthly savings target (KES):", "{{ saving_target }}");
+        if (goal) {
+            fetch("{% url 'update_savings_goal' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ goal: goal })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') location.reload();
+            });
+        }
+    }
+
     // Sidebar Toggle Script
     const toggleBtn = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('sidebar');

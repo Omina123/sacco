@@ -3,118 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financial Audit Report | Eldopoly SACCO</title>
+    <title>Annual Audit Report | {{ report.year }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        .report-header { background-color: #f8f9fa; padding: 20px; border-bottom: 3px solid #0d6efd; }
-        .table-section { margin-top: 30px; }
-        .bg-sacco { background-color: #0d6efd; color: white; }
-        @media print { .no-print { display: none; } }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .audit-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin: 40px auto; max-width: 1000px; }
+        .header-gradient { background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; padding: 40px; }
+        .metric-card { border: none; border-right: 1px solid #eee; border-radius: 0; }
+        .metric-card:last-child { border-right: none; }
+        .section-title { border-left: 5px solid #0d6efd; padding-left: 15px; font-weight: bold; color: #333; margin-bottom: 20px; }
+        .table thead { background-color: #212529; color: white; }
+        .note-badge { cursor: pointer; background: #e7f1ff; color: #0d6efd; padding: 2px 8px; border-radius: 4px; font-weight: bold; transition: 0.3s; }
+        .note-badge:hover { background: #0d6efd; color: white; }
+        
+        /* Financial Indicators */
+        .amt-pos { color: #198754; font-weight: bold; }
+        .amt-neg { color: #dc3545; font-weight: bold; }
+        
+        @media print { 
+            .no-print { display: none !important; } 
+            body { background: white; } 
+            .audit-container { box-shadow: none; margin: 0; max-width: 100%; border: 1px solid #eee; }
+            .header-gradient { background: #000 !important; color: white !important; -webkit-print-color-adjust: exact; }
+        }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container my-5 bg-white shadow-sm p-5">
-    
-    <div class="no-print mb-4 p-3 border rounded bg-light">
+<div class="container pb-5">
+    <div class="no-print mt-4 mb-4 p-3 bg-white border rounded shadow-sm d-flex justify-content-between align-items-center">
         <form method="GET" class="row g-3 align-items-center">
             <div class="col-auto">
-                <label for="year" class="col-form-label fw-bold">Select Fiscal Year:</label>
+                <label class="fw-bold">Audit Period:</label>
             </div>
             <div class="col-auto">
-                <select name="year" id="year" class="form-select">
+                <select name="year" class="form-select form-select-sm" onchange="this.form.submit()">
                     {% for y in year_range %}
-                        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>FY {{ y }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary">Update Report</button>
-            </div>
         </form>
+        <button onclick="window.print()" class="btn btn-dark btn-sm px-4">
+            <i class="bi bi-printer-fill me-1"></i> Print Statement
+        </button>
     </div>
 
-    <div class="report-header d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h2 class="fw-bold mb-0">ELDOPOLY SACCO</h2>
-            <p class="text-muted">ANNUAL FINANCIAL STATEMENT - YEAR {{ report.year }}</p>
-        </div>
-        <button onclick="window.print()" class="btn btn-outline-secondary no-print">Print Statement</button>
-    </div>
-
-    <div class="table-section">
-        <h5 class="bg-sacco p-2">OPERATIONAL EXPENDITURE</h5>
-        <table class="table table-bordered">
-            <thead class="table-light">
-                <tr>
-                    <th>PARTICULARS</th>
-                    <th class="text-end">AMOUNT (KES)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in report.expenses %}
-                <tr>
-                    <td>{{ item.expense_type|title|dictsort:"expense_type" }}</td>
-                    <td class="text-end">{{ item.total|floatformat:2 }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="2" class="text-center">No expenses found for this year.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <div class="row mt-4">
-        <div class="col-md-6">
-            <h5 class="bg-sacco p-2">INFLOWS & EQUITY</h5>
-            <table class="table table-bordered">
-                <tbody>
-                    <tr>
-                        <td>Monthly Contributions</td>
-                        <td class="text-end">{{ report.total_contributions|floatformat:2 }}</td>
-                    </tr>
-                    <tr>
-                        <td>Loan Repayments Recovered</td>
-                        <td class="text-end text-success">+ {{ report.total_repayments|floatformat:2 }}</td>
-                    </tr>
-                    <tr>
-                        <td>Registration Fees</td>
-                        <td class="text-end">{{ report.total_reg_fees|floatformat:2 }}</td>
-                    </tr>
-                </tbody>
-            </table>
+    <div class="audit-container">
+        <div class="header-gradient text-center">
+            <h1 class="fw-bold mb-1">ELDOPOLY SACCO SOCIETY LTD</h1>
+            <p class="text-uppercase tracking-widest opacity-75 mb-0">Annual Financial Audit Statement</p>
+            <div class="mt-2 badge bg-white text-primary px-3 py-2">Fiscal Year: {{ report.year }}</div>
         </div>
 
-        <div class="col-md-6">
-            <h5 class="bg-sacco p-2">REFUNDS & DISBURSEMENTS</h5>
-            <table class="table table-bordered">
-                <tbody>
-                    <tr>
-                        <td>Loans Issued to Members</td>
-                        <td class="text-end text-danger">- {{ report.loan_stats.total_disbursed|default:0|floatformat:2 }}</td>
-                    </tr>
-                    <tr>
-                        <td>Capital Share Refunds</td>
-                        <td class="text-end">- {{ report.refunds.capital_shares|floatformat:2 }}</td>
-                    </tr>
-                    <tr>
-                        <td>Xmas Fund Payouts</td>
-                        <td class="text-end">- {{ report.refunds.xmas_fund|floatformat:2 }}</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="row g-0 border-bottom bg-light">
+            <div class="col-md-3 p-4 text-center metric-card">
+                <small class="text-muted text-uppercase fw-bold d-block mb-1">Total Savings</small>
+                <h4 class="mb-0">KES {{ report.total_contributions|floatformat:2 }}</h4>
+            </div>
+            <div class="col-md-3 p-4 text-center metric-card">
+                <small class="text-muted text-uppercase fw-bold d-block mb-1">Loan Recovery</small>
+                <h4 class="mb-0 text-success">KES {{ report.total_repayments|floatformat:2 }}</h4>
+            </div>
+            <div class="col-md-3 p-4 text-center metric-card">
+                <small class="text-muted text-uppercase fw-bold d-block mb-1">Expenses</small>
+                <h4 class="mb-0 text-danger">KES {{ report.total_expenses|floatformat:2 }}</h4>
+            </div>
+            <div class="col-md-3 p-4 text-center bg-white">
+                <small class="text-muted text-uppercase fw-bold d-block mb-1">Net Flow</small>
+                <h4 class="mb-0 {% if report.net_cash_flow < 0 %}text-danger{% else %}text-success{% endif %}">
+                    KES {{ report.net_cash_flow|floatformat:2 }}
+                </h4>
+            </div>
         </div>
-    </div>
 
-    <div class="mt-4 p-3 border rounded bg-dark text-white d-flex justify-content-between align-items-center">
-        <h4 class="mb-0">NET CASH POSITION</h4>
-        <h3 class="mb-0">KES {{ report.net_cash_flow|floatformat:2 }}</h3>
-    </div>
+        <div class="p-5">
+            <div class="mb-5">
+                <h5 class="section-title">OPERATIONAL EXPENDITURE</h5>
+                <table class="table table-hover border">
+                    <thead>
+                        <tr>
+                            <th>Particulars / Description</th>
+                            <th class="text-center">Transaction Date</th>
+                            <th class="text-end pe-4">Amount (KES)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in report.expenses %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold">{{ item.get_expense_type_display }}</div>
+                                <small class="text-muted">{{ item.description|default:"Administrative Cost" }}</small>
+                            </td>
+                            <td class="text-center text-muted small">{{ item.date_spent|date:"d M Y" }}</td>
+                            <td class="text-end pe-4 fw-bold">{{ item.amount_spent|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="3" class="text-center py-4 fst-italic">No expense records found for this year.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr class="fw-bold">
+                            <td colspan="2" class="text-end">Total Operational Costs</td>
+                            <td class="text-end pe-4 text-danger">{{ report.total_expenses|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
 
-    <div class="mt-5 pt-3 border-top text-center text-muted small">
-        <p>This is an automated audit report. Please reconcile with bank statement (bank.pdf) for accuracy.</p>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h5 class="section-title">INFLOWS & EQUITY</h5>
+                    <div class="card shadow-sm border-0">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                                <span>Monthly Contributions <span class="note-badge ms-1" onclick="loadDetails('12')">12</span></span>
+                                <span class="amt-pos">{{ report.total_contributions|floatformat:2 }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                                <span>Registration Fees <span class="note-badge ms-1" onclick="loadDetails('16')">16</span></span>
+                                <span class="amt-pos">{{ report.total_reg_fees|floatformat:2 }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                                <span>Loan Principal Recovered</span>
+                                <span class="amt-pos">{{ report.total_repayments|floatformat:2 }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h5 class="section-title">DISBURSEMENTS</h5>
+                    <div class="card shadow-sm border-0">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                                <span>Loans Issued to Members <span class="note-badge ms-1" onclick="loadDetails('9')">9</span></span>
+                                <span class="amt-neg">- {{ report.total_disbursed|floatformat:2 }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                                <span>Capital Share Refunds</span>
+                                <span class="amt-neg">- {{ report.refunds.capital_shares|default:"0.00" }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center p-3">
+                                <span>Xmas Fund Payouts</span>
+                                <span class="amt-neg">- {{ report.refunds.xmas_fund|default:"0.00" }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-5 pt-5 text-center">
+                <div class="col-4">
+                    <div class="border-top border-dark mx-3 pt-2 small fw-bold">CHAIRMAN</div>
+                </div>
+                <div class="col-4">
+                    <div class="border-top border-dark mx-3 pt-2 small fw-bold">TREASURER</div>
+                </div>
+                <div class="col-4">
+                    <div class="border-top border-dark mx-3 pt-2 small fw-bold">SECRETARY</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-light p-3 text-center text-muted small border-top">
+            <i class="bi bi-info-circle me-1"></i> This audit was generated on {{ "now"|date:"d M Y H:i" }}. Reconcile with <strong>bank.pdf</strong> for full compliance.
+        </div>
     </div>
 </div>
+
+<div class="modal fade no-print" id="auditModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">Detailed Ledger Breakdown</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <table class="table table-striped mb-0">
+                    <thead class="table-dark small text-uppercase">
+                        <tr>
+                            <th class="ps-3">Date</th>
+                            <th>Description</th>
+                            <th class="text-end pe-3">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const auditModal = new bootstrap.Modal(document.getElementById('auditModal'));
+    const modalBody = document.getElementById('modalBody');
+
+    function loadDetails(noteId) {
+        modalBody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div> Loading...</td></tr>';
+        auditModal.show();
+
+        fetch(`/api/note-details/${noteId}/?year={{ selected_year }}`)
+            .then(res => res.json())
+            .then(data => {
+                modalBody.innerHTML = '';
+                if (!data.results.length) {
+                    modalBody.innerHTML = '<tr><td colspan="3" class="text-center py-4">No records found.</td></tr>';
+                    return;
+                }
+                data.results.forEach(item => {
+                    const clr = item.type === 'out' ? 'text-danger' : 'text-success';
+                    modalBody.innerHTML += `
+                        <tr>
+                            <td class="ps-3">${item.date}</td>
+                            <td>${item.desc}</td>
+                            <td class="text-end pe-3 fw-bold ${clr}">${item.amount.toLocaleString()}</td>
+                        </tr>
+                    `;
+                });
+            })
+            .catch(() => {
+                modalBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Connection Error.</td></tr>';
+            });
+    }
+</script>
 
 </body>
 </html>

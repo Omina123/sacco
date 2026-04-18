@@ -454,10 +454,6 @@ def resend_otp(request):
     return redirect('verify_otp')
  # adjust if different
 
-
-
-
-
 @login_required
 def complete_membership(request):
     profile = request.user.profile
