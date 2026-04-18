@@ -78,7 +78,7 @@ WSGI_APPLICATION = 'SACCO.wsgi.application'
 # --------------------------
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgresql://edl_user:QzKxYAjSlduCvzZYKq1ZU3NKXtizym9r@dpg-d7bp4f49c44c73bgu8lg-a.oregon-postgres.render.com/edl',
+        default='postgresql://polyte_user:gimE3frQZgTIG7M9X7PZ9VZTmlkPounp@dpg-d7hsljt7vvec73a4qneg-a.oregon-postgres.render.com/polyte',
         conn_max_age=600,
         ssl_require=True
     )

@@ -3099,3 +3099,59 @@ def member_loan_details_view(request, profile_id):
         'xmas_loans': xmas_loans,
     }
     return render(request, 'member_loans.html', context)
+
+
+def migrate_single_member_loan(request, member_id):
+    member = get_object_or_404(Profile, id=member_id)
+    
+    if request.method == "POST":
+        # Get data from the form
+        principal = Decimal(request.POST.get('principal', 0))
+        interest = Decimal(request.POST.get('interest', 0))
+        insurance = Decimal(request.POST.get('insurance', 0))
+        paid_on_paper = Decimal(request.POST.get('paid_on_paper', 0))
+        actual_start_date = request.POST.get('start_date')
+
+        # 1. Create the Legacy Loan record
+        loan = Loan.objects.create(
+            member=member,
+            amount=principal,
+            interest=interest,
+            insurance=insurance,
+            duration_months=12, # Use paper duration
+            is_legacy=True,
+            status='disbursed',
+            is_disbursed=True,
+            staff_approved=True,
+            treasurer_approved=True,
+            admin_approved=True
+        )
+
+        # 2. Backdate the loan (Force update because of auto_now_add)
+        Loan.objects.filter(id=loan.id).update(
+            application_date=actual_start_date, 
+            disbursed_at=actual_start_date
+        )
+
+        # 3. Create the "Credit" for what they already paid
+        if paid_on_paper > 0:
+            LoanRepayment.objects.create(
+                loan=loan,
+                member=member,
+                amount_paid=paid_on_paper,
+                reference=f"PAPER-MIGRATE-{loan.id}",
+                is_xmas=False
+            )
+            
+            # Record in the General Transaction Ledger
+            Transaction.objects.create(
+                member=member,
+                transaction_type='repayment',
+                amount=paid_on_paper,
+                reference=f"Legacy Balance Migration for Loan {loan.id}"
+            )
+
+        messages.success(request, f"Migration complete for {member.user.username}. System balance now matches paper records.")
+        return redirect('admin_dashboard') # Redirect to an appropriate page after migration
+
+    return render(request, 'migrate_form.html', {'member': member})

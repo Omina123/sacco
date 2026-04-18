@@ -84,6 +84,11 @@ class MonthlyContribution(models.Model):
 
     def __str__(self):
         return f"{self.member} - {self.month}"
+class LoanPurpose(models.Model):
+    name=models.CharField(max_length=60, null=True, blank=True)
+    
+    
+
 class CapitalShareRefund(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -143,10 +148,14 @@ class XmasLoan(models.Model):
     ]
 
     member = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='xmas_loans')
-
     amount_requested = models.DecimalField(max_digits=12, decimal_places=2)
 
-    # ✅ FIXED INTEREST
+    # --- LEGACY SUPPORT FIELDS ---
+    is_legacy = models.BooleanField(default=False, help_text="True if this loan was migrated from paper records.")
+    manual_interest_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, help_text="Override interest for paper records.")
+    # -----------------------------
+
+    # ✅ FIXED INTEREST (Defaults to 9.10%)
     interest_rate = models.DecimalField(max_digits=5, decimal_places=2, default=9.10)
 
     # ✅ FIXED PERIOD
@@ -156,22 +165,25 @@ class XmasLoan(models.Model):
     application_date = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
+    # Approval Workflow
     staff_approved = models.BooleanField(default=False)
     treasurer_approved = models.BooleanField(default=False)
     admin_approved = models.BooleanField(default=False)
 
     approval_date = models.DateTimeField(null=True, blank=True)
     disbursement_date = models.DateTimeField(null=True, blank=True)
-
     is_disbursed = models.BooleanField(default=False)
 
     @property
     def total_interest(self):
+        """Returns manual interest for legacy loans, otherwise calculates 9.1%."""
+        if self.is_legacy and self.manual_interest_amount is not None:
+            return self.manual_interest_amount
         return self.amount_requested * Decimal('0.091')
 
     @property
     def total_payable(self):
-        return self.amount_requested + self.total_interest
+        return (self.amount_requested or Decimal('0')) + self.total_interest
 
     @property
     def monthly_installment(self):
@@ -180,19 +192,17 @@ class XmasLoan(models.Model):
     @property
     def max_eligible_amount(self):
         from .models import CapitalShare
-
         total_shares = CapitalShare.objects.filter(member=self.member).aggregate(
             Sum('amount')
         )['amount__sum'] or Decimal('0.00')
-
         return total_shares * Decimal('0.10')
 
     @property
     def total_paid(self):
+        """Filters repayments specifically linked to THIS xmas loan instance."""
         from .models import LoanRepayment
-
         return LoanRepayment.objects.filter(
-            member=self.member,
+            xmas_loan=self, # Linking directly to the instance is safer
             is_xmas=True
         ).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
 
@@ -200,23 +210,16 @@ class XmasLoan(models.Model):
     def remaining_balance(self):
         return max(self.total_payable - self.total_paid, Decimal('0.00'))
 
-    def __str__(self):
-        return f"Xmas Loan - {self.member.user.username}"
-# -------------------------
-# LOAN PURPOSES
-# -------------------------
-class LoanPurpose(models.Model):
-    
-
-    name = models.CharField(max_length=200)
+    def save(self, *args, **kwargs):
+        # Auto-update status if all approvals are met
+        if self.admin_approved and self.staff_approved and self.treasurer_approved:
+            if self.status == 'pending':
+                self.status = 'approved'
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
-
-
-
-    def __str__(self):
-        return f"Loan {self.loan.id} Installment {self.installment_number}"
+        type_prefix = "Legacy " if self.is_legacy else ""
+        return f"{type_prefix}Xmas Loan - {self.member.user.username} ({self.status})"
 # -------------------------
 # LOANS
 # -------------------------
@@ -270,6 +273,20 @@ class Loan(models.Model):
     approval_date = models.DateTimeField(null=True, blank=True)
     is_disbursed = models.BooleanField(default=False)
     disbursed_at = models.DateTimeField(null=True, blank=True)
+    is_legacy = models.BooleanField(default=False, help_text="True if migrated from paper records")
+    legacy_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, help_text="Balance brought forward from paper")
+
+    def save(self, *args, **kwargs):
+        if not self.is_legacy:
+            # Your existing Tiered Interest Logic here
+            P = Decimal(str(self.amount))
+            # ... calculation logic ...
+        else:
+            # For Legacy: If interest/insurance isn't set, default to 0 to avoid double billing
+            if self.interest is None: self.interest = Decimal('0.00')
+            if self.insurance is None: self.insurance = Decimal('0.00')
+            
+        super().save(*args, **kwargs)
 
     @property
     def total_payable(self):

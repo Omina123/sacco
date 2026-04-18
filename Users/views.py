@@ -33,107 +33,157 @@ from home.models import HRNotification
 from .forms import MembershipSetupForm
 from .models import Profile
 from .utils import generate_membership_number
- 
 def register(request):
     if request.method == 'POST':
         user_form = MemberRegistrationForm(request.POST)
         if user_form.is_valid():
             user = user_form.save(commit=False)
             user.user_type = '4'  # Assign 'Member'
+            user.is_verified = False  # Ensure they start unverified
             user.save()
             
-            # CRITICAL: Create the empty profile so the user can log in
-            # and later fill it out via 'update_profile'
+            # Create the profile
             Profile.objects.get_or_create(user=user)
+
+            # --- OTP INTEGRATION ---
+            user.generate_otp() # Generate the 6-digit code
             
-            # messages.success(request, "Registration successful! Please login to complete your profile.")
-            return redirect('succfy')
+            # Store email in session so verify_otp/resend_otp knows who we are dealing with
+            request.session['verification_email'] = user.email
+            
+            html_content = f"""
+<div style="background-color: #f4f7f6; padding: 40px 10px; font-family: 'Segoe UI', Helvetica, Arial, sans-serif;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        
+        <div style="background-color: #002147; padding: 30px; text-align: center;">
+            <h1 style="color: #FFD700; margin: 0; font-size: 22px; letter-spacing: 2px; text-transform: uppercase;">
+                Eldoret Polytechnic SACCO
+            </h1>
+        </div>
+
+        <div style="padding: 40px; color: #333333; line-height: 1.6;">
+            <h2 style="color: #002147; margin-top: 0;">Account Verification</h2>
+            <p style="font-size: 16px;">Hello,</p>
+            <p style="font-size: 16px;">Thank you for registering with <strong>Eldopoly SACCO</strong>. To secure your account and complete your membership setup, please use the verification code below:</p>
+            
+            <div style="margin: 30px 0; text-align: center; background-color: #f9f9f9; border: 2px dashed #FFD700; border-radius: 10px; padding: 20px;">
+                <p style="margin: 0; font-size: 14px; color: #777; text-transform: uppercase; letter-spacing: 1px;">Your OTP Code</p>
+                <span style="font-size: 36px; font-weight: bold; color: #002147; letter-spacing: 8px;">{user.otp}</span>
+            </div>
+
+            <p style="font-size: 14px; color: #555;">This code is required to activate your account. If you did not request this, please ignore this email or contact the SACCO treasury department.</p>
+            
+            <hr style="border: none; border-top: 1px solid #eeeeee; margin: 30px 0;">
+            
+            <p style="font-size: 13px; color: #888; text-align: center; margin-bottom: 0;">
+                Best Regards,<br>
+                <strong>The Treasury Team</strong><br>
+                Eldoret Polytechnic SACCO
+            </p>
+        </div>
+
+        <div style="background-color: #fcfcfc; padding: 20px; text-align: center; border-top: 1px solid #eeeeee;">
+            <p style="font-size: 11px; color: #aaa; margin: 0;">
+                &copy; 2026 Eldoret Polytechnic SACCO | All Rights Reserved.
+            </p>
+        </div>
+    </div>
+</div>
+            """
+            send_brevo_email(user.email, "Verify Your Account", html_content)
+            # -----------------------
+
+            messages.info(request, "Registration successful! Please enter the OTP sent to your email.")
+            return redirect('verify_otp') # Send them straight to the OTP page
     else:
         user_form = MemberRegistrationForm()
     return render(request, 'register.html', {'user_form': user_form})
-
-# # --- LOGIN / LOGOUT ---
-
-# from django.utils import timezone
-# from django.db import transaction
-# from django.contrib import messages
-# from django.shortcuts import render, redirect
-# from .models import CustomUser, Profile
-# from .forms import MemberRegistrationForm
-# from .utils import send_brevo_email
-
-
 # def register(request):
 #     if request.method == 'POST':
-#         form = MemberRegistrationForm(request.POST)
-
-#         if form.is_valid():
-#             try:
-#                 with transaction.atomic():
-#                     # ✅ Create user but don't verify yet
-#                     user = form.save(commit=False)
-#                     user.user_type = '4'
-#                     user.is_verified = False  # 🔥 IMPORTANT
-#                     user.generate_otp()  # 🔥 generate OTP here
-#                     user.save()
-
-#                     # ✅ Create profile
-#                     Profile.objects.get_or_create(user=user)
-
-#                     # ✅ Store email in session
-#                     request.session['verification_email'] = user.email
-
-#                     # ✅ Send OTP email (PROFESSIONAL TEMPLATE)
-#                     html_content = f"""
-#                     <div style="font-family: Arial; padding: 20px;">
-#                         <h2 style="color:#0B1F3A;">Verify Your Account</h2>
-#                         <p>Hello {user.first_name},</p>
-#                         <p>Your OTP code is:</p>
-#                         <h1 style="color:#D4AF37;">{user.otp}</h1>
-#                         <p>This code expires soon.</p>
-#                         <hr>
-#                         <small>St. Peters Parish SACCO</small>
-#                     </div>
-#                     """
-
-#                     send_brevo_email(
-#                         to_email=user.email,
-#                         subject="Account Verification OTP",
-#                         html_content=html_content
-#                     )
-
-#                     messages.success(request, "OTP sent to your email. Verify your account.")
-#                     return redirect('verify_otp')
-
-#             except Exception as e:
-#                 messages.error(request, f"Error: {str(e)}")
-
+#         user_form = MemberRegistrationForm(request.POST)
+#         if user_form.is_valid():
+#             user = user_form.save(commit=False)
+#             user.user_type = '4'  # Assign 'Member'
+#             user.save()
+            
+#             # CRITICAL: Create the empty profile so the user can log in
+#             # and later fill it out via 'update_profile'
+#             Profile.objects.get_or_create(user=user)
+            
+#             # messages.success(request, "Registration successful! Please login to complete your profile.")
+#             return redirect('succfy')
 #     else:
-#         form = MemberRegistrationForm()
+#         user_form = MemberRegistrationForm()
+#     return render(request, 'register.html', {'user_form': user_form})
 
-    return render(request, 'register.html', {'user_form': form})
+# def Login(request):
+#     if request.method == 'POST':
+#         form = LoginForm(request.POST)
+#         if form.is_valid():
+#             # 'email' here acts as the identifier (Email or PF Number)
+#             email = form.cleaned_data['Email']
+#             password = form.cleaned_data['password']
+
+#             # authenticate() will use EmailBackend to check both email and pf_number
+#             user = authenticate(request, username=email, password=password)
+            
+#             if user is not None:
+#                 # if not user.is_verified:
+#                 #     messages.error(request, "Your account is not verified. Please verify OTP first.")
+#                 #     request.session['verification_email'] = user.email
+#                 #     return redirect('verify_otp')
+                
+#                 login(request, user)  # Log the user in
+                
+#                 profile = user.profile
+
+#                 # Redirect based on user type and profile completion
+#                 if profile.id_number and profile.phone_number:
+#                     if user.is_superuser or user.user_type == '1':
+#                         return redirect('admin_dashboard')
+#                     elif user.user_type == '2':
+#                         return redirect('staff_dashboard')
+#                     elif user.user_type == '3':
+#                         return redirect('treasurer_dashboard')
+#                     elif user.user_type == '5':
+#                         return redirect('Human_Resource')
+#                     else:
+#                         return redirect('member_dashboard')
+#                 else:
+#                     # Redirect to complete profile if ID or Phone is missing
+#                     return redirect('update_profile')
+#             else:
+#                 form.add_error(None, "Invalid email/PF Number or password")
+#     else:
+#         form = LoginForm()
+#     return render(request, 'login.html', {'form': form})
 def Login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            # 'email' here acts as the identifier (Email or PF Number)
             email = form.cleaned_data['Email']
             password = form.cleaned_data['password']
 
-            # authenticate() will use EmailBackend to check both email and pf_number
             user = authenticate(request, username=email, password=password)
             
             if user is not None:
-                # if not user.is_verified:
-                #     messages.error(request, "Your account is not verified. Please verify OTP first.")
-                #     request.session['verification_email'] = user.email
-                #     return redirect('verify_otp')
+                # --- VERIFICATION CHECK ---
+                if not user.is_verified:
+                    messages.warning(request, "Your account is not verified. Please verify the OTP sent to your email.")
+                    request.session['verification_email'] = user.email
+                    
+                    # Optional: Resend OTP automatically if it was deleted/expired
+                    if not user.otp:
+                        user.generate_otp()
+                        # (Add send_brevo_email logic here if you want to auto-resend)
+                        
+                    return redirect('verify_otp')
+                # --------------------------
                 
-                login(request, user)  # Log the user in
-                
+                login(request, user)
                 profile = user.profile
 
-                # Redirect based on user type and profile completion
+                # Redirect logic based on profile completion
                 if profile.id_number and profile.phone_number:
                     if user.is_superuser or user.user_type == '1':
                         return redirect('admin_dashboard')
@@ -146,14 +196,12 @@ def Login(request):
                     else:
                         return redirect('member_dashboard')
                 else:
-                    # Redirect to complete profile if ID or Phone is missing
                     return redirect('update_profile')
             else:
                 form.add_error(None, "Invalid email/PF Number or password")
     else:
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
-
 @login_required
 
 def update_profile(request):
@@ -420,8 +468,8 @@ def verify_otp(request):
             user.is_verified = True
             user.otp = "" 
             user.save()
-            messages.success(request, "Verified! You can now login.")
-            return redirect('s')
+            # messages.success(request, "Verified! You can now login.")
+            return redirect('succfy')  # Redirect to a success page or login
         except CustomUser.DoesNotExist:
             messages.error(request, "Invalid OTP.")
             
@@ -439,13 +487,32 @@ def resend_otp(request):
 
         # Send the new code via Brevo (using your professional style)
         html_content = f"""
-        <div style="font-family: Arial; padding: 20px; border-top: 5px solid #FFD700;">
-            <h2>New Verification Code</h2>
-            <p>Your new OTP is: <strong style="font-size: 24px; color: #212529;">{user.otp}</strong></p>
-            <p>This code replaces your previous one.</p>
+        <div style="background-color: #f4f7f6; padding: 30px 10px; font-family: 'Segoe UI', Arial, sans-serif;">
+            <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; border-top: 6px solid #FFD700; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden;">
+                
+                <div style="padding: 30px; text-align: center;">
+                    <h2 style="color: #002147; margin-bottom: 10px; font-size: 22px; font-weight: bold;">New Verification Code</h2>
+                    <p style="color: #666666; font-size: 15px;">Your requested security code is ready. The previous code has been deactivated for your protection.</p>
+                    
+                    <div style="margin: 25px 0; padding: 20px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 10px; display: inline-block; min-width: 220px;">
+                        <p style="margin: 0 0 5px 0; font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 2px;">Your New OTP</p>
+                        <span style="font-size: 36px; font-weight: bold; color: #002147; letter-spacing: 6px;">{user.otp}</span>
+                    </div>
+
+                    <p style="margin-top: 20px; font-size: 13px; color: #888; line-height: 1.5;">
+                        This code replaces your previous one. If you did not make this request, please contact the Eldopoly SACCO treasury immediately.
+                    </p>
+                </div>
+                
+                <div style="background-color: #002147; padding: 15px; text-align: center;">
+                    <p style="color: #ffffff; font-size: 11px; margin: 0; opacity: 0.8; letter-spacing: 1px;">
+                        ELDORET POLYTECHNIC SACCO | SECURE BANKING
+                    </p>
+                </div>
+            </div>
         </div>
         """
-        send_brevo_email(user.email, "New OTP - St. Peters Parish", html_content)
+        send_brevo_email(user.email, "New OTP - Eldoret Polytechnic SACCO", html_content)
         
         messages.success(request, "A fresh code has been sent to your email.")
     except CustomUser.DoesNotExist:

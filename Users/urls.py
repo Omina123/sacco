@@ -17,8 +17,8 @@ urlpatterns = [
     path('add_member/', add_member, name='add_member'),
     path('format_phone', format_phone, name='format_phone'),
     
-#     path('resender_otp/', resend_otp, name='resender_otp'),
-# path('verify_otp/', verify_otp, name='verify_otp'),
+     path('verify_otp/', verify_otp, name='verify_otp'),
+     path('resend_otp/', resend_otp, name='resend_otp'),
     path('delete_member/<int:user_id>/', delete_member, name='delete_member'),
     # path('update_profile/', update_profile, name='update_profile'),
     path('update_user/<int:user_id>/', update_user, name='update_user'),
@@ -27,6 +27,7 @@ urlpatterns = [
     path('password-reset-confirm/<uidb64>/<token>/', CustomPasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('password-reset-complete/', CustomPasswordResetCompleteView.as_view(), name='password_reset_complete'),
     path('complete_membership/', complete_membership, name='complete_membership'),
+    
    
     
 ]

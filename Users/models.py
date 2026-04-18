@@ -102,7 +102,7 @@ class Profile(models.Model):
     net_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     salary_needs_review = models.BooleanField(default=False)
     monthly_saving_target = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    month = models.DateField()
+    month = models.DateField(null=True, blank=True )
 
 
     def __str__(self):
