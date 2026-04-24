@@ -122,7 +122,28 @@
     <a href="{% url 'Logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
 
-<div class="main-content">
+
+
+<div class="main-content position-relative">
+
+    <div id="dashboard-lock" class="d-none position-absolute top-0 start-0 w-100 h-100 rounded-4 d-flex justify-content-center align-items-center" 
+         style="background: rgba(255,255,255,0.7); backdrop-filter: blur(6px); z-index: 1020;">
+        <div class="text-center p-4 shadow-lg bg-white rounded-4 border" style="max-width: 400px;">
+            <div class="mb-3 text-warning">
+                <i class="fas fa-lock fa-3x"></i>
+            </div>
+            <h4 class="fw-bold">Dashboard Locked</h4>
+            <p id="js-lock-message" class="text-muted mb-4 small">
+                Setup required: Please set your share milestone goal to unlock your portfolio overview.
+            </p>
+          <button type="button"
+        class="btn btn-success rounded-pill w-100 py-2 fw-bold"
+        onclick="updateGoal('share')">
+    Set Share Goal Now
+</button>
+        </div>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
         <div class="mb-2">
             <h2 class="fw-bold text-eldo-green">Hello, {{ profile.user.get_full_name }}!</h2>
@@ -133,97 +154,148 @@
         </div>
     </div>
 
-    {% for refund in active_refunds %}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="refund-tracker p-3 p-md-4 shadow-sm">
-                <div class="d-flex justify-content-between align-items-center flex-wrap">
-                    <div class="mb-2 mb-md-0">
-                        <h6 class="text-uppercase fw-bold text-muted small mb-1">
-                            <i class="fas fa-hourglass-half me-2"></i>Share Refund Processing
-                        </h6>
-                        <h4 class="fw-bold text-dark mb-0">KES {{ refund.amount_requested|floatformat:2 }}</h4>
-                        <p class="small text-muted mb-0">Effective Date: {{ refund.effective_date|date:"d M, Y" }}</p>
-                    </div>
-                    
-                    <div class="text-md-end">
-                        <div class="small fw-bold text-uppercase opacity-75 mb-1">Waiting Period Remaining:</div>
-                        <div id="countdown-{{ refund.id }}" class="h4 countdown-timer mb-2">00:00:00:00</div>
-                        
-                        <form action="{% url 'cancel_share_refund' refund.id %}" method="POST" 
-                              onsubmit="return confirm('Stop this refund? Your shares will remain in your account.');">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-danger rounded-pill px-3 shadow-sm">
-                                <i class="fas fa-times-circle me-1"></i> Cancel Refund Request
-                            </button>
-                        </form>
-                    </div>
+    <div id="main-portfolio-card" class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-header bg-white border-0 pt-4 px-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark">Portfolio Overview</h5>
+                <div class="dropdown">
+                    <button class="btn btn-light btn-sm rounded-pill px-3" type="button" id="targetsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-cog me-1"></i> Targets
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3" aria-labelledby="targetsDropdown">
+                        <li>
+    <button class="dropdown-item small" onclick="updateGoal('share')">
+        Edit Share Goal
+    </button>
+</li>
+
+<li>
+    <button class="dropdown-item small" onclick="updateGoal('saving')">
+        Edit Savings Target
+    </button>
+</li>
+                    </ul>
                 </div>
             </div>
         </div>
-    </div>
 
-    <script>
-        (function() {
-            let timeLeft = parseInt("{{ refund.time_remaining|floatformat:0 }}");
-            const display = document.getElementById("countdown-{{ refund.id }}");
+        <div class="card-body p-4">
+            <div class="row g-4">
+                <div class="col-md-6 border-end">
+                    <div class="d-flex align-items-center">
+                        <div class="position-relative me-3">
+                            <svg width="90" height="90" viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="54" fill="none" stroke="#f1f3f5" stroke-width="12" />
+                                <circle cx="60" cy="60" r="54" fill="none" stroke="#198754" stroke-width="12" 
+                                        stroke-dasharray="339.29" stroke-dashoffset="{{ dash_offset|default:339.29 }}" 
+                                        stroke-linecap="round" style="transition: stroke-dashoffset 1.5s ease-in-out; transform: rotate(-90deg); transform-origin: 50% 50%;" />
+                            </svg>
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <span class="fw-bold small text-dark">{{ share_progress_pct|floatformat:0 }}%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h6 class="text-uppercase text-muted small fw-bold mb-0">Shares</h6>
+                            <h4 class="fw-bold mb-0">KES {{ total_shares|floatformat:0 }}</h4>
+                            <p class="text-muted extra-small mb-0">Goal: {{ share_goal|floatformat:0 }}</p>
+                        </div>
+                    </div>
+                </div>
 
-            const updateTimer = () => {
-                if (timeLeft <= 0) {
-                    display.innerHTML = "MATURED";
-                    return;
-                }
-                const d = Math.floor(timeLeft / (24 * 3600));
-                const h = Math.floor((timeLeft % (24 * 3600)) / 3600);
-                const m = Math.floor((timeLeft % 3600) / 60);
-                const s = Math.floor(timeLeft % 60);
-                display.innerHTML = `${d}d ${h.toString().padStart(2, '0')}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`;
-                timeLeft--;
-            };
-            updateTimer();
-            setInterval(updateTimer, 1000);
-        })();
-    </script>
-    {% endfor %}
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <div class="position-relative me-3">
+                            <svg width="90" height="90" viewBox="0 0 120 120">
+                                <circle cx="60" cy="60" r="54" fill="none" stroke="#f1f3f5" stroke-width="12" />
+                                <circle cx="60" cy="60" r="54" fill="none" stroke="#0d6efd" stroke-width="12" 
+                                        stroke-dasharray="339.29" 
+                                        stroke-dashoffset="calc(339.29 - (339.29 * {{ progress_pct|default:0 }}) / 100)" 
+                                        stroke-linecap="round" style="transition: stroke-dashoffset 1.5s ease-in-out; transform: rotate(-90deg); transform-origin: 50% 50%;" />
+                            </svg>
+                            <div class="position-absolute top-50 start-50 translate-middle">
+                                <span class="fw-bold small text-dark">{{ progress_pct|floatformat:0 }}%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <h6 class="text-uppercase text-muted small fw-bold mb-0">Monthly Savings</h6>
+                            <h4 class="fw-bold mb-0">KES {{ current_month_savings|floatformat:0 }}</h4>
+                            <p class="text-muted extra-small mb-0">Target: {{ saving_target|floatformat:0 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-    <div class="card shadow-sm border-0 rounded-4 p-3 mb-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <h6 class="text-uppercase text-muted fw-bold small mb-0">Monthly Savings Target</h6>
-            <button class="btn btn-sm btn-link p-0 text-success text-decoration-none" onclick="updateGoal()">
-                <i class="fas fa-pencil-alt"></i> Set Goal
-            </button>
-        </div>
-        <h3 class="fw-bold mb-1">KES {{ saving_target|floatformat:0 }}</h3>
-        
-        <div class="progress mt-2" style="height: 8px;">
-            <div class="progress-bar bg-success" role="progressbar" 
-                 style="width: {{ progress_pct }}%"></div>
-        </div>
-        <div class="d-flex justify-content-between mt-1">
-            <span class="small text-muted">Saved: KES {{ current_month_savings|floatformat:2 }}</span>
-            <span class="small fw-bold text-success">{{ progress_pct|floatformat:0 }}%</span>
-        </div>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-lg text-white" 
-                 style="background: linear-gradient(135deg, #2615c2 0%, #507535 100%); border-radius: 15px;">
-                <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap">
+            {% if active_refunds %}
+            <hr class="my-4 text-muted opacity-25">
+            <div class="bg-light rounded-4 p-3 border-start border-warning border-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-clock me-2 text-warning"></i>Active Share Refunds</h6>
+                    <span class="badge bg-warning text-dark rounded-pill">{{ active_refunds.count }} Pending</span>
+                </div>
+                
+                {% for refund in active_refunds %}
+                <div class="d-flex justify-content-between align-items-center mt-3">
                     <div>
-                        <h4 class="fw-bold mb-1"><i class="fas fa-holly-berry me-2"></i>Quick Loan</h4>
-                        <p class="mb-0 opacity-75">Get up to X12 of your savings instantly for quick needs!</p>
+                        <span class="text-dark fw-bold">KES {{ refund.amount_requested|floatformat:2 }}</span>
+                        <div id="timer-{{ refund.id }}" class="small text-danger fw-bold font-monospace">--:--:--:--</div>
                     </div>
-                    <div class="mt-3 mt-md-0">
-                        <a href="{% url 'apply_xmas_loan' %}" class="btn btn-light fw-bold px-4 py-2 text-danger rounded-pill shadow-sm">
-                            Apply Now
-                        </a>
-                    </div>
+                    <form action="{% url 'cancel_share_refund' refund.id %}" method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-link text-danger text-decoration-none p-0 small">
+                            Cancel <i class="fas fa-times-circle ms-1"></i>
+                        </button>
+                    </form>
                 </div>
+                
+                <script>
+                    (function() {
+                        let timeLeft = parseInt("{{ refund.time_remaining|floatformat:0 }}");
+                        const display = document.getElementById("timer-{{ refund.id }}");
+                        const update = () => {
+                            if (timeLeft <= 0) { display.innerHTML = "COMPLETED"; return; }
+                            const d = Math.floor(timeLeft / 86400), h = Math.floor((timeLeft % 86400) / 3600);
+                            const m = Math.floor((timeLeft % 3600) / 60), s = timeLeft % 60;
+                            display.innerHTML = `${d}d ${h}h ${m}m ${s}s`;
+                            timeLeft--;
+                        };
+                        update(); setInterval(update, 1000);
+                    })();
+                </script>
+                {% endfor %}
             </div>
+            {% endif %}
         </div>
     </div>
+</div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Get current goal value
+    const shareGoal = parseFloat("{{ share_goal|default:0 }}");
+    
+    // 2. Element Selectors
+    const lockOverlay = document.getElementById('dashboard-lock');
+    const mainCard = document.getElementById('main-portfolio-card');
+    const lockMsg = document.getElementById('js-lock-message');
+
+    // 3. Deactivation Logic
+    if (shareGoal <= 0) {
+        lockOverlay.classList.remove('d-none'); // Show overlay
+        mainCard.style.pointerEvents = 'none'; // Stop clicking behind it
+        mainCard.style.opacity = '0.5';         // Visual fade
+        
+        // JS Dynamic Messaging
+        lockMsg.innerHTML = "<strong>Action Required:</strong> To view your portfolio metrics and active refunds, please set your <strong>Share Goal</strong> first.";
+    }
+});
+</script>
+
+<style>
+    .text-eldo-green { color: #198754; }
+    .extra-small { font-size: 0.75rem; }
+    /* Ensure modal can be clicked even if UI is locked */
+    .modal { z-index: 1060 !important; }
+</style>
     {% if pending_guarantor_requests %}
     <div class="row mb-4">
         <div class="col-12">
@@ -454,36 +526,129 @@
         </div>
     </div>
 </div>
-
+</div>
 <script>
-    function updateGoal() {
-        let goal = prompt("Enter your monthly savings target (KES):", "{{ saving_target }}");
-        if (goal) {
-            fetch("{% url 'update_savings_goal' %}", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": "{{ csrf_token }}",
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ goal: goal })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.status === 'success') location.reload();
-            });
-        }
+    // --- CSRF helper (important fix) ---
+    function getCSRFToken() {
+        return document.cookie.split('; ')
+            .find(row => row.startsWith('csrftoken'))
+            ?.split('=')[1];
     }
 
-    // Sidebar Toggle Script
+    // --- Toast Message Function ---
+    function showMessage(message, type = "success") {
+        const containerId = "toast-container";
+
+        let container = document.getElementById(containerId);
+        if (!container) {
+            container = document.createElement("div");
+            container.id = containerId;
+            container.style.position = "fixed";
+            container.style.top = "20px";
+            container.style.right = "20px";
+            container.style.zIndex = "9999";
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement("div");
+        toast.className = `alert alert-${type} shadow-sm mb-2`;
+        toast.style.minWidth = "250px";
+        toast.style.transition = "opacity 0.5s ease";
+
+        toast.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <span>${message}</span>
+                <button type="button" class="btn-close"></button>
+            </div>
+        `;
+
+        container.appendChild(toast);
+
+        toast.querySelector(".btn-close").addEventListener("click", () => {
+            toast.remove();
+        });
+
+        setTimeout(() => {
+            toast.style.opacity = "0";
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
+
+
+    // --- Update Goal Function (FIXED + VALIDATION) ---
+    function updateGoal(type = "saving") {
+
+        let currentValue = type === "saving" 
+            ? "{{ saving_target }}" 
+            : "{{ share_goal }}";
+
+        let goal = prompt(
+            type === "saving" 
+                ? "Enter your monthly savings target (KES):" 
+                : "Enter your share goal (Minimum 500 KES):",
+            currentValue
+        );
+
+        if (goal === null) {
+            showMessage("Update cancelled.", "warning");
+            return;
+        }
+
+        goal = parseFloat(goal);
+
+        if (isNaN(goal)) {
+            showMessage("Please enter a valid number.", "danger");
+            return;
+        }
+
+        // ✅ MINIMUM SHARE RULE
+        if (type === "share" && goal < 500) {
+            showMessage("Share goal must be at least KES 500.", "danger");
+            return;
+        }
+
+        showMessage("Updating target...", "info");
+
+        fetch("{% url 'update_targets' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": getCSRFToken(),
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                saving_target: type === "saving" ? goal : null,
+                share_goal: type === "share" ? goal : null
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showMessage("Target updated successfully!", "success");
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showMessage(data.message || "Update failed.", "danger");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showMessage("Something went wrong.", "danger");
+        });
+    }
+
+
+    // --- Sidebar Toggle Script ---
     const toggleBtn = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('sidebar');
-    
-    toggleBtn.addEventListener('click', () => {
-        sidebar.classList.toggle('active');
-    });
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
+    }
 
     document.addEventListener('click', (e) => {
-        if (window.innerWidth <= 992 && !sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+        if (window.innerWidth <= 992 && sidebar && toggleBtn &&
+            !sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
             sidebar.classList.remove('active');
         }
     });

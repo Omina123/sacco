@@ -82,9 +82,11 @@ path('disburse_share_refund/<int:refund_id>/', views.disburse_share_refund, name
  path('sacco_report/', views.sacco_report, name='sacco_report'),
  path ('Bank_Statement/', views.Bank_Statement, name='Bank_Statement'),
  path ('bank_financial_report', views.bank_financial_report, name='bank_financial_report'), 
-
+ path ('update_share_goal', views.update_share_goal, name='update_share_goal'),
+ path ('update_savings_goal', views.update_savings_goal, name='update_savings_goal'),
+ path ('update_targets', views.update_targets, name='update_targets'),
      path('performance_analysis/', views.performance_analysis_view, name='performance_analysis'),
-     path ('update_savings_goal', views.update_savings_goal, name='update_savings_goal'),
+     path ('update_targetds', views.update_targetds, name='update_targetds'),
      path('api/note-details/<str:note_id>/', views.get_note_details, name='note_details'),
      path('member_loan_details_view/<int:profile_id>/', views.member_loan_details_view, name='member_loan_details_view'),
      path ('migrate_single_member_loan/<int:member_id>/', views.migrate_single_member_loan, name='migrate_single_member_loan'),

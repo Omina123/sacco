@@ -98,65 +98,7 @@ def register(request):
     else:
         user_form = MemberRegistrationForm()
     return render(request, 'register.html', {'user_form': user_form})
-# def register(request):
-#     if request.method == 'POST':
-#         user_form = MemberRegistrationForm(request.POST)
-#         if user_form.is_valid():
-#             user = user_form.save(commit=False)
-#             user.user_type = '4'  # Assign 'Member'
-#             user.save()
-            
-#             # CRITICAL: Create the empty profile so the user can log in
-#             # and later fill it out via 'update_profile'
-#             Profile.objects.get_or_create(user=user)
-            
-#             # messages.success(request, "Registration successful! Please login to complete your profile.")
-#             return redirect('succfy')
-#     else:
-#         user_form = MemberRegistrationForm()
-#     return render(request, 'register.html', {'user_form': user_form})
 
-# def Login(request):
-#     if request.method == 'POST':
-#         form = LoginForm(request.POST)
-#         if form.is_valid():
-#             # 'email' here acts as the identifier (Email or PF Number)
-#             email = form.cleaned_data['Email']
-#             password = form.cleaned_data['password']
-
-#             # authenticate() will use EmailBackend to check both email and pf_number
-#             user = authenticate(request, username=email, password=password)
-            
-#             if user is not None:
-#                 # if not user.is_verified:
-#                 #     messages.error(request, "Your account is not verified. Please verify OTP first.")
-#                 #     request.session['verification_email'] = user.email
-#                 #     return redirect('verify_otp')
-                
-#                 login(request, user)  # Log the user in
-                
-#                 profile = user.profile
-
-#                 # Redirect based on user type and profile completion
-#                 if profile.id_number and profile.phone_number:
-#                     if user.is_superuser or user.user_type == '1':
-#                         return redirect('admin_dashboard')
-#                     elif user.user_type == '2':
-#                         return redirect('staff_dashboard')
-#                     elif user.user_type == '3':
-#                         return redirect('treasurer_dashboard')
-#                     elif user.user_type == '5':
-#                         return redirect('Human_Resource')
-#                     else:
-#                         return redirect('member_dashboard')
-#                 else:
-#                     # Redirect to complete profile if ID or Phone is missing
-#                     return redirect('update_profile')
-#             else:
-#                 form.add_error(None, "Invalid email/PF Number or password")
-#     else:
-#         form = LoginForm()
-#     return render(request, 'login.html', {'form': form})
 def Login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -381,7 +323,7 @@ class CustomPasswordResetView(auth_views.PasswordResetView):
             # 4. Send via Brevo
             send_brevo_email(
                 to_email=user.email, 
-                subject="Password Reset Request - St. Peters Parish", 
+                subject="Password Reset Request - Eldoret Polytechnic SACCO Limited", 
                 html_content=html_content
             )
 

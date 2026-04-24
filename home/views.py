@@ -678,147 +678,221 @@ def pay_xmas_loan(request):
     })
 @login_required
 @role_required(allowed_roles=['1', '2', '3', '4'])  # Allow all roles to access dashboard
+
+
 # def member_dashboard(request):
 #     profile = request.user.profile
-    
+#     today = date.today()
+
 #     # 1. Basic Data Retrieval
 #     loans = Loan.objects.filter(member=profile).order_by('-application_date')
-#     savings_list = MonthlyContribution.objects.filter(member=profile).order_by('-created_at')
-#     shares_list = CapitalShare.objects.filter(member=profile)
 #     xmas_loans = XmasLoan.objects.filter(member=profile).order_by('-application_date')
+#     savings_list = MonthlyContribution.objects.filter(member=profile).order_by('-month', '-created_at')
+#     shares_list = CapitalShare.objects.filter(member=profile)
+
 #     active_refunds = CapitalShareRefund.objects.filter(
-#     member=request.user.profile, 
-#     status__in=['pending', 'partially_approved', 'approved']
-# )
-#     # 2. NEW: Fetch notifications for this user (where they are a guarantor)
-#     # Shows requests for loans that are still pending and where they haven't responded yet
-#     pending_guarantor_requests = Guarantor.objects.filter(
-#         guarantor=profile,
-#         status='pending',
-#         loan__status='pending_guarantors' 
-#     ).select_related('loan__member__user')
+#         member=profile,
+#         status__in=['pending', 'partially_approved', 'approved']
+#     )
 
+#     # 2. Approval Counts
+#     active_normal_count = loans.filter(status__in=['pending', 'approved', 'disbursed']).count()
+#     active_xmas_count = xmas_loans.filter(status__in=['pending', 'approved', 'disbursed']).count()
+
+#     # 3. Loan Calculations
 #     running_total_remaining_balance = Decimal('0.00')
-#     running_total_penalties = Decimal('0.00')
 
-#     # 3. Process Loans for the Portfolio Table
 #     for loan in loans:
-#         # Repayment totals
-#         total_paid_lec = LoanRepayment.objects.filter(loan=loan).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
-#         total_payable_lec = LoanRepaymentSchedule.objects.filter(loan=loan).aggregate(Sum('amount_due'))['amount_due__sum'] or Decimal('0.00')
+#         total_paid = LoanRepayment.objects.filter(loan=loan).aggregate(
+#             Sum('amount_paid')
+#         )['amount_paid__sum'] or Decimal('0.00')
 
-#         loan.total_paid = total_paid_lec
-#         loan.total_payable_l = total_payable_lec
-#         loan.remaining_balance = total_payable_lec - total_paid_lec
+#         total_payable = LoanRepaymentSchedule.objects.filter(loan=loan).aggregate(
+#             Sum('amount_due')
+#         )['amount_due__sum'] or Decimal('0.00')
 
-#         # Penalty calculation
-#         loan.penalty_due = calculate_penalty(loan)
-#         running_total_penalties += loan.penalty_due
+#         loan.total_paid = total_paid
+#         loan.remaining_balance = max(total_payable - total_paid, Decimal('0.00'))
 
-#         # Only add to "Current Debt" card if the loan is actually active/disbursed
 #         if loan.status in ['approved', 'disbursed']:
 #             running_total_remaining_balance += loan.remaining_balance
 
-#     # 4. Top Summary Cards Math
+#     # Xmas loans
+#     for xmas in xmas_loans:
+#         if xmas.status in ['approved', 'disbursed']:
+#             running_total_remaining_balance += getattr(
+#                 xmas, 'remaining_balance', Decimal('0.00')
+#             )
+
+#     # 4. Savings Progress
+#     current_month_savings = MonthlyContribution.objects.filter(
+#         member=profile,
+#         month__month=today.month,
+#         month__year=today.year
+#     ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
+#     saving_target = getattr(profile, 'monthly_saving_target', Decimal('0.00'))
+#     savings_progress_pct = (
+#         current_month_savings / saving_target * 100
+#         if saving_target > 0 else 0
+#     )
+
+#     # 5. SHARES PROGRESS (NEW ADDITION)
+#     current_month_shares = CapitalShare.objects.filter(
+#         member=profile,
+#         month__month=today.month,
+#         month__year=today.year
+#     ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
+#     share_target = getattr(profile, 'monthly_share_target', Decimal('0.00'))
+#     share_progress_pct = (
+#         current_month_shares / share_target * 100
+#         if share_target > 0 else 0
+#     )
+
+#     # 6. Totals
 #     total_savings = savings_list.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
 #     total_shares = shares_list.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
-#     total_repaid_all_time = LoanRepayment.objects.filter(loan__member=profile).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
 
 #     context = {
-#         'xmas_loans': xmas_loans,
 #         'profile': profile,
 #         'loans': loans,
+#         'xmas_loans': xmas_loans,
+
+#         'active_normal_count': active_normal_count,
+#         'active_xmas_count': active_xmas_count,
+
 #         'savings': savings_list,
 #         'shares': shares_list,
+
 #         'total_savings': total_savings,
 #         'total_shares': total_shares,
 #         'total_loans': running_total_remaining_balance,
-#         'total_repaid': total_repaid_all_time,
-#         'total_penalties': running_total_penalties,
-#         # Pass the new notifications to the template
-#         'pending_guarantor_requests': pending_guarantor_requests,
+
 #         'active_refunds': active_refunds,
+
+#         # SAVINGS
+#         'current_month_savings': current_month_savings,
+#         'saving_target': saving_target,
+#         'progress_pct': min(float(savings_progress_pct), 100),
+
+#         # SHARES (NEW)
+#         'current_month_shares': current_month_shares,
+#         'share_target': share_target,
+#         'share_progress_pct': min(float(share_progress_pct), 100),
 #     }
 
 #     return render(request, 'r_dashboard.html', context)
 
+@login_required
 
+
+def update_targetds(request):
+    if request.method == "POST":
+        profile = request.user.profile
+        data = json.loads(request.body)
+
+        share_goal = data.get('share_goal')
+        saving_target = data.get('saving_target')
+
+        if share_goal:
+            profile.share_goal = share_goal
+
+        if saving_target:
+            profile.monthly_saving_target = saving_target
+
+        profile.save()
+
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'failed'})
+@login_required
 def member_dashboard(request):
     profile = request.user.profile
     today = date.today()
-    
+
     # 1. Basic Data Retrieval
     loans = Loan.objects.filter(member=profile).order_by('-application_date')
     xmas_loans = XmasLoan.objects.filter(member=profile).order_by('-application_date')
     savings_list = MonthlyContribution.objects.filter(member=profile).order_by('-month', '-created_at')
     shares_list = CapitalShare.objects.filter(member=profile)
+
     active_refunds = CapitalShareRefund.objects.filter(
-    member=request.user.profile, 
-    status__in=['pending', 'partially_approved', 'approved']
-)
-    
-    # 2. Dynamic Approval Counts for Portfolio Badges
-    # Counts loans that are either waiting for approval or currently active
+        member=profile,
+        status__in=['pending', 'partially_approved', 'approved']
+    )
+
+    # 2. Approval Counts
     active_normal_count = loans.filter(status__in=['pending', 'approved', 'disbursed']).count()
     active_xmas_count = xmas_loans.filter(status__in=['pending', 'approved', 'disbursed']).count()
 
-    # 3. Unified Loan Portfolio Calculations
+    # 3. Loan Calculations
     running_total_remaining_balance = Decimal('0.00')
 
-    # Calculate Normal Loans
     for loan in loans:
         total_paid = LoanRepayment.objects.filter(loan=loan).aggregate(
             Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
         total_payable = LoanRepaymentSchedule.objects.filter(loan=loan).aggregate(
             Sum('amount_due'))['amount_due__sum'] or Decimal('0.00')
-
-        loan.remaining_balance = total_payable - total_paid
-
+        loan.total_paid = total_paid
+        loan.remaining_balance = max(total_payable - total_paid, Decimal('0.00'))
         if loan.status in ['approved', 'disbursed']:
             running_total_remaining_balance += loan.remaining_balance
 
-    # Calculate Xmas Loans (Adding to the same running total)
     for xmas in xmas_loans:
-        # Assuming remaining_balance is a property/method on your XmasLoan model
         if xmas.status in ['approved', 'disbursed']:
-            running_total_remaining_balance += xmas.remaining_balance
+            running_total_remaining_balance += getattr(xmas, 'remaining_balance', Decimal('0.00'))
 
-    # 4. Savings Progress Tracking
+    # 4. Savings Progress
     current_month_savings = MonthlyContribution.objects.filter(
-        member=profile,
-        month__month=today.month,
-        month__year=today.year
+        member=profile, month__month=today.month, month__year=today.year
     ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+    saving_target = getattr(profile, 'monthly_saving_target', Decimal('0.00'))
+    savings_progress_pct = (current_month_savings / saving_target * 100) if saving_target > 0 else 0
 
-    target = getattr(profile, 'monthly_saving_target', Decimal('0.00'))
-    progress_pct = (current_month_savings / target * 100) if target > 0 else 0
-
-    # 5. Global Summary Totals
-    total_savings = savings_list.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+    # 5. Shares Milestone Logic
     total_shares = shares_list.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+    total_savings = savings_list.aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+    share_milestone_goal = getattr(profile, 'share_goal', Decimal('0.00'))
+    
+    # Calculate Percentage for the Circle
+    if share_milestone_goal > 0:
+        raw_pct = (total_shares / share_milestone_goal) * 100
+    else:
+        raw_pct = 0
+    
+    share_progress_pct_capped = min(float(raw_pct), 100)
+
+    # 6. CIRCULAR SVG CALCULATION (Crucial fix for your error)
+    # Circumference = 2 * π * r (where r=54) ≈ 339.29
+    circumference = 339.29
+    # dash_offset of 0 means full circle, 339.29 means empty circle
+    calculated_offset = circumference - (share_progress_pct_capped / 100) * circumference
 
     context = {
         'profile': profile,
         'loans': loans,
         'xmas_loans': xmas_loans,
-        'active_normal_count': active_normal_count, # Use in Normal Badge
-        'active_xmas_count': active_xmas_count,     # Use in Xmas Badge
+        'active_normal_count': active_normal_count,
+        'active_xmas_count': active_xmas_count,
         'savings': savings_list,
         'shares': shares_list,
-        
-        # Summary Totals
         'total_savings': total_savings,
         'total_shares': total_shares,
-        'total_loans': running_total_remaining_balance, # Combined total
+        'total_loans': running_total_remaining_balance,
         'active_refunds': active_refunds,
-        # Savings Goal Data
+
         'current_month_savings': current_month_savings,
-        'progress_pct': min(float(progress_pct), 100),
-        'saving_target': target,
+        'saving_target': saving_target,
+        'progress_pct': min(float(savings_progress_pct), 100),
+
+        # Pass the pre-calculated offset to avoid template math
+        'share_goal': share_milestone_goal,
+        'share_progress_pct': share_progress_pct_capped,
+        'dash_offset': calculated_offset, 
     }
 
     return render(request, 'r_dashboard.html', context)
-@login_required
 def respond_guarantor(request, guarantor_id, action):
     # 1. Security Check
     guarantor_req = get_object_or_404(Guarantor, id=guarantor_id, guarantor=request.user.profile)
@@ -2379,21 +2453,198 @@ def performance_analysis_view(request):
     }
     
     return render(request, 'analysis.html', context)
+# views.py
+
+import json
+from decimal import Decimal, InvalidOperation
+from django.http import JsonResponse
+
+def update_targets(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            profile = request.user.profile
+
+            # Savings target
+            if data.get("saving_target"):
+                profile.monthly_saving_target = Decimal(data["saving_target"])
+
+            # Share goal
+            if data.get("share_goal"):
+                profile.share_goal = Decimal(data["share_goal"])
+
+            profile.save()
+
+            return JsonResponse({
+                "status": "success",
+                "message": "Targets updated successfully"
+            })
+
+        except (ValueError, InvalidOperation):
+            return JsonResponse({
+                "status": "error",
+                "message": "Invalid amount entered"
+            }, status=400)
+
+    return JsonResponse({"status": "error"}, status=405)
+def update_share_goal(request):
+    if request.method == "POST":
+        goal_amount = request.POST.get('share_goal')
+        try:
+            profile = request.user.profile
+            profile.share_goal = Decimal(goal_amount)
+            profile.save()
+            messages.success(request, f"Your new share goal is KES {profile.share_goal:,.2f}")
+        except (ValueError, TypeError, Decimal.InvalidOperation):
+            messages.error(request, "Invalid amount entered.")
+            
+    return redirect('member_dashboard')
 from django.db.models import Sum
 from decimal import Decimal
 
+# def monthly_sacco_report(request):
+#     month = int(request.GET.get('month', timezone.now().month))
+#     year = int(request.GET.get('year', timezone.now().year))
+    
+#     report_data = []
+#     profiles = Profile.objects.all().select_related('user')
+
+#     for profile in profiles:
+#         # -------------------------------
+#         # 1. SAVINGS (XMAS GOAL) 
+#         # -------------------------------
+#         # FIX: Check the MonthlyContribution table specifically for the selected month
+#         savings_paid = MonthlyContribution.objects.filter(
+#             member=profile,
+#             month__month=month,
+#             month__year=year
+#         ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+
+#         # Use the goal set in profile
+#         savings_target = profile.monthly_saving_target or Decimal('0.00')
+        
+#         # Status logic: Paid if they met the goal (or paid anything if goal is 0)
+#         savings_status = savings_paid >= savings_target if savings_target > 0 else savings_paid > 0
+
+#         # -------------------------------
+#         # 2. CAPITAL SHARES
+#         # -------------------------------
+#         # FIX: Use __in for multiple types and correct filter syntax
+#         shares_paid = Transaction.objects.filter(
+#             member=profile,
+#             transaction_type='shares',
+#             created_at__month=month,
+#             created_at__year=year
+#         ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
+        
+#         share_target = Decimal('1000.00')
+#         shares_status = shares_paid >= share_target
+
+#         # -------------------------------
+#         # 3. LOAN LOGIC (Normal, Xmas, School, Emergency)
+#         # -------------------------------
+#         def get_loan_data(purpose_name, is_xmas_model=False):
+#             if is_xmas_model:
+#                 loan = XmasLoan.objects.filter(member=profile, status__in=['approved', 'disbursed']).first()
+#             else:
+#                 loan = Loan.objects.filter(member=profile, purpose=purpose_name, status__in=['approved', 'disbursed']).first()
+            
+#             if loan:
+#                 expected = loan.monthly_installment
+#                 repayment_filter = {'payment_date__month': month, 'payment_date__year': year}
+                
+#                 if is_xmas_model:
+#                     repayment_filter['member'] = profile
+#                     repayment_filter['is_xmas'] = True
+#                 else:
+#                     repayment_filter['loan'] = loan
+                
+#                 paid = LoanRepayment.objects.filter(**repayment_filter).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
+#                 return expected, paid, (paid >= expected)
+#             return Decimal('0.00'), Decimal('0.00'), False
+
+#         norm_exp, norm_paid, norm_status = get_loan_data('normal Loan')
+#         xmas_exp, xmas_paid, xmas_status = get_loan_data(None, is_xmas_model=True)
+#         sch_exp, sch_paid, sch_status = get_loan_data('scholl fees')
+#         emg_exp, emg_paid, emg_status = get_loan_data('emergency')
+
+#         # -------------------------------
+#         # 4. BUILD ROW
+#         # -------------------------------
+#         row = {
+#             'name': profile.user.get_full_name() or profile.user.username,
+#             'pf': profile.pf_number,
+#             'savings_paid': savings_paid, # Pass actual paid amount to template
+#             'savings_target': savings_target,
+#             'savings_status': savings_status,
+#             'shares_paid': shares_paid,
+#             'shares_target': share_target,
+#             'shares_status': shares_status,
+#             'normal_loan': norm_exp,
+#             'normal_paid': norm_paid,
+#             'normal_status': norm_status,
+#             'xmas_loan': xmas_exp,
+#             'xmas_paid': xmas_paid,
+#             'xmas_status': xmas_status,
+#             'school_fees': sch_exp,
+#             'school_paid': sch_paid,
+#             'school_status': sch_status,
+#             'emergency': emg_exp,
+#             'emergency_paid': emg_paid,
+#             'emergency_status': emg_status,
+#             'total_actual_paid': (savings_paid + shares_paid + norm_paid + xmas_paid + sch_paid + emg_paid)
+#         }
+#         report_data.append(row)
+
+#     # 5. CSV EXPORT LOGIC
+#     if 'export' in request.GET:
+#         response = HttpResponse(content_type='text/csv')
+#         response['Content-Disposition'] = f'attachment; filename="SACCO_Report_{month}_{year}.csv"'
+#         writer = csv.writer(response)
+#         writer.writerow(['Member Name', 'PF Number', 'Xmass Contri', ' Normal Shares', 'Normal loans', 'Quck Loans', 'School Fees', 'Emergency'])
+
+#         for r in report_data:
+#             writer.writerow([
+#                 r['name'], r['pf'],
+#                 0 if r['savings_status'] else r['savings_target'],
+#                 0 if r['shares_status'] else r['shares_target'],
+#                 0 if r['normal_status'] else r['normal_loan'],
+#                 0 if r['xmas_status'] else r['xmas_loan'],
+#                 0 if r['school_status'] else r['school_fees'],
+#                 0 if r['emergency_status'] else r['emergency'],
+#             ])
+#         return response
+
+#     context = {
+#         'report_data': report_data,
+#         'month': month,
+#         'year': year,
+#         'years': range(2023, 2030),
+#         'months_choices': [(i, date(2000, i, 1).strftime('%b')) for i in range(1, 13)],
+#     }
+#     return render(request, 'monthly_report.html', context)
+
+import csv
+from django.http import HttpResponse
+from django.db.models import Sum
+from decimal import Decimal
+from django.utils import timezone
+from datetime import date
+from .models import Profile, MonthlyContribution, Transaction, Loan, XmasLoan, LoanRepayment
+
 def monthly_sacco_report(request):
+    # Get month and year from request, default to current
     month = int(request.GET.get('month', timezone.now().month))
     year = int(request.GET.get('year', timezone.now().year))
     
     report_data = []
+    # Select related user to avoid N+1 query issues
     profiles = Profile.objects.all().select_related('user')
 
     for profile in profiles:
         # -------------------------------
         # 1. SAVINGS (XMAS GOAL) 
         # -------------------------------
-        # FIX: Check the MonthlyContribution table specifically for the selected month
         savings_paid = MonthlyContribution.objects.filter(
             member=profile,
             month__month=month,
@@ -2407,9 +2658,8 @@ def monthly_sacco_report(request):
         savings_status = savings_paid >= savings_target if savings_target > 0 else savings_paid > 0
 
         # -------------------------------
-        # 2. CAPITAL SHARES
+        # 2. CAPITAL SHARES (FIXED)
         # -------------------------------
-        # FIX: Use __in for multiple types and correct filter syntax
         shares_paid = Transaction.objects.filter(
             member=profile,
             transaction_type='shares',
@@ -2417,8 +2667,11 @@ def monthly_sacco_report(request):
             created_at__year=year
         ).aggregate(Sum('amount'))['amount__sum'] or Decimal('0.00')
         
-        share_target = Decimal('1000.00')
-        shares_status = shares_paid >= share_target
+        # Pulling the 389.9 (or whatever goal is set) from the profile
+        share_target = profile.share_goal or Decimal('0.00')
+        
+        # Matches Savings status logic exactly
+        shares_status = shares_paid >= share_target if share_target > 0 else shares_paid > 0
 
         # -------------------------------
         # 3. LOAN LOGIC (Normal, Xmas, School, Emergency)
@@ -2445,7 +2698,7 @@ def monthly_sacco_report(request):
 
         norm_exp, norm_paid, norm_status = get_loan_data('normal Loan')
         xmas_exp, xmas_paid, xmas_status = get_loan_data(None, is_xmas_model=True)
-        sch_exp, sch_paid, sch_status = get_loan_data('choll fees')
+        sch_exp, sch_paid, sch_status = get_loan_data('school fees')
         emg_exp, emg_paid, emg_status = get_loan_data('emergency')
 
         # -------------------------------
@@ -2454,7 +2707,7 @@ def monthly_sacco_report(request):
         row = {
             'name': profile.user.get_full_name() or profile.user.username,
             'pf': profile.pf_number,
-            'savings_paid': savings_paid, # Pass actual paid amount to template
+            'savings_paid': savings_paid,
             'savings_target': savings_target,
             'savings_status': savings_status,
             'shares_paid': shares_paid,
@@ -2481,13 +2734,17 @@ def monthly_sacco_report(request):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="SACCO_Report_{month}_{year}.csv"'
         writer = csv.writer(response)
-        writer.writerow(['Member Name', 'PF Number', 'Savings', 'Shares', 'Normal', 'Xmas', 'School', 'Emergency'])
+        
+        # Header Row
+        writer.writerow(['Member Name', 'PF Number', 'Xmass Contri', 'Normal Shares', 'Normal loans', 'Quick Loans', 'School Fees', 'Emergency'])
 
         for r in report_data:
+            # For each column: If status is True (Paid), show 0. If False, show the due amount.
             writer.writerow([
-                r['name'], r['pf'],
+                r['name'], 
+                r['pf'],
                 0 if r['savings_status'] else r['savings_target'],
-                0 if r['shares_status'] else r['shares_target'],
+                0 if r['shares_status'] else r['shares_target'],  # Respects the 389.9 goal
                 0 if r['normal_status'] else r['normal_loan'],
                 0 if r['xmas_status'] else r['xmas_loan'],
                 0 if r['school_status'] else r['school_fees'],
@@ -2495,6 +2752,7 @@ def monthly_sacco_report(request):
             ])
         return response
 
+    # 6. WEB VIEW RENDER
     context = {
         'report_data': report_data,
         'month': month,
@@ -2503,8 +2761,6 @@ def monthly_sacco_report(request):
         'months_choices': [(i, date(2000, i, 1).strftime('%b')) for i in range(1, 13)],
     }
     return render(request, 'monthly_report.html', context)
-
-
 def export_sacco_report_csv(report_data, month, year):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = f'attachment; filename="SACCO_Report_{month}_{year}.csv"'
@@ -2807,30 +3063,131 @@ def treasurer_edit_loan_amount(request, loan_id):
 from .balance import BalanceSheetService
 from django.http import JsonResponse
 from .models import Transaction, MonthlyContribution, Loan, LoanRepayment
+from django.http import JsonResponse
+from django.utils import timezone
+from decimal import Decimal
 
 def get_note_details(request, note_id):
-    year = request.GET.get('year', timezone.now().year)
+    year = int(request.GET.get('year', timezone.now().year))
     data = []
 
-    if note_id == "7": # Cash and Bank
-        records = Transaction.objects.filter(created_at__year=year).order_by('-created_at')
+    # -------------------------
+    # NOTE 7: CASH & BANK
+    # -------------------------
+    if note_id == "7":
+        records = Transaction.objects.filter(
+            created_at__year=year
+        ).select_related('member').order_by('-created_at')
+
         for r in records:
             data.append({
                 'date': r.created_at.strftime('%Y-%m-%d'),
                 'desc': f"{r.get_transaction_type_display()} - {r.member}",
                 'amount': float(r.amount),
-                'type': 'in' if r.transaction_type in ['deposit', 'repayment'] else 'out'
+                'type': 'in' if r.transaction_type in ['deposit', 'repayment', 'shares'] else 'out'
             })
 
-    elif note_id == "12": # Members' Deposits
-        records = MonthlyContribution.objects.filter(month__year=year).order_by('-month')
+    # -------------------------
+    # NOTE 12: MEMBERS DEPOSITS
+    # -------------------------
+    elif note_id == "12":
+        records = MonthlyContribution.objects.filter(
+            month__year=year
+        ).select_related('member').order_by('-month')
+
         for r in records:
             data.append({
                 'date': r.month.strftime('%b %Y'),
-                'desc': f"Contribution: {r.member}",
+                'desc': f"Monthly Contribution - {r.member}",
+                'amount': float(r.amount or 0),
+                'type': 'in'
+            })
+
+    # -------------------------
+    # NOTE 9: LOANS TO MEMBERS
+    # -------------------------
+    elif note_id == "9":
+        records = Loan.objects.filter(
+            application_date__year=year,
+            status__in=['approved', 'disbursed']
+        ).select_related('member')
+
+        for r in records:
+            data.append({
+                'date': r.application_date.strftime('%Y-%m-%d'),
+                'desc': f"Loan to {r.member} ({r.purpose})",
+                'amount': float(r.amount),
+                'type': 'out'
+            })
+
+    # -------------------------
+    # NOTE 13: ACCRUED EXPENSES
+    # -------------------------
+    elif note_id == "13":
+        records = Expense.objects.filter(
+            date_spent__year=year
+        ).select_related('recorded_by').order_by('-date_spent')
+
+        for r in records:
+            data.append({
+                'date': r.date_spent.strftime('%Y-%m-%d'),
+                'desc': f"{r.get_expense_type_display()} - {r.description or ''}",
+                'amount': float(r.amount_spent),
+                'type': 'out'
+            })
+
+    # -------------------------
+    # NOTE 14: INTEREST PAYABLE
+    # -------------------------
+    elif note_id == "14":
+        records = Transaction.objects.filter(
+            created_at__year=year,
+            transaction_type='interest'
+        )
+
+        for r in records:
+            data.append({
+                'date': r.created_at.strftime('%Y-%m-%d'),
+                'desc': f"Interest on Deposits - {r.member}",
+                'amount': float(r.amount),
+                'type': 'out'
+            })
+
+    # -------------------------
+    # NOTE 16: SHARE CAPITAL
+    # -------------------------
+    elif note_id == "16":
+        records = RegistrationFee.objects.filter(
+            paid=True,
+            paid_at__year=year
+        ).select_related('member')
+
+        for r in records:
+            data.append({
+                'date': r.paid_at.strftime('%Y-%m-%d') if r.paid_at else '',
+                'desc': f"Share Capital - {r.member}",
                 'amount': float(r.amount),
                 'type': 'in'
             })
+
+    # -------------------------
+    # NOTE 17: RESERVES (NO RAW RECORDS)
+    # -------------------------
+    elif note_id == "17":
+        # Reserves are a CALCULATED figure, not raw transactions
+        data.append({
+            'date': str(year),
+            'desc': "Retained Earnings / Surplus (Calculated)",
+            'amount': 0,
+            'type': 'in'
+        })
+
+    # -------------------------
+    # RESPONSE
+    # -------------------------
+    return JsonResponse({
+        "results": data
+    })
 
     # Add more elif blocks for Note 9, 13, 16, etc.
 
@@ -3099,59 +3456,126 @@ def member_loan_details_view(request, profile_id):
         'xmas_loans': xmas_loans,
     }
     return render(request, 'member_loans.html', context)
+from decimal import Decimal
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from django.db import transaction
+from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib import messages
+
+def to_decimal(value):
+    try:
+        return Decimal(str(value).strip())
+    except:
+        return Decimal('0.00')
+
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.db import transaction
+from decimal import Decimal
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
+from .models import Profile, Loan, LoanRepaymentSchedule, LoanRepayment, Transaction
+
+
+def to_decimal(value):
+    try:
+        return Decimal(str(value))
+    except:
+        return Decimal('0.00')
 
 
 def migrate_single_member_loan(request, member_id):
     member = get_object_or_404(Profile, id=member_id)
-    
+
     if request.method == "POST":
-        # Get data from the form
-        principal = Decimal(request.POST.get('principal', 0))
-        interest = Decimal(request.POST.get('interest', 0))
-        insurance = Decimal(request.POST.get('insurance', 0))
-        paid_on_paper = Decimal(request.POST.get('paid_on_paper', 0))
+        principal = to_decimal(request.POST.get('principal'))
+        interest = to_decimal(request.POST.get('interest'))
+        insurance = to_decimal(request.POST.get('insurance'))
+        paid_on_paper = to_decimal(request.POST.get('paid_on_paper'))
+        purpose = request.POST.get('purpose', 'normal Loan')
         actual_start_date = request.POST.get('start_date')
 
-        # 1. Create the Legacy Loan record
-        loan = Loan.objects.create(
-            member=member,
-            amount=principal,
-            interest=interest,
-            insurance=insurance,
-            duration_months=12, # Use paper duration
-            is_legacy=True,
-            status='disbursed',
-            is_disbursed=True,
-            staff_approved=True,
-            treasurer_approved=True,
-            admin_approved=True
-        )
+        # ❌ validation
+        if not actual_start_date:
+            messages.error(request, "Start date is required.")
+            return redirect(request.path)
 
-        # 2. Backdate the loan (Force update because of auto_now_add)
-        Loan.objects.filter(id=loan.id).update(
-            application_date=actual_start_date, 
-            disbursed_at=actual_start_date
-        )
+        start_date = datetime.strptime(actual_start_date, "%Y-%m-%d").date()
 
-        # 3. Create the "Credit" for what they already paid
-        if paid_on_paper > 0:
-            LoanRepayment.objects.create(
-                loan=loan,
+        with transaction.atomic():
+
+            # 1. CREATE LOAN
+            loan = Loan.objects.create(
                 member=member,
-                amount_paid=paid_on_paper,
-                reference=f"PAPER-MIGRATE-{loan.id}",
-                is_xmas=False
+                amount=principal,
+                interest=interest,
+                insurance=insurance,
+                duration_months=12,
+                purpose=purpose,   # ✅ ADDED PURPOSE
+                is_legacy=True,
+                status='disbursed',
+                is_disbursed=True,
+                staff_approved=True,
+                treasurer_approved=True,
+                admin_approved=True
             )
-            
-            # Record in the General Transaction Ledger
+
+            # 2. BACKDATE LOAN
+            Loan.objects.filter(id=loan.id).update(
+                application_date=start_date,
+                disbursed_at=start_date
+            )
+
+            # 3. CREATE REPAYMENT SCHEDULE
+            total_payable = principal + interest + insurance
+            duration = 12
+            monthly_amount = (total_payable / duration).quantize(Decimal('0.01'))
+
+            schedules = []
+
+            for i in range(duration):
+                schedule = LoanRepaymentSchedule.objects.create(
+                    loan=loan,
+                    installment_number=i + 1,
+                    due_date=start_date + relativedelta(months=i + 1),
+                    amount_due=monthly_amount,
+                    is_paid=False
+                )
+                schedules.append(schedule)
+
+            # 4. APPLY OLD PAYMENTS (PAPER RECORDS)
+            if paid_on_paper > 0:
+                LoanRepayment.objects.create(
+                    loan=loan,
+                    member=member,
+                    amount_paid=paid_on_paper,
+                    reference=f"MIG-{loan.id}",
+                    is_xmas=False
+                )
+
+                remaining = paid_on_paper
+
+                for s in schedules:
+                    if remaining <= 0:
+                        break
+
+                    if remaining >= s.amount_due:
+                        remaining -= s.amount_due
+                        s.is_paid = True
+                        s.save()
+
+            # 5. TRANSACTION LOG
             Transaction.objects.create(
                 member=member,
                 transaction_type='repayment',
                 amount=paid_on_paper,
-                reference=f"Legacy Balance Migration for Loan {loan.id}"
+                reference=f"Legacy Migration Loan {loan.id}"
             )
 
-        messages.success(request, f"Migration complete for {member.user.username}. System balance now matches paper records.")
-        return redirect('admin_dashboard') # Redirect to an appropriate page after migration
+        messages.success(request, "Migration completed successfully.")
+        return redirect('admin_dashboard')
 
     return render(request, 'migrate_form.html', {'member': member})

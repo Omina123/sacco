@@ -152,13 +152,52 @@
             .top-navbar { left: 0; }
             .main-wrapper { margin-left: 0; padding: 1.5rem; }
         }
+        @media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-100%);
+        position: fixed;
+        z-index: 1200;
+        transition: all 0.3s ease;
+    }
+
+    .sidebar.show {
+        transform: translateX(0);
+    }
+
+    .top-navbar {
+        left: 0;
+    }
+
+    .main-wrapper {
+        margin-left: 0;
+    }
+
+    /* dark overlay */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1100;
+        display: none;
+    }
+
+    .sidebar-overlay.show {
+        display: block;
+    }
+}
     </style>
 </head>
 <body>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
 <aside class="sidebar">
     <a href="#" class="sidebar-brand"><i class="bi bi-bank2"></i> ELDOPOLY</a>
-    <nav>
+    <nav><button class="btn btn-sm d-lg-none" id="sidebarToggle">
+    <i class="bi bi-list fs-4"></i>
+</button>
         <div class="label-text mb-2 ps-3 opacity-50">Main Menu</div>
         <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side active"><i class="bi bi-speedometer2"></i> Dashboard</a>
         <a href="{% url 'Members' %}" class="nav-link-side"><i class="bi bi-people"></i> Members</a>
@@ -479,57 +518,91 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // --- SIDEBAR LOGIC ---
+document.addEventListener("DOMContentLoaded", function () {
+
+    // =========================
+    // SIDEBAR TOGGLE (MOBILE)
+    // =========================
+    const sidebar = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const overlay = document.getElementById('sidebar-overlay');
+
     function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('active');
-        document.getElementById('sidebar-overlay').classList.toggle('show');
+        if (!sidebar) return;
+
+        sidebar.classList.toggle('show');
+        if (overlay) overlay.classList.toggle('show');
     }
 
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleSidebar);
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', toggleSidebar);
+    }
+
+
+    // =========================
+    // COLLAPSE (DESKTOP)
+    // =========================
     const collapseBtn = document.getElementById('collapse-btn');
+
     if (collapseBtn) {
-        collapseBtn.addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('collapsed');
-            document.getElementById('top-nav').classList.toggle('full-width');
-            document.getElementById('main-content').classList.toggle('full-width');
+        collapseBtn.addEventListener('click', function () {
+            const sidebar = document.getElementById('sidebar');
+            const topNav = document.getElementById('top-nav');
+            const mainContent = document.getElementById('main-content');
+
+            if (sidebar) sidebar.classList.toggle('collapsed');
+            if (topNav) topNav.classList.toggle('full-width');
+            if (mainContent) mainContent.classList.toggle('full-width');
         });
     }
 
-    // --- SEARCH FUNCTIONALITY ---
+
+    // =========================
+    // SEARCH FUNCTIONALITY
+    // =========================
     const memberSearch = document.getElementById('memberSearch');
+
     if (memberSearch) {
-        memberSearch.addEventListener('keyup', function() {
+        memberSearch.addEventListener('keyup', function () {
             let filter = this.value.toLowerCase();
             let rows = document.querySelectorAll('.table tbody tr');
 
             rows.forEach(row => {
-                // Ensure the row has enough columns before searching
+
                 let name = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase() || "";
-                let pf = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || "";
-                let id = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || "";
+                let pf   = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || "";
+                let id   = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || "";
 
                 if (name.includes(filter) || pf.includes(filter) || id.includes(filter)) {
-                    row.style.display = ""; 
+                    row.style.display = "";
                 } else {
-                    row.style.display = "none"; 
+                    row.style.display = "none";
                 }
             });
         });
     }
 
-    // --- POPUP MESSAGING ---
-    document.addEventListener('DOMContentLoaded', function() {
-        {% if messages %}
-            {% for message in messages %}
-                Swal.fire({
-                    icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}",
-                    title: "{{ message.tags|capfirst }}",
-                    text: "{{ message }}",
-                    confirmButtonColor: "#1B5E20", // Matches Eldopoly Green
-                    timer: 4000
-                });
-            {% endfor %}
-        {% endif %}
-    });
+
+    // =========================
+    // SWEETALERT MESSAGES
+    // =========================
+    {% if messages %}
+        {% for message in messages %}
+            Swal.fire({
+                icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}",
+                title: "{{ message.tags|capfirst }}",
+                text: "{{ message }}",
+                confirmButtonColor: "#1B5E20",
+                timer: 4000
+            });
+        {% endfor %}
+    {% endif %}
+
+});
 </script>
 </body>
 </html>

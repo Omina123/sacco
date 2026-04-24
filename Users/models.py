@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 import random
@@ -10,14 +12,22 @@ def validate_kenyan_phone(value):
     if not re.match(pattern, value):
         raise ValidationError("Enter a valid phone number (e.g. 254710000000)")
 
+
 def validate_pf_number(value):
-    # Matches: 1-4 digits, then 'N', then any number of digits
-    # Example: 1N123, 2024N55, 21N00028
-    pattern = r'^\d{1,4}N\d+$'
+    # Matches: 
+    # 1. ^\d{1,4} -> 1 to 4 digits at the start
+    # 2. [a-zA-Z]{3} -> Exactly 3 letters (A-Z or a-z) in any order
+    # 3. \d+$ -> One or more digits at the end
+    # Examples: 123PTA001, 2024pTo55, 21XYZ00028
+    
+    pattern = r'^\d{1,4}[a-zA-Z]{1,3}\d+$'
+    
     if not re.match(pattern, value):
         raise ValidationError(
-            "PF Number must start with 1-4 digits followed by 'N' and more digits (e.g., 2024N001)."
+            "PF Number must start with 1-4 digits, followed by exactly 3 letters "
+            "(e.g., PTA, pTo) and then more digits (e.g., 2024PTA001)."
         )
+        
 
 def validate_membership_range(value):
     # Ensures the string entered is a number between 1 and 1000
@@ -102,6 +112,7 @@ class Profile(models.Model):
     net_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     salary_needs_review = models.BooleanField(default=False)
     monthly_saving_target = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    share_goal = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     month = models.DateField(null=True, blank=True )
 
 

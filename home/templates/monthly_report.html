@@ -75,7 +75,7 @@
                     </tr>
                     <tr class="table-secondary text-dark">
                         <th>Savings Goal</th>
-                        <th>Capital Shares (1000)</th>
+                        <th>Capital Shares</th>
                         <th>Normal</th>
                         <th>Xmas</th>
                         <th>School</th>
@@ -106,7 +106,7 @@
                                 <span class="badge status-badge bg-success">PAID</span>
                             {% else %}
                                 <span class="badge status-badge bg-danger">NOT PAID</span>
-                                <div class="text-muted" style="font-size: 0.6rem;">Due: 1000</div>
+                                <div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.shares_target }}</div>
                             {% endif %}
                         </td>
 
@@ -116,7 +116,7 @@
                                 <i class="bi bi-check-circle-fill text-success"></i>
                             {% else %}
                                 <i class="bi bi-x-circle text-danger"></i>
-                                {% if row.normal_target > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.normal_target }}</div>{% endif %}
+                                {% if row.normal_loan > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.normal_loan }}</div>{% endif %}
                             {% endif %}
                         </td>
 
@@ -126,7 +126,7 @@
                                 <i class="bi bi-check-circle-fill text-success"></i>
                             {% else %}
                                 <i class="bi bi-x-circle text-danger"></i>
-                                {% if row.xmas_target > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.xmas_target }}</div>{% endif %}
+                                {% if row.xmas_loan > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.xmas_loan }}</div>{% endif %}
                             {% endif %}
                         </td>
 
@@ -136,7 +136,7 @@
                                 <i class="bi bi-check-circle-fill text-success"></i>
                             {% else %}
                                 <i class="bi bi-x-circle text-danger"></i>
-                                {% if row.school_target > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.school_target }}</div>{% endif %}
+                                {% if row.school_fees > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.school_fees }}</div>{% endif %}
                             {% endif %}
                         </td>
 
@@ -146,7 +146,7 @@
                                 <i class="bi bi-check-circle-fill text-success"></i>
                             {% else %}
                                 <i class="bi bi-x-circle text-danger"></i>
-                                {% if row.emergency_target > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.emergency_target }}</div>{% endif %}
+                                {% if row.emergency > 0 %}<div class="text-muted" style="font-size: 0.6rem;">Due: {{ row.emergency }}</div>{% endif %}
                             {% endif %}
                         </td>
 

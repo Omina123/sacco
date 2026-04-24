@@ -1,250 +1,302 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legacy Migration | Eldopoly SACCO</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/bootstrap.min.css" rel="stylesheet">
+    <title>Loan Migration | Eldopoly SACCO</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         :root {
-            --sacco-navy: #002147;
-            --sacco-gold: #FFD700;
-            --sacco-light: #f4f7f6;
+            --eldo-deep-green: #14452F;
+            --eldo-light-green: #8DC63F;
+            --eldo-gold: #FFD700;
+            --light-bg: #f8fafb;
+            --sidebar-width: 260px;
         }
 
-        body { 
-            background-color: var(--sacco-light); 
-            font-family: 'Inter', 'Segoe UI', Roboto, sans-serif; 
+        body {
+            background: var(--light-bg);
+            font-family: 'Segoe UI', Roboto, sans-serif;
             color: #333;
         }
 
-        .sacco-navy-bg { background-color: var(--sacco-navy); }
-        .text-navy { color: var(--sacco-navy); }
-        
-        /* Card Styling */
-        .card-migration {
+        /* --- Sidebar --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--eldo-deep-green);
+            color: white;
+            padding: 0;
+            transition: 0.3s;
+            z-index: 1045;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+        }
+
+        .sidebar-brand {
+            padding: 25px 20px;
+            background: rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .sidebar a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            transition: 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .sidebar a i { width: 30px; }
+
+        .sidebar a:hover, .sidebar a.active {
+            background: rgba(255,255,255,0.05);
+            color: var(--eldo-gold);
+            border-left-color: var(--eldo-light-green);
+        }
+
+        /* --- Main Content --- */
+        .main {
+            margin-left: var(--sidebar-width);
+            padding: 40px;
+            transition: 0.3s;
+        }
+
+        /* --- Mobile Responsiveness --- */
+        @media(max-width: 992px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.show { transform: translateX(0); }
+            .main { margin-left: 0; padding: 20px; }
+        }
+
+        /* --- Glassmorphism Card --- */
+        .card-custom {
             border: none;
-            border-top: 8px solid var(--sacco-gold) !important;
-            border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            background: #fff;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.05);
             overflow: hidden;
         }
 
-        /* Input Styling */
-        .form-label {
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            color: #555;
-            margin-bottom: 8px;
+        .card-header-eldo {
+            background: var(--eldo-deep-green);
+            padding: 25px;
+            border: none;
         }
 
-        .form-control {
-            border: 1.5px solid #e0e0e0;
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: #888;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i { margin-right: 8px; color: var(--eldo-light-green); }
+
+        .form-control, .form-select {
             border-radius: 10px;
-            padding: 12px 15px;
-            transition: all 0.3s ease;
+            padding: 12px;
+            border: 1px solid #e0e6ed;
+            background-color: #fcfdfe;
         }
 
         .form-control:focus {
-            border-color: var(--sacco-gold);
-            box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.15);
+            border-color: var(--eldo-light-green);
+            box-shadow: 0 0 0 3px rgba(141, 198, 63, 0.1);
         }
 
-        /* Preview Box - The "Hero" of the form */
+        /* --- Summary Box --- */
         .preview-box {
-            background: linear-gradient(135deg, #ffffff 0%, #f9f9f9 100%);
-            border: 2px solid #eee;
+            background: #f1f8f4;
+            padding: 25px;
             border-radius: 15px;
-            position: relative;
+            border: 1px dashed var(--eldo-light-green);
         }
 
-        .preview-label {
-            font-size: 0.7rem;
-            font-weight: 800;
-            color: #888;
-            text-transform: uppercase;
-        }
+        .amount-label { font-size: 13px; color: #666; margin-bottom: 0; }
+        .amount-value { font-size: 1.6rem; font-weight: 800; color: var(--eldo-deep-green); }
+        .balance-value { font-size: 1.6rem; font-weight: 800; color: #28a745; }
 
-        .amount-display {
-            font-size: 1.6rem;
-            font-weight: 800;
-            letter-spacing: -1px;
-        }
-
-        /* Section Dividers */
-        .section-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            margin-top: 10px;
-        }
-
-        .section-header span {
-            background: var(--sacco-navy);
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            margin-right: 10px;
-            font-weight: bold;
-        }
-
-        .btn-sync {
-            background-color: var(--sacco-navy);
+        .btn-main {
+            background: var(--eldo-deep-green);
+            color: var(--eldo-gold);
             border: none;
             border-radius: 12px;
-            padding: 16px;
-            transition: transform 0.2s ease, background-color 0.2s ease;
+            padding: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.3s;
         }
 
-        .btn-sync:hover {
-            background-color: #003366;
+        .btn-main:hover {
+            background: var(--eldo-light-green);
+            color: var(--eldo-deep-green);
             transform: translateY(-2px);
         }
     </style>
 </head>
+
 <body>
 
-<div class="container py-5">
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <h4 class="fw-bold mb-0" style="color: var(--eldo-gold);">ELDOPOLY</h4>
+        <small class="text-white-50"> Migration Tool</small>
+    </div>
+    <div class="mt-3">
+        <a href="{% url 'admin_dashboard' %}"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="#"><i class="fas fa-users"></i> Members</a>
+        <a href="#" class="active"><i class="fas fa-file-import"></i> Loan Migration</a>
+        <a href="#"><i class="fas fa-history"></i> Logs</a>
+    </div>
+</div>
+
+<div class="main">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div class="d-flex align-items-center">
+            <button class="btn btn-white shadow-sm d-lg-none me-3" onclick="toggleSidebar()">
+                <i class="bi bi-list fs-4"></i>
+            </button>
+            <h3 class="fw-bold mb-0">Legacy Loan Sync</h3>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-white text-dark shadow-sm p-2 px-3 border">
+                <i class="fas fa-user-shield text-success me-2"></i> Admin: Treasury Dept
+            </span>
+        </div>
+    </div>
+
     <div class="row justify-content-center">
-        <div class="col-lg-7">
-            
-            <div class="text-center mb-5">
-                <h2 class="fw-bold text-navy mb-1">ELDORET POLYTECHNIC SACCO</h2>
-                <div class="d-flex justify-content-center align-items-center">
-                    <div style="height: 2px; width: 40px; background: var(--sacco-gold);"></div>
-                    <span class="mx-3 fw-bold small text-muted text-uppercase tracking-wider">Treasury Operations</span>
-                    <div style="height: 2px; width: 40px; background: var(--sacco-gold);"></div>
-                </div>
-            </div>
-
-            <div class="card card-migration">
-                <div class="card-header bg-white pt-4 px-4 border-0">
-                    <div class="d-flex align-items-center">
-                        <div class="p-3 rounded-3 me-3" style="background: rgba(0, 33, 71, 0.05);">
-                            <i class="bi bi-person-vcard fs-2 text-navy"></i>
-                        </div>
-                        <div>
-                            <h5 class="fw-bold mb-0 text-navy">Migration for Member</h5>
-                            <p class="text-muted mb-0 small">{{ member.user.get_full_name }} <span class="badge bg-light text-dark ms-1">ID: {{ member.user.username }}</span></p>
-                        </div>
+        <div class="col-lg-8">
+            <div class="card card-custom">
+                <div class="card-header-eldo text-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0 fw-bold">Manual Loan Entry</h5>
+                        <p class="mb-0 small text-white-50">Updating records for: <strong>{{ member.user.get_full_name }}</strong></p>
                     </div>
+                    <i class="fas fa-database fs-2 opacity-25"></i>
                 </div>
 
-                <div class="card-body p-4 p-md-5 pt-2">
-                    <hr class="opacity-10 mb-4">
+                <div class="card-body p-4 p-md-5">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} rounded-3 shadow-sm">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
 
                     <form method="POST">
                         {% csrf_token %}
-                        
-                        <div class="section-header">
-                            <span>1</span>
-                            <h6 class="fw-bold mb-0 text-navy text-uppercase small">Original Agreement</h6>
-                        </div>
-                        
-                        <div class="row g-3 mb-4">
+
+                        <div class="row g-4">
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">PRINCIPAL (KES)</label>
+                                <div class="section-title"><i class="fas fa-tag"></i> Loan Purpose</div>
+                                <select name="purpose" class="form-select">
+                                    <option value="normal Loan">Normal Loan</option>
+                                    <option value="school fees">School Fees</option>
+                                    <option value="emergency">Emergency</option>
+                                    <option value="personal">Personal</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="section-title"><i class="fas fa-calendar-alt"></i> Original Issuance Date</div>
+                                <input type="date" name="start_date" class="form-control">
+                            </div>
+
+                            <div class="col-12">
+                                <div class="section-title"><i class="fas fa-money-bill-wave"></i> Original Principal Amount</div>
                                 <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-cash"></i></span>
-                                    <input type="number" name="principal" id="principal" class="form-control border-start-0" step="0.01" required placeholder="0.00">
+                                    <span class="input-group-text bg-white border-end-0">KES</span>
+                                    <input type="number" name="principal" id="principal" class="form-control border-start-0" placeholder="0.00">
                                 </div>
                             </div>
+
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">DISBURSEMENT DATE</label>
-                                <input type="date" name="start_date" class="form-control" required>
+                                <div class="section-title"><i class="fas fa-percentage"></i> Total Accrued Interest</div>
+                                <input type="number" name="interest" id="interest" class="form-control" placeholder="0.00">
                             </div>
-                        </div>
 
-                        <div class="section-header">
-                            <span>2</span>
-                            <h6 class="fw-bold mb-0 text-navy text-uppercase small">Charges & Interest</h6>
-                        </div>
-
-                        <div class="row g-3 mb-4">
                             <div class="col-md-6">
-                                <label class="form-label fw-bold">PAPER INTEREST</label>
-                                <input type="number" name="interest" id="interest" class="form-control" step="0.01" value="0.00">
+                                <div class="section-title"><i class="fas fa-shield-alt"></i> Insurance / Other Charges</div>
+                                <input type="number" name="insurance" id="insurance" class="form-control" placeholder="0.00">
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold">PAPER INSURANCE</label>
-                                <input type="number" name="insurance" id="insurance" class="form-control" step="0.01" value="0.00">
-                            </div>
-                        </div>
 
-                        <div class="section-header">
-                            <span>3</span>
-                            <h6 class="fw-bold mb-0 text-danger text-uppercase small">Repayment History</h6>
-                        </div>
-
-                        <div class="mb-5">
-                            <label class="form-label fw-bold">TOTAL PAID ON PAPER TO DATE</label>
-                            <input type="number" name="paid_on_paper" id="paid" class="form-control form-control-lg border-danger-subtle bg-danger-subtle bg-opacity-10 text-danger fw-bold" step="0.01" required value="0.00">
-                            <div class="form-text small mt-2">
-                                <i class="bi bi-info-circle me-1"></i> Sum of all manual receipts found in the file.
+                            <div class="col-12">
+                                <div class="section-title text-danger"><i class="fas fa-receipt"></i> Total Paid to Date (Paper Records)</div>
+                                <input type="number" name="paid_on_paper" id="paid" class="form-control border-danger" placeholder="Enter total amount already paid">
+                                <small class="text-muted mt-1 d-block">This amount will be deducted from the total payable to calculate the digital balance.</small>
                             </div>
                         </div>
 
-                        <div class="preview-box p-4 mb-5 shadow-sm">
-                            <div class="row align-items-center text-center">
-                                <div class="col-6 border-end">
-                                    <div class="preview-label mb-2">Total Payable</div>
-                                    <div class="amount-display text-navy" id="preview_payable">0.00</div>
+                        <div class="preview-box mt-5">
+                            <div class="row text-center">
+                                <div class="col-6 border-end border-2">
+                                    <p class="amount-label">Total Payable</p>
+                                    <div class="amount-value" id="total">0.00</div>
                                 </div>
                                 <div class="col-6">
-                                    <div class="preview-label mb-2 text-success">Opening Balance</div>
-                                    <div class="amount-display text-success" id="preview_balance">0.00</div>
+                                    <p class="amount-label">Digital Starting Balance</p>
+                                    <div class="balance-value" id="balance">0.00</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="d-grid gap-3">
-                            <button type="submit" class="btn btn-lg btn-sync text-white fw-bold shadow">
-                                <i class="bi bi-cloud-check me-2"></i> FINALIZE MIGRATION
-                            </button>
-                            <a href="javascript:history.back()" class="btn btn-link text-muted small text-decoration-none">
-                                <i class="bi bi-arrow-left me-1"></i> Cancel and Return
-                            </a>
-                        </div>
+                        <button type="submit" class="btn btn-main w-100 mt-4 shadow-sm">
+                            <i class="fas fa-check-circle me-2"></i> Commit Migration to Ledger
+                        </button>
                     </form>
                 </div>
             </div>
             
-            <p class="text-center mt-4 small text-muted">
-                &copy; 2026 Eldopoly SACCO | Internal Auditor System
-            </p>
+            <div class="text-center mt-4 mb-5">
+                <a href="#" class="text-muted text-decoration-none small"><i class="fas fa-arrow-left me-1"></i> Return to Member Profile</a>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    const principal = document.getElementById('principal');
-    const interest = document.getElementById('interest');
-    const insurance = document.getElementById('insurance');
-    const paid = document.getElementById('paid');
-    
-    const displayPayable = document.getElementById('preview_payable');
-    const displayBalance = document.getElementById('preview_balance');
-
-    function calculate() {
-        const p = parseFloat(principal.value) || 0;
-        const i = parseFloat(interest.value) || 0;
-        const ins = parseFloat(insurance.value) || 0;
-        const pd = parseFloat(paid.value) || 0;
-
-        const total = p + i + ins;
-        const bal = total - pd;
-
-        displayPayable.innerText = total.toLocaleString('en-KE', { minimumFractionDigits: 2 });
-        displayBalance.innerText = (bal < 0 ? 0 : bal).toLocaleString('en-KE', { minimumFractionDigits: 2 });
+    function toggleSidebar(){
+        document.getElementById('sidebar').classList.toggle('show');
     }
 
-    [principal, interest, insurance, paid].forEach(el => el.addEventListener('input', calculate));
+    const p = document.getElementById('principal');
+    const i = document.getElementById('interest');
+    const ins = document.getElementById('insurance');
+    const paid = document.getElementById('paid');
+    const totalEl = document.getElementById('total');
+    const balEl = document.getElementById('balance');
+
+    function calc(){
+        let principal = +p.value || 0;
+        let interest = +i.value || 0;
+        let insurance = +ins.value || 0;
+        let paidVal = +paid.value || 0;
+
+        let total = principal + interest + insurance;
+        let balance = total - paidVal;
+
+        totalEl.innerText = total.toLocaleString('en-KE', {minimumFractionDigits:2});
+        balEl.innerText = (balance < 0 ? 0 : balance).toLocaleString('en-KE', {minimumFractionDigits:2});
+    }
+
+    [p,i,ins,paid].forEach(el=>{
+        if(el) el.addEventListener('input', calc);
+    });
 </script>
 
 </body>
