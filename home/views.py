@@ -34,7 +34,9 @@ from Users.models import CustomUser
 import json
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-
+from Users.utils import send_brevo_email
+def devloper(request):
+    return render(request, "devloper.html")
 @login_required
 def update_savings_goal(request):
     if request.method == 'POST':
@@ -60,8 +62,43 @@ def home(request):
     return render(request, "home.html",context)
 def about(request):
     return render (request, "about.html")
+
+
+from django.shortcuts import render
+from django.contrib import messages
+from django.template.loader import render_to_string
+
 def Contact(request):
-    return render (request,  "contact.html")
+    if request.method == "POST":
+        name = request.POST.get("name")
+        email = request.POST.get("email")
+        phone = request.POST.get("phone")
+        subject = request.POST.get("subject")
+        message = request.POST.get("message")
+
+        # Context for the HTML email template
+        context = {
+            'name': name,
+            'email': email,
+            'phone': phone,
+            'subject': subject,
+            'message': message,
+        }
+
+        # Create the styled HTML body
+        html_content = render_to_string('contact_email_template.html', context)
+
+        try:
+            send_brevo_email(
+                to_email="kevinmalasa2000@gmail.com",
+                subject=f"New Contact Inquiry: {subject}",
+                html_content=html_content
+            )
+            messages.success(request, "Your message has been sent successfully! We will get back to you soon.")
+        except Exception as e:
+            messages.error(request, "There was an error sending your message. Please try again later.")
+    
+    return render(request, "contact.html")
 def Service(request):
     return render (request,  "services.html")
 

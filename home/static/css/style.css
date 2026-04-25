@@ -3,11 +3,11 @@
 /*** Spinner ***/
 /* Eldoret National Polytechnic Theme Colors */
 :root {
-    --bs-primary: #0B7A3B;   /* Green */
-    --bs-dark: #0A3D24;      /* Dark Green */
+    --bs-primary: #a9c908;   /* Green */
+    --bs-dark: #81a421;      /* Dark Green */
     --bs-light: #F5F5F5;     /* Light background */
     --bs-white: #ffffff;     /* White */
-    --bs-warning: #FFD700;   /* Gold / Yellow */
+    --bs-warning: #e3c311;   /* Gold / Yellow */
     --bs-body: #d9d9d9;
 }
 #spinner {

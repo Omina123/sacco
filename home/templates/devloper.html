@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Dev Dashboard | Kevin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* CSS Variables - Controlled by JavaScript */
+        :root {
+            --primary-color: #1A237E; /* Default Blue */
+            --accent-color: #FFD700;  /* Default Yellow */
+            --bg-color: #f0f2f5;
+            --text-light: #ffffff;
+        }
+
+        body { 
+            background-color: var(--bg-color); 
+            font-family: 'Inter', sans-serif; 
+            transition: all 0.5s ease;
+        }
+
+        .dev-card {
+            border: none;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            background: white;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #000 100%);
+            padding: 50px 20px;
+            color: var(--text-light);
+            text-align: center;
+            transition: background 0.5s ease;
+        }
+
+        /* The Animated Profile Circle */
+        .img-container {
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 15px;
+            border: 4px solid var(--accent-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            transition: transform 0.3s ease;
+        }
+
+        .img-container:hover { transform: rotate(10deg) scale(1.1); }
+
+        /* Tech Badges with JS hover logic */
+        .tech-badge {
+            background: var(--bg-color);
+            color: var(--primary-color);
+            padding: 8px 15px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            border: 1px solid var(--primary-color);
+        }
+
+        /* The JS Console/Terminal */
+        .terminal-box {
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            min-height: 100px;
+            border-bottom: 5px solid var(--accent-color);
+        }
+
+        .theme-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <button class="btn btn-dark rounded-pill theme-btn shadow" onclick="toggleTheme()">
+        <i class="fas fa-magic me-2 text-warning"></i> Switch Theme
+    </button>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card dev-card">
+                    <div class="profile-header">
+                        <div class="img-container">
+                            <i class="fas fa-user-code fa-4x text-dark"></i>
+                        </div>
+                        <h2 id="dev-name">Kevin</h2>
+                        <p class="small text-uppercase fw-bold opacity-75">Full Stack Fintech Architect</p>
+                        
+                        <div class="mt-3">
+                            <span class="badge bg-light text-dark p-2 me-2">
+                                <i class="fas fa-envelope me-1"></i> kevinmalasa2000@gmail.com
+                            </span>
+                            <span class="badge bg-light text-dark p-2">
+                                <i class="fas fa-phone me-1"></i> 0759975197
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4 p-md-5">
+                        <div class="row">
+                            <div class="col-md-7">
+                                <h4 class="fw-bold mb-3" style="color: var(--primary-color)">System Log</h4>
+                                <div class="terminal-box mb-4" id="log-terminal">
+                                    > Initializing system...<br>
+                                </div>
+
+                                <h5 class="fw-bold mb-3">Tech Stack</h5>
+                                <div class="d-flex flex-wrap gap-2" id="skill-container">
+                                    <span class="tech-badge">Python</span>
+                                    <span class="tech-badge">Django</span>
+                                    <span class="tech-badge">PostgreSQL</span>
+                                    <span class="tech-badge">JavaScript</span>
+                                    <span class="tech-badge">Fintech APIs</span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-5 mt-4 mt-md-0 border-start ps-md-4 text-center">
+                                <h5 class="fw-bold mb-3">Engagement</h5>
+                                <button class="btn btn-primary w-100 mb-2 py-2" onclick="alert('Sending Notification...')">
+                                    <i class="fas fa-paper-plane me-2"></i> Quick Connect
+                                </button>
+                                <div class="mt-4">
+                                    <p class="small text-muted mb-2">Social Hub</p>
+                                    <div class="d-flex justify-content-center gap-3">
+                                        <a href="#" class="fs-3" style="color: var(--primary-color)"><i class="fab fa-github"></i></a>
+                                        <a href="#" class="fs-3" style="color: var(--primary-color)"><i class="fab fa-linkedin"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. Theme Engine Logic
+        let currentTheme = 'blue';
+        function toggleTheme() {
+            const root = document.documentElement;
+            if (currentTheme === 'blue') {
+                root.style.setProperty('--primary-color', '#14452F'); // Sacco Green
+                root.style.setProperty('--accent-color', '#FFD700');  // Gold
+                currentTheme = 'green';
+            } else {
+                root.style.setProperty('--primary-color', '#1A237E'); // Dev Blue
+                root.style.setProperty('--accent-color', '#FFD700');  // Yellow
+                currentTheme = 'blue';
+            }
+        }
+
+        // 2. Terminal Typewriter Logic
+        const messages = [
+            "Connecting to Eldopoly Database...",
+            "Checking SASRA compliance protocols...",
+            "Loading automated loan appraisal engine...",
+            "System online. Welcome, Kevin."
+        ];
+        
+        let msgIndex = 0;
+        const terminal = document.getElementById('log-terminal');
+
+        function typeLog() {
+            if (msgIndex < messages.length) {
+                terminal.innerHTML += `> ${messages[msgIndex]} <br>`;
+                msgIndex++;
+                setTimeout(typeLog, 1200); // Wait 1.2 seconds between lines
+            }
+        }
+
+        // 3. Initialize everything on load
+        window.onload = () => {
+            typeLog();
+            console.log("UI Dashboard Ready 🚀");
+        };
+    </script>
+</body>
+</html>
