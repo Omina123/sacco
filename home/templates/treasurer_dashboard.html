@@ -67,12 +67,33 @@
             font-weight: 600;
             font-size: 0.85rem;
             transition: 0.2s;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
         }
         .nav-link-side:hover, .nav-link-side.active { 
             background: rgba(255,255,255,0.1); 
             color: var(--eldo-gold); 
         }
         .nav-link-side i { font-size: 1.1rem; margin-right: 12px; width: 20px; }
+
+        /* Submenu Styling */
+        .submenu .nav-link-side {
+            padding-left: 45px;
+            font-size: 0.8rem;
+            font-weight: 400;
+            margin-bottom: 2px;
+        }
+        .chevron-icon {
+            margin-left: auto;
+            transition: transform 0.3s;
+            font-size: 0.7rem !important;
+        }
+        .nav-link-side[aria-expanded="true"] .chevron-icon {
+            transform: rotate(180deg);
+        }
 
         /* --- TOP NAVBAR --- */
         .top-navbar {
@@ -133,6 +154,16 @@
         .bg-navy { background-color: var(--navy); }
         .text-gold { color: var(--eldo-gold); }
 
+        .progress-pill {
+            font-size: 0.65rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: #f0f0f0;
+            color: #888;
+        }
+        .pill-done { background: #d1e7dd; color: #0f5132; }
+        .pill-wait { background: #fff3cd; color: #664d03; }
+
         .step-pill {
             height: 6px; width: 25px;
             border-radius: 10px; display: inline-block;
@@ -151,76 +182,74 @@
             .sidebar { transform: translateX(-100%); }
             .top-navbar { left: 0; }
             .main-wrapper { margin-left: 0; padding: 1.5rem; }
+            .sidebar.show { transform: translateX(0); }
+            .sidebar-overlay {
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.5); z-index: 1100; display: none;
+            }
+            .sidebar-overlay.show { display: block; }
         }
-        @media (max-width: 992px) {
-    .sidebar {
-        transform: translateX(-100%);
-        position: fixed;
-        z-index: 1200;
-        transition: all 0.3s ease;
-    }
-
-    .sidebar.show {
-        transform: translateX(0);
-    }
-
-    .top-navbar {
-        left: 0;
-    }
-
-    .main-wrapper {
-        margin-left: 0;
-    }
-
-    /* dark overlay */
-    .sidebar-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.5);
-        z-index: 1100;
-        display: none;
-    }
-
-    .sidebar-overlay.show {
-        display: block;
-    }
-}
     </style>
 </head>
 <body>
-    <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-<aside class="sidebar">
+<aside class="sidebar" id="sidebar">
     <a href="#" class="sidebar-brand"><i class="bi bi-bank2"></i> ELDOPOLY</a>
-    <nav><button class="btn btn-sm d-lg-none" id="sidebarToggle">
-    <i class="bi bi-list fs-4"></i>
-</button>
+    <nav>
         <div class="label-text mb-2 ps-3 opacity-50">Main Menu</div>
         <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side active"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        <a href="{% url 'Members' %}" class="nav-link-side"><i class="bi bi-people"></i> Members</a>
-        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-piggy-bank"></i> Member Savings</a>
         
-        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Loan Management</div>
-        <a href="{% url 'pending_loans' %}" class="nav-link-side"><i class="bi bi-hourglass-split"></i> Pending Standard</a>
-        <a href="{% url 'Xm_approved' %}" class="nav-link-side"><i class="bi bi-gift"></i> Pending Holiday</a>
-        <a href="{% url 'active_loan' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Active Loans</a>
+        <a class="nav-link-side" data-bs-toggle="collapse" href="#memberSub" role="button" aria-expanded="false">
+            <i class="bi bi-people"></i> Membership <i class="bi bi-chevron-down chevron-icon"></i>
+        </a>
+        <div class="collapse submenu" id="memberSub">
+            <a href="{% url 'Members' %}" class="nav-link-side"><i class="bi bi-person-lines-fill"></i> View Members</a>
+            <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-piggy-bank"></i> Member Savings</a>
+        </div>
         
-        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Refund Control</div>
-        <a href="{% url 'manage_refunds_list' %}" class="nav-link-side"><i class="bi bi-coin"></i> Xmas Refunds</a>
-        <a href="{% url 'capital_share_refund_queue' %}" class="nav-link-side"><i class="bi bi-safe2"></i> Share Refunds</a>
- <a href="{% url 'add_expense_view' %}" class="nav-link-side"><i class="bi bi-receipt"></i> Add Expense</a>
+        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Operations</div>
+        <a class="nav-link-side" data-bs-toggle="collapse" href="#loanSub" role="button" aria-expanded="false">
+            <i class="bi bi-hourglass-split"></i> Loan Requests <i class="bi bi-chevron-down chevron-icon"></i>
+        </a>
+        <div class="collapse submenu" id="loanSub">
+            <a href="{% url 'pending_loans' %}" class="nav-link-side">Standard Loans</a>
+            <a href="{% url 'Xm_approved' %}" class="nav-link-side">QuickLoans</a>
+            <a href="{% url 'active_loan' %}" class="nav-link-side">Active Portfolio</a>
+            <a href="{% url 'active_xmas_loan' %}" class="nav-link-side"></i> Active Holiday</a>
+            
+        </div>
+        
+        <a class="nav-link-side" data-bs-toggle="collapse" href="#refundSub" role="button" aria-expanded="false">
+            <i class="bi bi-coin"></i> Refund & Finance <i class="bi bi-chevron-down chevron-icon"></i>
+        </a>
+        <div class="collapse submenu" id="refundSub">
+            <a href="{% url 'manage_refunds_list' %}" class="nav-link-side">Xmas Refunds</a>
+            <a href="{% url 'capital_share_refund_queue' %}" class="nav-link-side">Share Refunds</a>
+            <a href="{% url 'add_expense_view' %}" class="nav-link-side">Add Expense</a>
+        </div>
+
         <div class="label-text mb-2 ps-3 mt-4 opacity-50">System</div>
-        <a href="{% url 'sacco_reportings' %}" class="nav-link-side"><i class="bi bi-graph-up"></i> SACCO Report</a>
-        <a href="{% url 'sacco_report' %}" class="nav-link-side"><i class="bi bi-bar-chart-line"></i> Monthly Performance</a>
+        <a class="nav-link-side" data-bs-toggle="collapse" href="#sysSub" role="button" aria-expanded="false">
+            <i class="bi bi-graph-up"></i> Analytics <i class="bi bi-chevron-down chevron-icon"></i>
+        </a>
+        <div class="collapse submenu" id="sysSub">
+            <a href="{% url 'sacco_reportings' %}" class="nav-link-side">Detailed Reports</a>
+            <a href="{% url 'sacco_report' %}" class="nav-link-side">Performance Metrics</a>
+            <a href ="{%url 'monthly_sacco_report'%}" class ="nav-link-side"> Monthly Report</a>
+            <a href="{% url 'Completed_loans' %}" class="nav-link-side"> Completed Loans</a>
+            
+        </div>
+
         <a href="{% url 'Logout' %}" class="nav-link-side text-danger mt-5"><i class="bi bi-power"></i> Sign Out</a>
     </nav>
 </aside>
 
 <header class="top-navbar">
     <div class="d-flex align-items-center">
+        <button class="btn btn-sm d-lg-none me-3" id="sidebarToggle">
+            <i class="bi bi-list fs-4"></i>
+        </button>
         <h5 class="mb-0 fw-800" style="color: #444;">Executive Treasury Suite</h5>
     </div>
     <div class="d-flex align-items-center gap-3">
@@ -307,113 +336,92 @@
             </table>
         </div>
     </div>
-<div class="data-table-card">
-        <div class="p-4 bg-white d-flex justify-content-between align-items-center">
+
+    <div class="content-card">
+        <div class="p-0 d-flex justify-content-between align-items-center mb-4">
             <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-warning"></i>QUICK LOAN Awaiting Approval</h5>
-            <button class="btn btn-sm btn-light border text-muted px-3 rounded-pill">View All</button>
         </div>
         <div class="table-responsive">
             <table class="table align-middle mb-0">
                 <thead>
                     <tr>
-                        <th class="ps-4">Member Details</th>
-                       
+                        <th>Member Details</th>
                         <th>Amount</th>
                         <th>Duration</th>
                         <th>Approval Flow</th>
-                        <th class="text-center">Quick Actions</th>
+                        <th class="text-end">Quick Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for loan in pending_xmas_loans %}
                     <tr>
-                        <td class="ps-4">
+                        <td>
                             <div class="fw-bold">{{ loan.member.user.get_full_name|default:loan.member.user.username }}</div>
                             <small class="text-muted">ID: #{{ loan.id|stringformat:"05d" }}</small>
                         </td>
-                        
                         <td><span class="fw-bold">KES {{ loan.amount_requested|floatformat:2 }}</span></td>
                         <td>{{ loan.duration_months }} Months</td>
                         <td>
                             <div class="d-flex gap-1">
-                                <span class="progress-pill {% if loan.admin_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-person-badge"></i> Admin</span>
-                                <span class="progress-pill {% if loan.staff_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-person-check"></i> Staff</span>
-                                <span class="progress-pill {% if loan.treasurer_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-cash-coin"></i> Treasurer</span>
+                                <span class="progress-pill {% if loan.admin_approved %}pill-done{% else %}pill-wait{% endif %}">Admin</span>
+                                <span class="progress-pill {% if loan.staff_approved %}pill-done{% else %}pill-wait{% endif %}">Staff</span>
+                                <span class="progress-pill {% if loan.treasurer_approved %}pill-done{% else %}pill-wait{% endif %}">Treasury</span>
                             </div>
                         </td>
                         <td class="text-end">
-                            <a href="{% url 'approve_xmas_loan' loan.id %}" class="btn btn-success">Approve</a>
-                            <a href="{% url 'reject_xmas_loan' loan.id %}" class="btn btn-danger">Reject</a>
+                            <a href="{% url 'approve_xmas_loan' loan.id %}" class="btn btn-success btn-sm">Approve</a>
+                            <a href="{% url 'reject_xmas_loan' loan.id %}" class="btn btn-danger btn-sm">Reject</a>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <div class="py-4">
-                                <i class="bi bi-inbox text-light display-1"></i>
-                                <p class="text-muted mt-3 italic">Queue is clear. No pending applications found.</p>
-                            </div>
-                        </td>
-                    </tr>
+                    <tr><td colspan="5" class="text-center py-5 text-muted small">Queue is clear.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-    <div class="data-table-card">
-        <div class="p-4 bg-white d-flex justify-content-between align-items-center">
-            <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-warning"></i>Xmass Refunds</h5>
-            <button class="btn btn-sm btn-light border text-muted px-3 rounded-pill">View All</button>
+
+    <div class="content-card">
+        <div class="p-0 d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0"><i class="bi bi-calendar-check me-2 text-success"></i>Xmas Refunds Queue</h5>
         </div>
         <div class="table-responsive">
             <table class="table align-middle mb-0">
                 <thead>
                     <tr>
-                        <th class="ps-4">Member Details</th>
-                       
+                        <th>Member Details</th>
                         <th>Amount</th>
-                        <th>Duration</th>
                         <th>Approval Flow</th>
-                        <th class="text-center">Quick Actions</th>
+                        <th class="text-end">Quick Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for loan in pending_xmas_refunds %}
                     <tr>
-                        <td class="ps-4">
+                        <td>
                             <div class="fw-bold">{{ loan.member.user.get_full_name|default:loan.member.user.username }}</div>
                             <small class="text-muted">ID: #{{ loan.id|stringformat:"05d" }}</small>
                         </td>
-                        
                         <td><span class="fw-bold">KES {{ loan.amount_requested|floatformat:2 }}</span></td>
-                        <td>{{ loan.duration_months }} Months</td>
                         <td>
                             <div class="d-flex gap-1">
-                                <span class="progress-pill {% if loan.admin_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-person-badge"></i> Admin</span>
-                                <span class="progress-pill {% if loan.staff_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-person-check"></i> Staff</span>
-                                <span class="progress-pill {% if loan.treasurer_approved %}pill-done{% else %}pill-wait{% endif %}"><i class="bi bi-cash-coin"></i> Treasurer</span>
+                                <span class="progress-pill {% if loan.admin_approved %}pill-done{% else %}pill-wait{% endif %}">Admin</span>
+                                <span class="progress-pill {% if loan.staff_approved %}pill-done{% else %}pill-wait{% endif %}">Staff</span>
+                                <span class="progress-pill {% if loan.treasurer_approved %}pill-done{% else %}pill-wait{% endif %}">Treasury</span>
                             </div>
                         </td>
                         <td class="text-end">
-                            <a href="{% url 'approve_xmas_refund' loan.id %}" class="btn btn-success">Approve</a>
-                            <a href="{% url 'reject_xmas_refund' loan.id %}" class="btn btn-danger">Reject</a>
+                            <a href="{% url 'approve_xmas_refund' loan.id %}" class="btn btn-success btn-sm">Approve</a>
+                            <a href="{% url 'reject_xmas_refund' loan.id %}" class="btn btn-danger btn-sm">Reject</a>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <div class="py-4">
-                                <i class="bi bi-inbox text-light display-1"></i>
-                                <p class="text-muted mt-3 italic">Queue is clear. No pending Xmas found.</p>
-                            </div>
-                        </td>
-                    </tr>
+                    <tr><td colspan="4" class="text-center py-5 text-muted small">No pending Xmas refunds.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-      
 
     <div class="content-card">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -529,63 +537,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function toggleSidebar() {
         if (!sidebar) return;
-
         sidebar.classList.toggle('show');
         if (overlay) overlay.classList.toggle('show');
     }
 
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', toggleSidebar);
-    }
-
-    if (overlay) {
-        overlay.addEventListener('click', toggleSidebar);
-    }
-
-
-    // =========================
-    // COLLAPSE (DESKTOP)
-    // =========================
-    const collapseBtn = document.getElementById('collapse-btn');
-
-    if (collapseBtn) {
-        collapseBtn.addEventListener('click', function () {
-            const sidebar = document.getElementById('sidebar');
-            const topNav = document.getElementById('top-nav');
-            const mainContent = document.getElementById('main-content');
-
-            if (sidebar) sidebar.classList.toggle('collapsed');
-            if (topNav) topNav.classList.toggle('full-width');
-            if (mainContent) mainContent.classList.toggle('full-width');
-        });
-    }
-
-
-    // =========================
-    // SEARCH FUNCTIONALITY
-    // =========================
-    const memberSearch = document.getElementById('memberSearch');
-
-    if (memberSearch) {
-        memberSearch.addEventListener('keyup', function () {
-            let filter = this.value.toLowerCase();
-            let rows = document.querySelectorAll('.table tbody tr');
-
-            rows.forEach(row => {
-
-                let name = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase() || "";
-                let pf   = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || "";
-                let id   = row.querySelector('td:nth-child(3)')?.textContent.toLowerCase() || "";
-
-                if (name.includes(filter) || pf.includes(filter) || id.includes(filter)) {
-                    row.style.display = "";
-                } else {
-                    row.style.display = "none";
-                }
-            });
-        });
-    }
-
+    if (toggleBtn) toggleBtn.addEventListener('click', toggleSidebar);
+    if (overlay) overlay.addEventListener('click', toggleSidebar);
 
     // =========================
     // SWEETALERT MESSAGES
@@ -596,12 +553,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 icon: "{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% else %}info{% endif %}",
                 title: "{{ message.tags|capfirst }}",
                 text: "{{ message }}",
-                confirmButtonColor: "#1B5E20",
+                confirmButtonColor: "#14452F",
                 timer: 4000
             });
         {% endfor %}
     {% endif %}
-
 });
 </script>
 </body>

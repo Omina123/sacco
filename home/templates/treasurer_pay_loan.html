@@ -111,35 +111,58 @@
 </div>
 
 <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-<div class="sidebar" id="sidebar">
-    <div class="sidebar-brand text-center">
-        <h4 class="fw-bold text-warning mb-0"><i class="fas fa-university"></i> <span>ELDOPOLY</span></h4>
-    </div>
-      
-    <div class="nav-menu">
-        <div class="label-text">Main Menu</div>
-         <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side active"><i class="bi bi-speedometer2"></i> Dashboard</a>
-        <a href="{% url 'Members' %}" class="nav-link-side"><i class="bi bi-people"></i> Members</a>
-        <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-piggy-bank"></i> Member Savings</a>
-        <a href="{% url 'sacco_reportings' %}" class="nav-link-side"><i class="bi bi-graph-up"></i> SACCO Report</a>
+<aside class="sidebar" id="sidebar">
+    <a href="#" class="sidebar-brand"><i class="bi bi-bank2"></i> ELDOPOLY</a>
+    <nav>
+        <div class="label-text mb-2 ps-3 opacity-50">Main Menu</div>
+        <a href="{% url 'treasurer_dashboard' %}" class="nav-link-side active"><i class="bi bi-speedometer2"></i> Dashboard</a>
         
-        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Loan Management and Reporting</div>
-        <a href="{% url 'pending_loans' %}" class="nav-link-side"><i class="bi bi-hourglass-split"></i> Pending Standard</a>
-        <a href="{% url 'Xm_approved' %}" class="nav-link-side"><i class="bi bi-gift"></i> Pending Holiday</a>
-        <a href="{% url 'approved_loans' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Approved History</a>
-        <a href="{% url 'Completed_loans' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Completed Loans</a>
-        <a href="{% url 'monthly_sacco_report' %}" class="nav-link-side"><i class="bi bi-gift"></i> Monthly Sacco Report</a>
-        <a href="{% url 'active_loan' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Active Loans</a>
-        <a href="{% url 'active_xmas_loan' %}" class="nav-link-side"><i class="bi bi-check2-circle"></i> Active Holiday</a>
+        <a class="nav-link-side" data-bs-toggle="collapse" href="#memberSub" role="button" aria-expanded="false">
+            <i class="bi bi-people"></i> Membership <i class="bi bi-chevron-down chevron-icon"></i>
+        </a>
+        <div class="collapse submenu" id="memberSub">
+            <a href="{% url 'Members' %}" class="nav-link-side"><i class="bi bi-person-lines-fill"></i> View Members</a>
+            <a href="{% url 'all_savings' %}" class="nav-link-side"><i class="bi bi-piggy-bank"></i> Member Savings</a>
+        </div>
         
-        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Archives</div>
-        <a href="{% url 'approved_loans' %}" class="nav-link-side"><i class="bi bi-archive"></i> Approved History</a>
-        <a href="{% url 'rejected_loans' %}" class="nav-link-side text-danger-emphasis"><i class="bi bi-x-circle"></i> Rejected Loans</a>
+        <div class="label-text mb-2 ps-3 mt-4 opacity-50">Operations</div>
+        <a class="nav-link-side" data-bs-toggle="collapse" href="#loanSub" role="button" aria-expanded="false">
+            <i class="bi bi-hourglass-split"></i> Loan Requests <i class="bi bi-chevron-down chevron-icon"></i>
+        </a>
+        <div class="collapse submenu" id="loanSub">
+            <a href="{% url 'pending_loans' %}" class="nav-link-side">Standard Loans</a>
+            <a href="{% url 'Xm_approved' %}" class="nav-link-side">QuickLoans</a>
+            <a href="{% url 'active_loan' %}" class="nav-link-side">Active Portfolio</a>
+            <a href="{% url 'active_xmas_loan' %}" class="nav-link-side"></i> Active Holiday</a>
+            
+        </div>
+        
+        <a class="nav-link-side" data-bs-toggle="collapse" href="#refundSub" role="button" aria-expanded="false">
+            <i class="bi bi-coin"></i> Refund & Finance <i class="bi bi-chevron-down chevron-icon"></i>
+        </a>
+        <div class="collapse submenu" id="refundSub">
+            <a href="{% url 'manage_refunds_list' %}" class="nav-link-side">Xmas Refunds</a>
+            <a href="{% url 'capital_share_refund_queue' %}" class="nav-link-side">Share Refunds</a>
+            <a href="{% url 'add_expense_view' %}" class="nav-link-side">Add Expense</a>
+        </div>
+
+        <div class="label-text mb-2 ps-3 mt-4 opacity-50">System</div>
+        <a class="nav-link-side" data-bs-toggle="collapse" href="#sysSub" role="button" aria-expanded="false">
+            <i class="bi bi-graph-up"></i> Analytics <i class="bi bi-chevron-down chevron-icon"></i>
+        </a>
+        <div class="collapse submenu" id="sysSub">
+            <a href="{% url 'sacco_reportings' %}" class="nav-link-side">Detailed Reports</a>
+            <a href="{% url 'sacco_report' %}" class="nav-link-side">Performance Metrics</a>
+            <a href ="{%url 'monthly_sacco_report'%}" class ="nav-link-side"> Monthly Report</a>
+            <a href="{% url 'Completed_loans' %}" class="nav-link-side"> Completed Loans</a>
+            
+        </div>
 
         <a href="{% url 'Logout' %}" class="nav-link-side text-danger mt-5"><i class="bi bi-power"></i> Sign Out</a>
-    </div>
-</div>
+    </nav>
+</aside>
 
 <div class="main-content">
     <div class="row mb-4 gy-3 align-items-center">
