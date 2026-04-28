@@ -108,6 +108,7 @@
     </style>
 </head>
 <body>
+   
 
 <div class="mobile-header">
     <div class="d-flex align-items-center">
@@ -117,24 +118,44 @@
 </div>
 
 <div class="wrapper">
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-brand text-center">
-            <h3 class="fw-bold m-0" style="color: var(--eldo-gold); letter-spacing: 2px;">ELDOPOLY</h3>
-            <span class="small text-white-50">SACCO PORTAL</span>
-        </div>
-        <nav class="mt-3">
-             <a href="{% url 'member_dashboard' %}"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a href="{% url 'deposit_savings' %}"><i class="fas fa-piggy-bank"></i> Xmass Savings</a>
-            <a href="{% url 'purchase_shares' %}"><i class="fas fa-chart-pie"></i> Shares</a>
-            <a href="{% url 'apply_loan' %}" class="active"><i class="fas fa-file-invoice-dollar"></i> Apply Loan</a>
-            <a href="{% url 'pay_loan' %}"><i class="fas fa-hand-holding-usd"></i> Repay Loan</a>
-            <a href="{% url 'my_loans' %}"><i class="fas fa-exchange-alt"></i> My Loans</a>
-            <a href="{% url 'member_individual_report'%}"><i class="fas fa-file-alt"></i> My Statement</a>
-            <hr class="mx-3 text-white-50">
-            <a href="{% url 'Logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
-        </nav>
-    </aside>
+   <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand text-center">
+        <h3 class="fw-bold m-0" style="color: var(--eldo-gold); letter-spacing: 2px;">ELDOPOLY</h3>
+        <span class="small text-white-50">V 2.0 SaaS Edition</span>
+    </div>
 
+    {% if request.user.user_type != '4' %}
+    <div class="px-3 mb-3">
+        {% if 'admin' in request.path or 'management' in request.path %}
+            <a href="{% url 'member_dashboard' %}" class="btn btn-sm w-100 btn-outline-light fw-bold py-2 shadow-sm">
+                <i class="fas fa-user me-2"></i> My Member View
+            </a>
+        {% else %}
+            <a href="{% url 'management_index' %}" class="btn btn-sm w-100 btn-gold fw-bold py-2 shadow-sm text-dark" style="background: var(--eldo-gold); border:none;">
+                <i class="fas fa-user-shield me-2"></i> Management Hub
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <nav class="mt-3">
+        <a href="{% url 'member_dashboard' %}"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="{% url 'deposit_savings' %}"><i class="fas fa-piggy-bank"></i> Xmass Savings</a>
+        <a href="{% url 'purchase_shares' %}"><i class="fas fa-chart-pie"></i> Shares</a>
+        <a href="{% url 'apply_loan' %}" class="active"><i class="fas fa-file-invoice-dollar"></i> Apply Loan</a>
+        <a href="{% url 'pay_loan' %}"><i class="fas fa-hand-holding-usd"></i> Repay Loan</a>
+        <a href="{% url 'my_loans' %}"><i class="fas fa-exchange-alt"></i> My Loans</a>
+        <a href="{% url 'member_individual_report' %}"><i class="fas fa-file-alt"></i> My Ledger</a>
+        <hr class="mx-3 text-white-50">
+        <a href="{% url 'Logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </nav>
+</aside>
+ <div id="toast-container" style="
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+"></div>
     <div class="main-container">
         <main class="scrollable-content">
             <div class="container-fluid">
@@ -266,10 +287,32 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 $(document).ready(function() {
+    // --- 0. DATA FROM BACKEND ---
     const loanLimit = parseFloat("{{ loan_limit|default:'0' }}");
+    const isContract = "{{ profile.employment_status }}" === "CONTRACT";
+    
+    // Calculate max months allowed based on contract (Expiry Date - 2 months - Today)
+    // We pass this from the view context usually, but here is the JS logic:
+    let contractMaxMonths = 48; // Default
+    {% if profile.employment_status == 'CONTRACT' and profile.contract_expiry %}
+        const expiryDate = new Date("{{ profile.contract_expiry|date:'Y-m-d' }}");
+        const today = new Date();
+        // Subtract 2 months for Sacco buffer
+        expiryDate.setMonth(expiryDate.getMonth() - 2);
+        
+        const diffTime = Math.abs(expiryDate - today);
+        contractMaxMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.44));
+        if (contractMaxMonths < 1) contractMaxMonths = 1; 
+    {% endif %}
+
     const $amtRange = $('#amount_range');
     const $amtInput = $('#id_amount');
     const $monRange = $('#month_range');
@@ -277,44 +320,50 @@ $(document).ready(function() {
     const $purposeSelect = $('#id_purpose');
     const $durationWarning = $('#duration-warning');
 
-    // 1. POPULATE DURATION & LOGIC (48 vs 12)
-    function rebuildDurationOptions(maxMonths) {
-        const currentVal = $monInput.val() || 12;
+    // --- 1. POPULATE DURATION & CONTRACT LOGIC ---
+    function rebuildDurationOptions(policyMax) {
+        // The real max is the SHORTER of the Policy vs the Contract
+        const finalMaxMonths = Math.min(policyMax, contractMaxMonths);
+        
+        const currentVal = $monInput.val() || 1;
         $monInput.empty();
-        for (let i = 1; i <= maxMonths; i++) {
+        
+        for (let i = 1; i <= finalMaxMonths; i++) {
             $monInput.append(`<option value="${i}">${i} Months</option>`);
         }
-        $monRange.attr('max', maxMonths);
-        // Ensure current selection doesn't exceed new max
-        const newVal = currentVal > maxMonths ? maxMonths : currentVal;
+        
+        $monRange.attr('max', finalMaxMonths);
+        const newVal = currentVal > finalMaxMonths ? finalMaxMonths : currentVal;
         $monInput.val(newVal);
         $monRange.val(newVal);
         
-        $durationWarning.text(`Policy: Max ${maxMonths} Months`);
+        // Update UI Label
+        let warningText = `Max Allowed: ${finalMaxMonths} Months`;
+        if (isContract && finalMaxMonths === contractMaxMonths) {
+            warningText += " (Contract Limited)";
+        }
+        $durationWarning.text(warningText).addClass('text-primary fw-bold');
+        
         updateCalculations();
     }
 
     $purposeSelect.on('change', function() {
         const type = $(this).val();
-        if (type === 'normal') {
-            rebuildDurationOptions(48);
-        } else {
-            rebuildDurationOptions(12);
-        }
+        rebuildDurationOptions(type === 'normal' ? 48 : 12);
     });
 
-    // Initial load - default to Normal Loan 48
+    // Initial load
     rebuildDurationOptions(48);
 
     function initSelect2() {
         $('select[name$="-guarantor"]').select2({ 
             width: '100%',
-            placeholder: "Search for a member..."
+            placeholder: "Search for a regular member..."
         });
     }
     initSelect2();
 
-    // 2. AMOUNT SYNC
+    // --- 2. SYNC CONTROLS ---
     $amtRange.on('input', function() {
         $amtInput.val($(this).val());
         updateCalculations();
@@ -328,7 +377,6 @@ $(document).ready(function() {
         updateCalculations();
     });
 
-    // 3. DURATION SYNC
     $monRange.on('input', function() {
         $monInput.val($(this).val());
         updateCalculations();
@@ -339,6 +387,7 @@ $(document).ready(function() {
         updateCalculations();
     });
 
+    // --- 3. CALCULATIONS & 1/3 RULE PREVIEW ---
     function updateCalculations() {
         const principal = parseFloat($amtInput.val()) || 0;
         const months = parseInt($monInput.val()) || 0;
@@ -356,16 +405,20 @@ $(document).ready(function() {
         const interest = principal * rate;
         const insurance = months > 0 ? ((5.03 * months + 3.03) * principal) / 6000 : 0;
         const totalDebt = principal + interest + insurance;
+        const monthlyInstallment = totalDebt / (months || 1);
 
         $('#p-rate-badge').text(rateLabel);
         $('#p-interest').text("KES " + interest.toLocaleString(undefined,{minimumFractionDigits:2}));
         $('#p-insurance').text("KES " + insurance.toLocaleString(undefined,{minimumFractionDigits:2}));
         $('#p-total').text("KES " + totalDebt.toLocaleString(undefined,{minimumFractionDigits:2}));
         
+        // Show installment preview
+        $('#p-monthly').text("Monthly: KES " + monthlyInstallment.toLocaleString(undefined,{minimumFractionDigits:2}));
+        
         validateCoverage();
     }
 
-    // 4. GUARANTOR VALIDATION
+    // --- 4. GUARANTOR VALIDATION ---
     function validateCoverage() {
         let totalGuaranteed = 0;
         const requestedAmount = parseFloat($amtInput.val()) || 0;
@@ -379,7 +432,7 @@ $(document).ready(function() {
         const $submitBtn = $('#submitBtn');
 
         if (totalGuaranteed >= requestedAmount && requestedAmount > 0) {
-            $status.text("Covered").removeClass('bg-danger').addClass('bg-success');
+            $status.text("Fully Covered").removeClass('bg-danger').addClass('bg-success');
             $submitBtn.prop('disabled', false);
         } else {
             $status.text("Shortfall: KES " + (shortfall > 0 ? shortfall : 0).toLocaleString());
@@ -390,9 +443,17 @@ $(document).ready(function() {
 
     $(document).on('input', '.guarantor-amt', validateCoverage);
 
+    // --- 5. DYNAMIC FORMSET LOGIC ---
     $('#add-guarantor').click(function() {
         const $totalForms = $('#id_form-TOTAL_FORMS');
         const count = parseInt($totalForms.val());
+        
+        // Prevent more than 10 guarantors per policy
+        if (count >= 10) {
+            Swal.fire("Limit Reached", "You can only add up to 10 guarantors.", "warning");
+            return;
+        }
+
         const $newRow = $('.guarantor-row').first().clone();
         
         $newRow.find('input, select').each(function() {
@@ -403,14 +464,33 @@ $(document).ready(function() {
             }
         });
 
-        $newRow.find('label').first().text('Select Member');
         $newRow.find('.select2-container').remove();
         $('#guarantor-container').append($newRow);
         $totalForms.val(count + 1);
         initSelect2();
     });
 
-    $('#menuToggle').click(() => $('#sidebar').toggleClass('active'));
+    // --- 6. NOTIFICATIONS (Eldopoly Style) ---
+    function showSMSPopup(message, type = "success") {
+        const container = document.getElementById("toast-container");
+        if (!container) return;
+
+        const popup = document.createElement("div");
+        popup.className = `sms-popup shadow border-start border-4 ${type === 'danger' ? 'border-danger' : 'border-success'}`;
+        popup.style.cssText = "background:#fff; padding:15px; margin-bottom:10px; border-radius:8px; transition:0.4s; min-width:300px;";
+        
+        popup.innerHTML = `<strong>ELDOPOLY SMS</strong><br>${message}`;
+        container.appendChild(popup);
+        
+        setTimeout(() => popup.remove(), 15000); // 15 Seconds
+    }
+
+    {% if messages %}
+        {% for message in messages %}
+            showSMSPopup("{{ message|escapejs }}", "{% if message.tags == 'error' %}danger{% else %}success{% endif %}");
+        {% endfor %}
+    {% endif %}
+
 });
 </script>
 </body>

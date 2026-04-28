@@ -3,11 +3,11 @@
 /*** Spinner ***/
 /* Eldoret National Polytechnic Theme Colors */
 :root {
-    --bs-primary: #0B7A3B;   /* Green */
-    --bs-dark: #0A3D24;      /* Dark Green */
+    --bs-primary: rgb(4, 39, 14);   /* Green */
+    --bs-dark: rgb(77, 100, 0);      /* Dark Green */
     --bs-light: #F5F5F5;     /* Light background */
     --bs-white: #ffffff;     /* White */
-    --bs-warning: #FFD700;   /* Gold / Yellow */
+    --bs-warning: #e3c311;   /* Gold / Yellow */
     --bs-body: #d9d9d9;
 }
 #spinner {
@@ -110,8 +110,8 @@
 }
 
 .btn.btn-light {
-    background: var(--bs-primary) !important;
-    color: var(--bs-white) !important;
+    background: var(--bs-light) !important;
+    color: var(--bs-dark) !important;
     font-family: 'Roboto', sans-serif;
     border: none;
     font-weight: 400;

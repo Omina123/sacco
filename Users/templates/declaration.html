@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Declaration | Eldopoly SACCO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f4f7f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .declaration-card {
+            border: none;
+            border-radius: 15px;
+        }
+        .declaration-header {
+            background: #1a2a6c;
+            background: -webkit-linear-gradient(to right, #b21f1f, #fdbb2d, #1a2a6c);
+            background: linear-gradient(to right, #004e92, #000428);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            padding: 2rem;
+        }
+        .legal-text {
+            background-color: #ffffff;
+            border-left: 5px solid #004e92;
+            font-family: 'Georgia', serif;
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: #2c3e50;
+            text-align: justify;
+        }
+        .signature-box {
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 5px;
+            font-weight: bold;
+            color: #004e92;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card declaration-card shadow-lg">
+                <div class="card-header declaration-header text-center">
+                    <h2 class="text-uppercase fw-bold m-0">Member Declaration</h2>
+                    <p class="small mb-0 opacity-75">Eldopoly SACCO Management System</p>
+                </div>
+                
+                <div class="card-body p-4 p-md-5">
+                    <div class="legal-text p-4 mb-4 shadow-sm">
+                        <p>I, <strong>{{ user.get_full_name|upper }}</strong>, 
+                           ID Number: <strong>{{ user.profile.id_number }}</strong>, 
+                           do hereby solemnly declare that:</p>
+                        
+                        <p>
+                            The statements herein are true to the best of my knowledge. I further undertake 
+                            to abide by the by-laws and any alterations on the loan amount, terms and conditions 
+                            of the repayment attached hereto by the Credit/Management committee and declare 
+                            that the statements herein are made for the purpose of obtaining the loan and 
+                            are true to the best of my knowledge and belief.
+                        </p>
+                    </div>
+
+                    <form method="POST" action="{% url 'member_declaration_view' %}">
+                        {% csrf_token %}
+                        
+                        <div class="form-check mb-5">
+                            <input class="form-check-input" type="checkbox" name="consent_check" id="consentCheck" style="transform: scale(1.3);" required>
+                            <label class="form-check-label ms-2 fw-bold text-dark" for="consentCheck">
+                                I confirm that I have read, understood, and agree to the terms of this declaration.
+                            </label>
+                        </div>
+
+                        <div class="row g-4 mb-5">
+                            <div class="col-sm-6">
+                                <label class="text-muted small text-uppercase d-block">Digital Signature</label>
+                                <div class="signature-box">{{ user.get_full_name }}</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="text-muted small text-uppercase d-block">Date of Submission</label>
+                                <div class="signature-box">{% now "d/m/Y" %}</div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg py-3 fw-bold shadow">
+                                <i class="bi bi-shield-check me-2"></i> SUBMIT SIGNED DECLARATION
+                            </button>
+                            <a href="{% url 'member_dashboard' %}" class="btn btn-outline-secondary">
+                                Cancel and return to Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-white text-center py-3 border-0">
+                    <small class="text-muted">
+                        <i class="bi bi-lock-fill"></i> This is a legally binding digital signature under the laws of Kenya.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

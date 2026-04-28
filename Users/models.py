@@ -67,6 +67,20 @@ class Profile(models.Model):
         ('F', 'Female'),
         ('O', 'Other'),
     )
+    EMPLOYMENT_CHOICES = (
+        ('PERMANENT', 'Permanent & Pensionable'),
+        ('CONTRACT', 'Contract Terms'),
+    )
+    employment_status = models.CharField(
+        max_length=20, 
+        choices=EMPLOYMENT_CHOICES, 
+        default='PERMANENT'
+    )
+    contract_expiry = models.DateField(
+        null=True, 
+        blank=True, 
+        help_text="Required only for contract-based members"
+    )
 
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     phone_number = models.CharField(
@@ -114,6 +128,8 @@ class Profile(models.Model):
     monthly_saving_target = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     share_goal = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     month = models.DateField(null=True, blank=True )
+    agreed_to_declaration = models.BooleanField(default=False)
+    declaration_timestamp = models.DateTimeField(null=True, blank=True)
 
 
     def __str__(self):
@@ -126,3 +142,9 @@ class Profile(models.Model):
         
     ]
         return all(required_fields)
+    def can_access_sacco_services(self):
+        """
+        Ensures the member has both updated their details 
+        AND signed the legal declaration.
+        """
+        return self.is_profile_updated() and self.agreed_to_declaration

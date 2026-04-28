@@ -239,12 +239,11 @@ class Loan(models.Model):
     )
     
     PURPOSE_CHOICES = (
-        ('normal Loan', 'Normal Loan'),
-        ('school fees', 'School fees'),
-        ('emergency', 'Emergency'),
-        ('personal', 'Personal'),
-    )
-
+    ('normal', 'Normal Loan'),
+    ('school_fees', 'School Fees'),
+    ('emergency', 'Emergency'),
+    ('personal', 'Personal'),
+)
     member = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="member_loans")
     purpose = models.CharField(max_length=50, choices=PURPOSE_CHOICES, default='normal Loan')
     

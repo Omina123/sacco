@@ -59,7 +59,7 @@ class ProfileForm(forms.ModelForm):
 class UserUpdateForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ['username','first_name', 'last_name'] # The "remaining" fields
+        fields = ['username','first_name', 'last_name','email'] # The "remaining" fields
 # forms.py
 class LoginForm(forms.Form):
     # Change label to be more descriptive

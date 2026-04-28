@@ -146,6 +146,45 @@ def Login(request):
     return render(request, 'login.html', {'form': form})
 @login_required
 
+# def update_profile(request):
+#     user = request.user
+#     profile_instance = user.profile
+
+#     if request.method == 'POST':
+#         u_form = UserUpdateForm(request.POST, instance=user)
+#         p_form = ProfileForm(request.POST, request.FILES, instance=profile_instance)
+
+#         if u_form.is_valid() and p_form.is_valid():
+#             # Save user basic info
+#             u_form.save()
+
+#             # Save profile safely
+#             profile = p_form.save(commit=False)
+
+#             # Handle optional unique fields (avoid empty string issues)
+#             profile.pf_number = profile.pf_number or None
+#             # profile.membership_number = profile.membership_number or None
+
+#             # 🔥 IMPORTANT: Reset salary review flag after update
+#             if hasattr(profile, 'salary_needs_review'):
+#                 profile.salary_needs_review = False
+
+#             profile.save()
+
+#             messages.success(request, "Profile updated successfully.")
+#             return redirect('member_dashboard')
+
+#         else:
+#             messages.error(request, "Please correct the errors below.")
+
+#     else:
+#         u_form = UserUpdateForm(instance=user)
+#         p_form = ProfileForm(instance=profile_instance)
+
+#     return render(request, 'up.html', {
+#         'u_form': u_form,
+#         'p_form': p_form
+#     })
 def update_profile(request):
     user = request.user
     profile_instance = user.profile
@@ -155,23 +194,25 @@ def update_profile(request):
         p_form = ProfileForm(request.POST, request.FILES, instance=profile_instance)
 
         if u_form.is_valid() and p_form.is_valid():
-            # Save user basic info
             u_form.save()
-
-            # Save profile safely
             profile = p_form.save(commit=False)
 
-            # Handle optional unique fields (avoid empty string issues)
+            # Handle optional unique fields
             profile.pf_number = profile.pf_number or None
-            # profile.membership_number = profile.membership_number or None
 
-            # 🔥 IMPORTANT: Reset salary review flag after update
+            # Reset salary review flag
             if hasattr(profile, 'salary_needs_review'):
                 profile.salary_needs_review = False
 
             profile.save()
 
             messages.success(request, "Profile updated successfully.")
+
+            # 🔥 NEW REDIRECT LOGIC:
+            # If the user hasn't signed the declaration yet, send them there.
+            if not profile.agreed_to_declaration:
+                return redirect('member_declaration') # Ensure this name matches your urls.py
+            
             return redirect('member_dashboard')
 
         else:
@@ -507,3 +548,53 @@ def complete_membership(request):
         form = MembershipSetupForm()
 
     return render(request, 'setup.html', {'form': form})
+
+
+# Users/views.py
+from django.utils import timezone
+
+def member_declaration_view(request):
+    if request.method == 'POST':
+        profile = request.user.profile
+        # We assume the 'required' attribute on the checkbox handled the validation
+        profile.agreed_to_declaration = True
+        profile.declaration_timestamp = timezone.now()
+        profile.save()
+        
+        messages.success(request, "Thank you! Your membership declaration has been recorded.")
+        return redirect('member_dashboard')
+        
+    return render(request, 'declaration.html')
+
+
+def update_member_contract(request, profile_id):
+    profile = get_object_or_404(Profile, id=profile_id)
+    
+    if request.method == 'POST':
+        new_status = request.POST.get('employment_status')
+        new_expiry = request.POST.get('contract_expiry')
+        
+        profile.employment_status = new_status
+        # Only save expiry date if they are on contract
+        if new_status == 'CONTRACT' and new_expiry:
+            profile.contract_expiry = new_expiry
+        else:
+            profile.contract_expiry = None
+            
+        profile.save()
+        messages.success(request, f"Contract for {profile.user.username} updated successfully!")
+        return redirect('Human_Resource') # Redirect back to your staff member list
+
+    return render(request, 'update_contract.html', {'profile': profile})
+@login_required
+def management_index(request): 
+    if request.user.user_type == '1':
+        return redirect('admin_dashboard')
+    elif request.user.user_type == '2':
+        return redirect('staff_dashboard')
+    elif request.user.user_type == '3':
+        return redirect('treasurer_dashboard')
+    elif request.user.user_type == '5':
+        return redirect('Human_Resource')
+    else:
+        return redirect('member_dashboard')

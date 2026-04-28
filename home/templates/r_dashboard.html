@@ -87,12 +87,71 @@
         /* Progress Circle Fixes */
         .progress-circle-container { position: relative; display: inline-block; }
         svg circle { transition: stroke-dashoffset 1s ease-in-out; }
+        .
     </style>
 </head>
 <body>
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-brand p-3 mb-2 text-center">
+        <h4 class="fw-bold" style="color: var(--eldo-gold);"><i class="fas fa-university"></i> ELDOPOLY</h4>
+        <small class="text-white-50 d-block" style="font-size: 0.65rem; margin-top: -10px;">V 2.0 SaaS Edition</small>
+    </div>
 
-<div id="toast-container"></div>
+    {% if request.user.user_type != '4' %}
+    <div class="px-3 mb-3">
+        {% if 'admin' in request.path or 'management' in request.path or 'staff' in request.path %}
+            <a href="{% url 'member_dashboard' %}" class="btn btn-sm w-100 btn-outline-light fw-bold py-2 shadow-sm">
+                <i class="fas fa-user me-2"></i> My Member View
+            </a>
+        {% else %}
+            <a href="{% url 'management_index' %}" class="btn btn-sm w-100 btn-gold fw-bold py-2 shadow-sm text-dark">
+                <i class="fas fa-user-shield me-2"></i> Management Hub
+            </a>
+        {% endif %}
+    </div>
+    {% endif %}
 
+    <div class="menu-label px-3 small text-uppercase text-white-50 mb-2" style="font-size: 0.7rem;">Main Menu</div>
+    
+    <a href="{% url 'member_dashboard' %}" class="{% if request.resolver_match.url_name == 'member_dashboard' %}active{% endif %}">
+        <i class="fas fa-th-large"></i> Dashboard
+    </a>
+    
+    <a href="{% url 'deposit_savings' %}" class="{% if 'savings' in request.path %}active{% endif %}">
+        <i class="fas fa-piggy-bank"></i> Xmass Savings
+    </a>
+    
+    <a href="{% url 'purchase_shares' %}" class="{% if 'shares' in request.path %}active{% endif %}">
+        <i class="fas fa-chart-pie"></i> Shares
+    </a>
+
+    <div class="menu-label px-3 small text-uppercase text-white-50 mt-3 mb-2" style="font-size: 0.7rem;">Credit Services</div>
+    
+    <a href="{% url 'apply_loan' %}"><i class="fas fa-file-invoice-dollar"></i> Apply Loan</a>
+    <a href="{% url 'pay_loan' %}"><i class="fas fa-hand-holding-usd"></i> Repay Loan</a>
+    <a href="{% url 'my_loans' %}"><i class="fas fa-exchange-alt"></i> My Loans</a>
+
+    <div class="menu-label px-3 small text-uppercase text-white-50 mt-3 mb-2" style="font-size: 0.7rem;">Ledgers & Payouts</div>
+    
+    <a href="{% url 'my_statement' %}"><i class="fas fa-file-alt"></i> My Statement</a>
+    <a href="{% url 'member_individual_report' %}"><i class="fas fa-book"></i> My Ledger</a>
+    
+    <a class="d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#refundSubmenu" role="button">
+        <span><i class="fas fa-undo-alt"></i> Refunds</span>
+        <i class="fas fa-chevron-down submenu-arrow" style="font-size: 0.8rem;"></i>
+    </a>
+    <div class="collapse" id="refundSubmenu">
+        <a href="{% url 'apply_xmas_refund' %}" class="ps-5 py-2" style="font-size: 0.85rem;"><i class="fas fa-gift me-2"></i>Xmass Refunds</a>
+        <a href="{% url 'apply_share_refund' %}" class="ps-5 py-2" style="font-size: 0.85rem;"><i class="fas fa-coins me-2"></i>Share Refunds</a>
+    </div>
+    
+    <hr class="mx-3 border-white-50 mt-4">
+    <a href="{% url 'Logout' %}" class="text-danger-hover">
+        <i class="fas fa-sign-out-alt"></i> Logout
+    </a>
+</div>
+ <div id="toast-container"></div>
+{% comment %}
 <div class="mobile-header shadow-sm">
     <h5 class="mb-0 fw-bold" style="color: var(--eldo-gold);"><i class="fas fa-university me-2"></i>ELDOPOLY</h5>
     <button class="btn text-white fs-4" id="sidebarToggle"><i class="fas fa-bars"></i></button>
@@ -122,7 +181,7 @@
     
     <hr class="mx-3 text-white-50">
     <a href="{% url 'Logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
-</div>
+</div> {% endcomment %}
 
 <div class="main-content position-relative">
     
@@ -426,17 +485,33 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
 <script>
-    // MOBILE SIDEBAR TOGGLE
+    // --- 1. MOBILE SIDEBAR TOGGLE ---
     const sidebarToggle = document.getElementById('sidebarToggle');
     const sidebar = document.getElementById('sidebar');
     if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('active'));
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('active');
+        });
     }
 
-    // ELDOPOLY SMS POPUP NOTIFICATION
+    // --- 2. ELDOPOLY SMS POPUP NOTIFICATION ENGINE ---
+    /**
+     * Shows a custom SMS-style notification.
+     * @param {string} message - The text to display.
+     * @param {string} type - 'success', 'danger', 'info', or 'warning'.
+     */
     function showSMSPopup(message, type = "success") {
         const container = document.getElementById("toast-container");
+        
+        if (!container) {
+            console.warn("Toast container not found. Ensure <div id='toast-container'></div> is in your HTML.");
+            return;
+        }
+
         const popup = document.createElement("div");
         
         const icons = {
@@ -446,42 +521,86 @@
             warning: "fa-exclamation-circle text-warning"
         };
 
-        popup.className = `sms-popup`;
+        // Styling for the Eldopoly SMS look
+        popup.className = `sms-popup shadow-sm border-start border-4 ${type === 'danger' ? 'border-danger' : 'border-success'}`;
+        popup.style.background = "#ffffff";
+        popup.style.padding = "15px";
+        popup.style.marginBottom = "10px";
+        popup.style.borderRadius = "8px";
+        popup.style.display = "flex";
+        popup.style.alignItems = "center";
+        popup.style.minWidth = "320px";
+        popup.style.opacity = "0";
+        popup.style.transform = "translateX(120%)";
+        popup.style.transition = "all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)";
+
         popup.innerHTML = `
-            <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center w-100">
                 <i class="fas ${icons[type] || icons.info} fs-4 me-3"></i>
-                <div>
-                    <strong class="d-block small text-muted" style="letter-spacing: 1px;">ELDOPOLY SMS</strong>
-                    <span class="fw-bold" style="font-size: 0.9rem;">${message}</span>
+                <div class="flex-grow-1">
+                    <strong class="d-block small text-uppercase text-muted" style="letter-spacing: 1.5px; font-size: 0.7rem;">Eldopoly SMS</strong>
+                    <span class="fw-bold text-dark" style="font-size: 0.9rem;">${message}</span>
                 </div>
+                <button type="button" class="btn-close ms-2" style="font-size: 0.7rem;" aria-label="Close" onclick="this.closest('.sms-popup').remove()"></button>
             </div>
-            <button type="button" class="btn-close ms-3" style="font-size: 0.65rem;" onclick="this.parentElement.remove()"></button>
         `;
 
         container.appendChild(popup);
+
+        // Slide-in effect
+        setTimeout(() => {
+            popup.style.transform = "translateX(0)";
+            popup.style.opacity = "1";
+        }, 10);
+
+        // --- DURATION: 15 SECONDS ---
         setTimeout(() => {
             if (popup.parentElement) {
                 popup.style.transform = "translateX(120%)";
                 popup.style.opacity = "0";
                 setTimeout(() => popup.remove(), 400);
             }
-        }, 5000);
+        }, 15000); 
     }
 
-    // TARGET UPDATE LOGIC
+    // --- 3. PAGE LOAD HANDLERS ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // Trigger SMS Popups for Django Backend Messages automatically
+        {% if messages %}
+            {% for message in messages %}
+                showSMSPopup("{{ message|escapejs }}", "{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% else %}info{% endif %}");
+            {% endfor %}
+        {% endif %}
+
+        // Close sidebar when clicking outside on mobile devices
+        document.addEventListener('click', (e) => {
+            if (window.innerWidth < 768 && sidebar && sidebar.classList.contains('active')) {
+                if (!sidebar.contains(e.target) && e.target !== sidebarToggle) {
+                    sidebar.classList.remove('active');
+                }
+            }
+        });
+    });
+
+    // --- 4. TARGET UPDATE LOGIC (AJAX) ---
+    /**
+     * Prompt user to update Savings or Share goals and send to Django backend.
+     */
     function updateGoal(type = "saving") {
-        let currentValue = type === "saving" ? "{{ saving_target }}" : "{{ share_goal }}";
-        let goal = prompt(`Enter new ${type} target (KES):`, currentValue);
+        let currentValue = type === "saving" ? "{{ profile.monthly_saving_target }}" : "{{ profile.share_goal }}";
+        let title = type === "saving" ? "Monthly Saving Target" : "Capital Share Goal";
         
-        if (goal === null) return;
+        let goal = prompt(`Enter new ${title} (KES):`, currentValue);
+        
+        if (goal === null) return; // Exit if user clicks cancel
         goal = parseFloat(goal);
 
         if (isNaN(goal) || (type === "share" && goal < 500)) {
-            showSMSPopup("Please enter a valid amount (Min 500 for shares).", "danger");
+            showSMSPopup("Please enter a valid amount (Min KES 500 for shares).", "danger");
             return;
         }
 
-        showSMSPopup("Connecting to server...", "info");
+        showSMSPopup("Updating Eldopoly records...", "info");
 
         fetch("{% url 'update_targets' %}", {
             method: "POST",
@@ -494,16 +613,23 @@
                 share_goal: type === "share" ? goal : null
             })
         })
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("Network response was not ok");
+            return res.json();
+        })
         .then(data => {
             if (data.status === 'success') {
                 showSMSPopup("Success! Your targets have been updated.", "success");
+                // 1.5s delay so the user can see the "Success" SMS before the page reloads
                 setTimeout(() => location.reload(), 1500);
             } else {
                 showSMSPopup(data.message || "Operation failed.", "danger");
             }
         })
-        .catch(() => showSMSPopup("Network error. Please try again.", "danger"));
+        .catch(err => {
+            console.error("Fetch error:", err);
+            showSMSPopup("Network error. Could not connect to Eldopoly server.", "danger");
+        });
     }
 </script>
 </body>
