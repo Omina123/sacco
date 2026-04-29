@@ -449,7 +449,7 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.member} - {self.transaction_type}"
 class ActivityLog(models.Model):
-
+    
     user = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True)
 
     action = models.CharField(max_length=255)

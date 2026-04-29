@@ -7,10 +7,11 @@ from Users.views import*
 
 urlpatterns = [
     path('register/',register, name='register'),
+    path('member_profile/', member_profile, name='member_profile'),
     path('login/', Login, name='login'),
-    path('update_profile',update_profile,name='update_profile'),
-    path ('Logout',Logout, name= 'Logout'),
-    path('edit_user_role/<int:user_id>',edit_user_role, name='edit_user_role'),
+    path('update_profile/',update_profile,name='update_profile'),
+    path ('Logout/',Logout, name= 'Logout'),
+    path('edit_user_role/<int:user_id>/',edit_user_role, name='edit_user_role'),
     path('access_denied/', access_denied, name='access_denied'),
     path('succfy/', succfy,name='succfy'),
     path('edit_salary/<int:user_id>/', edit_salary, name='edit_salary'),
@@ -30,4 +31,5 @@ urlpatterns = [
     path('member_declaration_view/', member_declaration_view, name='member_declaration_view'),
     path ('update_member_contract/<int:profile_id>/', update_member_contract, name='update_member_contract'),
     path ('management_index/', management_index, name='management_index'),
+    path(' member_declaration_view/', member_declaration_view, name='member_declaration_view'),
 ]

@@ -2149,19 +2149,23 @@ def Setting_loan(request):
 def purchase_shares(request):
     user_profile = request.user.profile
 
-    # Only members (not treasurers) can access this
-    if request.user.user_type != '3':  # assuming '3' is treasurer
-        if request.method == "POST":
-            form = SharesForm(request.POST)
-            if form.is_valid():
-                share = form.save(commit=False)
-                share.member = user_profile
-                share.save()
-                messages.success(request, f"Share purchase of KES {share.amount} has been recorded. Please complete M-Pesa payment.")
-                return redirect("member_dashboard")
-        else:
-            form = SharesForm()
-        return render(request, "shares.html", {"form": form})
+    if request.method == "POST":
+        form = SharesForm(request.POST)
+
+        if form.is_valid():
+            share = form.save(commit=False)
+            share.member = user_profile
+            share.save()
+
+            messages.success(
+                request,
+                f"Share purchase of KES {share.amount} has been recorded."
+            )
+            return redirect("member_dashboard")
+    else:
+        form = SharesForm()
+
+    return render(request, "shares.html", {"form": form})
     
     # If treasurer, we could later add manual + mpesa
     return redirect("treasurer_dashboard")

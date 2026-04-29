@@ -559,3 +559,80 @@ def management_index(request):
         return redirect('Human_Resource')
     else:
         return redirect('member_dashboard')
+from django.shortcuts import render
+from decimal import Decimal
+
+def get_full_member_details(user):
+    profile = user.profile
+
+    data = {
+        # USER CORE
+        "username": user.username,
+        "full_name": user.get_full_name(),
+        "email": user.email,
+        "user_type": user.get_user_type_display(),
+        "is_verified": user.is_verified,
+
+        # PROFILE
+        "pf_number": profile.pf_number,
+        "membership_number": profile.membership_number,
+        "phone_number": profile.phone_number,
+        "id_number": profile.id_number,
+        "gender": profile.get_gender_display() if profile.gender else "",
+        "date_of_birth": profile.date_of_birth,
+        "address": profile.address,
+        "employment_status": profile.employment_status,
+        "contract_expiry": profile.contract_expiry,
+
+        # NEXT OF KIN (FIXED FIELD NAME)
+        "next_of_kin": profile.next_of_kin,
+        "next_of_kin_phone": profile.Next_of_kin_phone,
+
+        # FINANCIAL
+        "gross_salary": profile.gross_salary,
+        "net_salary": profile.net_salary,
+        "monthly_saving_target": profile.monthly_saving_target,
+        "share_goal": profile.share_goal,
+
+        # SYSTEM
+        "joined_date": profile.date_joined,
+        "profile_updated": profile.is_profile_updated(),
+        "can_access": profile.can_access_sacco_services(),
+
+        # DECLARATION (✔ IMPORTANT)
+        "agreed_to_declaration": profile.agreed_to_declaration,
+        "declaration_timestamp": profile.declaration_timestamp,
+
+        # IMAGE
+        "profile_picture": profile.profile_picture.url if profile.profile_picture else None,
+    }
+
+    return data
+
+
+def member_profile(request):
+    data = get_full_member_details(request.user)
+
+    return render(request, "member_profile.html", {
+        "data": data
+    })
+from django.contrib import messages
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def member_declaration_view(request):
+    profile = request.user.profile
+    
+    if request.method == 'POST':
+        if not profile.agreed_to_declaration:
+            profile.agreed_to_declaration = True
+            profile.declaration_timestamp = timezone.now()
+            profile.save()
+            messages.success(request, "Declaration signed successfully!")
+            return redirect('member_profile') # Redirect back to profile
+        else:
+            messages.info(request, "You have already signed this declaration.")
+            return redirect('member_profile')
+
+    return render(request, 'de.html', {'profile': profile})
