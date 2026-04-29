@@ -146,45 +146,6 @@ def Login(request):
     return render(request, 'login.html', {'form': form})
 @login_required
 
-# def update_profile(request):
-#     user = request.user
-#     profile_instance = user.profile
-
-#     if request.method == 'POST':
-#         u_form = UserUpdateForm(request.POST, instance=user)
-#         p_form = ProfileForm(request.POST, request.FILES, instance=profile_instance)
-
-#         if u_form.is_valid() and p_form.is_valid():
-#             # Save user basic info
-#             u_form.save()
-
-#             # Save profile safely
-#             profile = p_form.save(commit=False)
-
-#             # Handle optional unique fields (avoid empty string issues)
-#             profile.pf_number = profile.pf_number or None
-#             # profile.membership_number = profile.membership_number or None
-
-#             # 🔥 IMPORTANT: Reset salary review flag after update
-#             if hasattr(profile, 'salary_needs_review'):
-#                 profile.salary_needs_review = False
-
-#             profile.save()
-
-#             messages.success(request, "Profile updated successfully.")
-#             return redirect('member_dashboard')
-
-#         else:
-#             messages.error(request, "Please correct the errors below.")
-
-#     else:
-#         u_form = UserUpdateForm(instance=user)
-#         p_form = ProfileForm(instance=profile_instance)
-
-#     return render(request, 'up.html', {
-#         'u_form': u_form,
-#         'p_form': p_form
-#     })
 def update_profile(request):
     user = request.user
     profile_instance = user.profile

@@ -6,7 +6,7 @@ from Users.views import*
 
 
 urlpatterns = [
-    path('register',register, name='register'),
+    path('register/',register, name='register'),
     path('login/', Login, name='login'),
     path('update_profile',update_profile,name='update_profile'),
     path ('Logout',Logout, name= 'Logout'),

@@ -9,58 +9,37 @@
 
     <style>
         :root {
-            /* Theme Colors: mostly little yellow (Gold) and little green */
-            --eldo-navy: #0B1F3A; /* Keep for primary text and footer */
-            --eldo-gold: #D4AF37; /* SACCO Yellow */
-            --eldo-green: #28a745; /* Green for growth/trust */
-            --eldo-light-green: #e9f7ef; /* Ultra-light background hint */
+            --eldo-navy: #0B1F3A;
+            --eldo-gold: #D4AF37;
+            --eldo-green: #28a745;
+            --eldo-light-green: #e9f7ef;
             --eldo-white: #FFFFFF;
         }
 
         body {
-            /* Ultra light green background for freshness */
             background-color: var(--eldo-light-green); 
             min-height: 100vh;
             display: flex;
             align-items: center;
             padding: 40px 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
         }
 
         .registration-card {
             max-width: 800px;
             margin: auto;
-            border: none;
-            border-radius: 20px; /* More rounded */
-            box-shadow: 0 20px 60px rgba(40, 167, 69, 0.1); /* Subtle green shadow */
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(40, 167, 69, 0.1);
             background-color: var(--eldo-white);
-            overflow: hidden; /* Important for header border-radius */
-            transition: 0.3s ease-in-out;
+            overflow: hidden;
+            border: none;
         }
 
-        .registration-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 25px 70px rgba(40, 167, 69, 0.15);
-        }
-
-        /* The Header Section: Modern Two-Tone Gradient */
         .header-section {
             background: linear-gradient(135deg, #FFD700 0%, var(--eldo-gold) 50%, var(--eldo-green) 100%);
-            color: var(--eldo-navy); /* Keep navy for contrast on light colors */
+            color: var(--eldo-navy);
             padding: 40px 20px;
             text-align: center;
-            position: relative;
-        }
-
-        .header-section::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            width: 100%;
-            height: 10px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50% 50% 0 0;
         }
 
         .poly-logo-text {
@@ -68,97 +47,62 @@
             letter-spacing: 2px;
             text-transform: uppercase;
             font-size: 2rem;
-            text-shadow: 1px 1px 0px var(--eldo-white);
         }
 
-        .small-tagline {
-            color: var(--eldo-navy);
-            opacity: 0.8;
-            font-weight: 600;
+        /* Password Wrapper for Eye Icon */
+        .pass-group {
+            position: relative;
         }
 
-        /* Informative Alert regarding Two-Step Process */
-        .sacco-info-alert {
-            background-color: var(--eldo-light-green);
-            border-left: 5px solid var(--eldo-green);
-            color: var(--eldo-navy);
-            border-radius: 8px;
-            font-size: 0.9rem;
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6c757d;
+            z-index: 10;
         }
 
-        .section-title {
-            color: var(--eldo-navy);
-            border-bottom: 3px solid var(--eldo-green); /* Green underline */
-            padding-bottom: 8px;
-            margin-bottom: 25px;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.95rem;
-            letter-spacing: 1px;
-            display: inline-block;
+        /* Strength Meter Styling */
+        .strength-container {
+            height: 5px;
+            background-color: #eee;
+            margin-top: 8px;
+            border-radius: 10px;
+            overflow: hidden;
         }
 
-        /* Buttons: Focus on Green for Action/Submit */
-        .btn-eldo {
-            background: linear-gradient(to right, var(--eldo-green) 0%, #34ce57 100%);
-            color: var(--eldo-white);
-            font-weight: 700;
-            padding: 15px 40px;
-            transition: 0.3s;
-            border: none;
-            letter-spacing: 1px;
-            font-size: 1rem;
+        .strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.4s ease;
         }
 
-        .btn-eldo:hover {
-            color: var(--eldo-gold); /* Hint of yellow on hover */
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.2);
-        }
-
-        .form-label {
-            color: var(--eldo-navy);
-            font-weight: 700;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            opacity: 0.8;
-        }
-
-        .text-green { color: var(--eldo-green) !important; }
-        .text-gold { color: var(--eldo-gold) !important; }
-
-        /* Styling for Django's auto-generated forms */
-        input, select, textarea {
-            display: block;
-            width: 100%;
-            padding: 12px 18px;
-            font-size: 1rem;
-            font-weight: 400;
-            line-height: 1.5;
-            color: #212529;
-            background-color: #fff;
+        .form-control {
             border: 2px solid #e1e5eb;
             border-radius: 10px;
-            transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+            padding: 12px 18px;
         }
 
-        /* Form Input Focus: Use Green */
-        input:focus {
+        .form-control:focus {
             border-color: var(--eldo-green);
-            outline: 0;
             box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.15);
         }
 
-        /* Stylized Sign In link */
-        .sign-in-link {
-            color: var(--eldo-green);
+        .btn-eldo {
+            background: linear-gradient(to right, var(--eldo-green) 0%, #34ce57 100%);
+            color: white;
             font-weight: 700;
-            text-decoration: none;
-            border-bottom: 2px solid var(--eldo-gold); /* Yellow highlight */
-            padding-bottom: 2px;
+            padding: 15px 40px;
+            border: none;
+            transition: 0.3s;
         }
 
+        .btn-eldo:hover {
+            color: var(--eldo-gold);
+            transform: translateY(-3px);
+        }
     </style>
 </head>
 <body>
@@ -167,43 +111,58 @@
     <div class="card registration-card">
         <div class="header-section">
             <h2 class="mb-0 poly-logo-text">ELDOPOLY SACCO</h2>
-            <p class="mb-0 small-tagline">Secure Your Financial Future</p>
+            <p class="mb-0 fw-bold">Secure Your Financial Future</p>
         </div>
 
         <div class="card-body p-4 p-md-5">
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" id="eldoForm" novalidate>
                 {% csrf_token %}
 
-                <div class="alert sacco-info-alert p-3 mb-5 d-flex align-items-center shadow-sm" role="alert">
-                    <i class="bi bi-info-circle-fill fs-4 me-3 text-green"></i>
-                    <div>
-                        <strong>Welcome!</strong> Start your journey with us by creating your account credentials. You will complete your full profile (Phone, ID, Address) after signing in.
+                <div class="alert p-3 mb-5 d-flex align-items-center shadow-sm" style="background: var(--eldo-light-green); border-left: 5px solid var(--eldo-green);">
+                    <i class="bi bi-info-circle-fill fs-4 me-3" style="color: var(--eldo-green);"></i>
+                    <div style="color: var(--eldo-navy); font-size: 0.9rem;">
+                        <strong>Step 1:</strong> Set up your login credentials. You will update your Phone, ID, and Address in the next step.
                     </div>
                 </div>
 
-                <div class="text-center mb-4">
-                    <div class="section-title">Step 1: Account Credentials</div>
-                </div>
-                
                 <div class="row g-4">
-                    {% for field in user_form %}
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.errors %}
-                                <div class="text-danger small mt-1"><i class="bi bi-exclamation-triangle me-1"></i> {{ field.errors }}</div>
-                            {% endif %}
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Username</label>
+                        <input type="text" name="username" id="username" class="form-control" placeholder="Create username" required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Email Address</label>
+                        <input type="email" name="email" id="email" class="form-control" placeholder="name@domain.com" required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Password</label>
+                        <div class="pass-group">
+                            <input type="password" name="password" id="password" class="form-control" required>
+                            <i class="bi bi-eye toggle-password" id="eyeIcon"></i>
                         </div>
-                    {% endfor %}
+                        <div class="strength-container">
+                            <div id="strengthBar" class="strength-bar"></div>
+                        </div>
+                        <small id="strengthText" class="text-muted" style="font-size: 11px;"></small>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold small text-uppercase">Confirm Password</label>
+                        <div class="pass-group">
+                            <input type="password" name="password_confirm" id="confirm_password" class="form-control" required>
+                        </div>
+                        <div id="matchText" class="small mt-1"></div>
+                    </div>
                 </div>
 
-                
                 <div class="text-center mt-5">
-                    <button type="submit" class="btn btn-eldo px-5 rounded-pill shadow-lg">
+                    <button type="submit" id="submitBtn" class="btn btn-eldo rounded-pill px-5">
                         REGISTER AS MEMBER <i class="bi bi-arrow-right-circle ms-2"></i>
                     </button>
-                    <p class="mt-4 pt-2 small text-muted">
-                        Already have an account? <a href="{% url 'login' %}" class="sign-in-link">Sign In</a>
+                    <p class="mt-4 small text-muted">
+                        Already a member? <a href="{% url 'login' %}" class="fw-bold text-decoration-none" style="color: var(--eldo-green); border-bottom: 2px solid var(--eldo-gold);">Sign In</a>
                     </p>
                 </div>
             </form>
@@ -212,6 +171,71 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 1. Password Visibility (The Eye)
+    const eyeIcon = document.getElementById('eyeIcon');
+    const passwordInput = document.getElementById('password');
+
+    eyeIcon.addEventListener('click', () => {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        eyeIcon.classList.toggle('bi-eye');
+        eyeIcon.classList.toggle('bi-eye-slash');
+    });
+
+    // 2. Strength Meter Logic
+    passwordInput.addEventListener('input', function() {
+        const val = this.value;
+        const bar = document.getElementById('strengthBar');
+        const text = document.getElementById('strengthText');
+        let score = 0;
+
+        if (val.length >= 8) score += 30;
+        if (/[A-Z]/.test(val)) score += 30;
+        if (/[0-9]/.test(val)) score += 40;
+
+        bar.style.width = score + '%';
+        if (score < 40) {
+            bar.style.backgroundColor = '#dc3545';
+            text.innerText = "Weak";
+        } else if (score < 80) {
+            bar.style.backgroundColor = '#ffc107';
+            text.innerText = "Fair";
+        } else {
+            bar.style.backgroundColor = '#28a745';
+            text.innerText = "Strong Account Secured ✅";
+        }
+    });
+
+    // 3. Confirm Password Match
+    const confirmInput = document.getElementById('confirm_password');
+    const matchText = document.getElementById('matchText');
+
+    confirmInput.addEventListener('input', function() {
+        if (this.value === passwordInput.value && this.value !== "") {
+            matchText.innerText = "Passwords match ✅";
+            matchText.className = "text-success small mt-1";
+            this.style.borderColor = "#28a745";
+        } else {
+            matchText.innerText = "Passwords do not match ❌";
+            matchText.className = "text-danger small mt-1";
+            this.style.borderColor = "#dc3545";
+        }
+    });
+
+    // 4. Loading State on Submit
+    const form = document.getElementById('eldoForm');
+    form.addEventListener('submit', function(e) {
+        if (passwordInput.value !== confirmInput.value) {
+            e.preventDefault();
+            alert("Passwords must match!");
+        } else {
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+            btn.disabled = true;
+        }
+    });
+</script>
+
 </body>
 </html>

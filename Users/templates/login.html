@@ -20,38 +20,37 @@
             height: 100vh;
             display: flex;
             align-items: center;
-            /* Light Green background to match Registration */
             background-color: var(--eldo-light-green);
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            font-family: "Segoe UI", sans-serif;
+            overflow-x: hidden;
         }
 
+        /* Floating Card */
         .login-card {
             max-width: 420px;
             margin: auto;
             border: none;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(40, 167, 69, 0.1);
-            background-color: var(--eldo-white);
-            overflow: hidden;
-            transition: 0.3s ease-in-out;
+            border-radius: 24px;
+            background: var(--eldo-white);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s ease;
         }
 
         .login-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-10px);
+            box-shadow: 0 30px 60px rgba(40, 167, 69, 0.15);
         }
 
-        /* Gradient Header to match Registration */
         .login-header {
             background: linear-gradient(135deg, #FFD700 0%, var(--eldo-gold) 50%, var(--eldo-green) 100%);
             padding: 40px 20px;
             text-align: center;
-            position: relative;
+            border-radius: 24px 24px 0 0;
         }
 
-        /* Logo Circle overlapping the header */
         .logo-circle {
-            width: 70px;
-            height: 70px;
+            width: 75px;
+            height: 75px;
             background: var(--eldo-navy);
             border-radius: 50%;
             display: flex;
@@ -59,60 +58,61 @@
             justify-content: center;
             color: var(--eldo-gold);
             font-weight: 800;
-            font-size: 1.4rem;
-            margin: 0 auto -75px; /* Pulls it down to sit on the edge */
-            border: 4px solid var(--eldo-white);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin: -38px auto 10px;
+            border: 5px solid var(--eldo-white);
             position: relative;
-            z-index: 2;
-        }
-
-        .btn-eldo {
-            background: linear-gradient(to right, var(--eldo-green) 0%, #34ce57 100%);
-            color: white;
-            font-weight: 700;
-            padding: 12px;
-            transition: 0.3s;
-            border-radius: 10px;
-            border: none;
-            letter-spacing: 1px;
-        }
-
-        .btn-eldo:hover {
-            color: var(--eldo-gold);
-            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.2);
-            transform: translateY(-2px);
+            z-index: 15;
         }
 
         .form-control {
-            border-radius: 10px;
-            padding: 12px;
-            border: 2px solid #e1e5eb;
+            border-radius: 12px;
+            padding: 14px 18px;
+            border: 2px solid #edf2f7;
+            transition: 0.3s;
         }
 
         .form-control:focus {
             border-color: var(--eldo-green);
-            box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.1);
+            box-shadow: 0 0 0 4px rgba(40, 167, 69, 0.1);
         }
 
-        .form-label {
+        .pass-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #a0aec0;
+        }
+
+        .btn-eldo {
+            background: linear-gradient(to right, var(--eldo-green), #34ce57);
+            border: none;
+            border-radius: 12px;
+            padding: 14px;
+            color: white;
             font-weight: 700;
-            color: var(--eldo-navy);
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .forgot-link {
+            display: block;
+            text-align: right;
             font-size: 0.85rem;
-            text-transform: uppercase;
-            opacity: 0.8;
-        }
-
-        .sign-up-link {
-            color: var(--eldo-green);
-            font-weight: 700;
+            color: var(--eldo-navy);
+            font-weight: 600;
             text-decoration: none;
-            border-bottom: 2px solid var(--eldo-gold);
+            margin-top: 8px;
         }
 
+        .forgot-link:hover { color: var(--eldo-green); }
     </style>
 </head>
-
 <body>
 
 <div class="container">
@@ -120,53 +120,81 @@
     
     <div class="card login-card">
         <div class="login-header">
-            <h3 class="fw-extrabold mb-0" style="color:var(--eldo-navy); letter-spacing: 2px;">ELDOPOLY</h3>
-            <p class="small mb-0 text-dark opacity-75 fw-bold">MEMBER PORTAL</p>
+            <h3 class="fw-bold mb-0" style="color:var(--eldo-navy); letter-spacing: 1px;">ELDOPOLY SACCO</h3>
+            <p class="small mb-0 fw-bold opacity-75">MEMBER LOGIN</p>
         </div>
 
-        <div class="card-body p-4 pt-5"> <form method="POST">
+        <div class="card-body p-4 pt-5">
+            <form method="POST" id="loginForm">
                 {% csrf_token %}
 
                 {% if form.non_field_errors %}
-                <div class="alert alert-danger p-2 small border-0 shadow-sm">
-                    <i class="bi bi-exclamation-circle-fill me-2"></i> {{ form.non_field_errors }}
+                <div class="alert alert-danger py-2 small border-0 mb-3">
+                    {{ form.non_field_errors }}
                 </div>
                 {% endif %}
 
-                {% for field in form %}
                 <div class="mb-3">
-                    <label class="form-label">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                    <div class="text-danger small mt-1">
-                        {{ field.errors }}
-                    </div>
-                    {% endif %}
+                    <label class="form-label small fw-bold text-uppercase text-muted">Email or PF Number</label>
+                    <input type="text" name="Email" placeholder="Email or PF Number" class="form-control" required>
                 </div>
-                {% endfor %}
 
-                <button type="submit" class="btn btn-eldo w-100 mt-3 shadow-sm">
-                    SIGN IN <i class="bi bi-box-arrow-in-right ms-2"></i>
+                <div class="mb-2">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Password</label>
+                    <div class="pass-wrapper">
+                        <input type="password" name="password" id="password" class="form-control" placeholder="••••••••" required>
+                        <i class="bi bi-eye toggle-password" id="eye"></i>
+                    </div>
+                    <a href="{% url 'password_reset' %}" class="forgot-link">Forgot Password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-eldo" id="submitBtn">
+                    <span id="btnText">SIGN IN</span> <i class="bi bi-box-arrow-in-right ms-2"></i>
                 </button>
             </form>
-            <a href="{% url 'password_reset' %}" class="small text-decoration-none" style="color: var(--eldo-navy); font-weight: 600;">
-            Forgot?
-        </a>
 
-            <div class="text-center mt-4 pt-2">
-                <p class="small text-muted mb-0">
-                    Not a member yet? 
+            <div class="text-center mt-4">
+                <p class="small text-muted mb-0">Need an account? 
+                    <a href="{% url 'register' %}" class="fw-bold text-decoration-none" style="color: var(--eldo-green); border-bottom: 2px solid var(--eldo-gold);">Register</a>
                 </p>
-                <a href="{% url 'register' %}" class="sign-up-link small">
-                    Create Sacco Account
-                </a>
             </div>
         </div>
         
-        <div style="height: 8px; background: linear-gradient(to right, var(--eldo-gold) 0%, var(--eldo-green) 100%);"></div>
+        <div style="height: 10px; background: linear-gradient(to right, var(--eldo-gold), var(--eldo-green));"></div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 1. Eye Toggle JS
+    const eye = document.getElementById('eye');
+    const passInput = document.getElementById('password');
+
+    eye.addEventListener('click', () => {
+        const type = passInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passInput.setAttribute('type', type);
+        eye.classList.toggle('bi-eye');
+        eye.classList.toggle('bi-eye-slash');
+    });
+
+    // 2. Button Loading JS
+    document.getElementById('loginForm').onsubmit = function() {
+        const btnText = document.getElementById('btnText');
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.disabled = true;
+        btnText.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Authenticating...';
+    };
+
+    // 3. Hover Interaction JS
+    const card = document.querySelector('.login-card');
+    document.querySelectorAll('.form-control').forEach(input => {
+        input.addEventListener('focus', () => {
+            card.style.borderColor = "var(--eldo-green)";
+        });
+        input.addEventListener('blur', () => {
+            card.style.borderColor = "transparent";
+        });
+    });
+</script>
+
 </body>
 </html>
