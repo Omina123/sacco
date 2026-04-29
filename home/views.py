@@ -1045,7 +1045,7 @@ def apply_loan(request):
     GuarantorFormSet = modelformset_factory(
         Guarantor,
         form=GuarantorForm,
-        extra=2, # Changed to 2 so the user sees both required rows immediately
+        extra=1, # Changed to 2 so the user sees both required rows immediately
         max_num=10,
         validate_min=True,
         min_num=2
@@ -1121,7 +1121,7 @@ def apply_loan(request):
                     loan.save()
                     for g in guarantors_to_save:
                         if g.guarantor.user.user_type != '4':
-                            raise ValueError(f"{g.guarantor.user.get_full_name()} is not a regular Member.")
+                            raise ValueError(f"{g.guarantor.user.get_full_name()} is among the officials and cannot be a guarantor.")
                         g.loan = loan
                         g.save()
 

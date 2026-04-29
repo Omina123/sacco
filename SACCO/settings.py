@@ -16,9 +16,12 @@ BREVO_API_KEY = env('BREVO_API_KEY')
 # You can also use it for your Django Secret Key
 SECRET_KEY = env('SECRET_KEY')
 # DEBUG = env.bool('DEBUG', default=False)
-DEBUG = True  # Set to False in production  
+DEBUG = False  # Set to False in production  
 ALLOWED_HOSTS = ['*']  # or set your Render URL
-
+# ALLOWED_HOSTS = [
+#     "edopoly.ac.ke",
+#     "www.edopoly.ac.ke"
+# ]
 # --------------------------
 # APPLICATIONS
 # --------------------------
@@ -77,6 +80,15 @@ WSGI_APPLICATION = 'SACCO.wsgi.application'
 # --------------------------
 # DATABASE
 # --------------------------
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'dbname',
+#         'USER': 'dbuser',
+#         'PASSWORD': 'password',
+#         'HOST': 'localhost',
+#     }
+# }
 DATABASES = {
     'default': dj_database_url.config(
         default='postgresql://polyte_user:gimE3frQZgTIG7M9X7PZ9VZTmlkPounp@dpg-d7hsljt7vvec73a4qneg-a.oregon-postgres.render.com/polyte',

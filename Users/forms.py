@@ -16,7 +16,7 @@ class UserRoleForm(forms.ModelForm):
 class MemberRegistrationForm(UserCreationForm):
     class Meta:
         model = CustomUser
-        fields = ('username', 'email', 'password1', 'password2')  # user_type removed
+        fields = ('username', 'email')  # user_type removed
 
 
 
