@@ -4,7 +4,7 @@
 /* Eldoret National Polytechnic Theme Colors */
 :root {
     --bs-primary: #1F7A4C;   /* Rich green (buttons, accents) */
-    --bs-dark: #0B2E1E;      /* Deep premium green (sidebar, headers) */
+    --bs-dark:#0B2E1E;      /* Deep premium green (sidebar, headers) */
     --bs-light: #F5F7F6;     /* Clean light background */
     --bs-white: #ffffff;
 

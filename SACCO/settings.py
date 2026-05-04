@@ -10,13 +10,13 @@ env = environ.Env()
 # Read the .env file
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-# api
+# Now replace your hardcoded key with this:
 BREVO_API_KEY = env('BREVO_API_KEY')
 
 # You can also use it for your Django Secret Key
 SECRET_KEY = env('SECRET_KEY')
-# DEBUG = env.bool('DEBUG', default=False)
-# DEBUG = False  # Set to False in production  
+DEBUG = env.bool('DEBUG', default=False)
+# DEBUG = False # Set to False in production  
 ALLOWED_HOSTS = ['*']  # or set your Render URL
 # ALLOWED_HOSTS = [
 #     "edopoly.ac.ke",
@@ -77,16 +77,14 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'SACCO.wsgi.application'
 
-# --------------------------
-# DATABASE
-# --------------------------
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'dbname',
-#         'USER': 'dbuser',
-#         'PASSWORD': 'password',
+#         'NAME': 'eldopoly_sacco_db',
+#         'USER': 'eldopoly_Sacco',
+#         'PASSWORD': 'Polyy123@123',
 #         'HOST': 'localhost',
+#         'PORT': '3306',
 #     }
 # }
 DATABASES = {

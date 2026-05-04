@@ -256,7 +256,7 @@ def disburse_share_refund(request, refund_id):
     if getattr(request.user, 'user_type', None) != '3':
         messages.error(request, "Only the Treasurer can disburse share refunds.")
         return redirect('capital_share_refund_queue')
-
+    
     refund = get_object_or_404(CapitalShareRefund, id=refund_id)
 
     # 2. Validation Checks
@@ -1568,27 +1568,33 @@ def treasurer_pay_Xloan(request, loan_id):
 
     return render(request, "treasurer_pay.html", {"loan": loan})
 @login_required
-@role_required(allowed_roles=['3'])  # Only Treasurer
+@role_required(allowed_roles=['3']) 
 def treasurer_pay_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
 
-    if request.user.user_type != '3':  # Only Treasurer
-        messages.error(request, "Unauthorized access")
+    # 1. Access Control
+    if request.user.user_type != '3':  # Treasurer Role
+        messages.error(request, "Unauthorized access: Treasurer permissions required.")
         return redirect('treasurer_dashboard')
+
     if request.method == "POST":
         try:
             amount = Decimal(request.POST.get('amount'))
+            if amount <= 0:
+                messages.error(request, "Invalid amount.")
+                return redirect('treasurer_pay_loan', loan_id=loan.id)
 
             with transaction.atomic():
-                # 1️⃣ Record repayment
+                # 2. Record the raw repayment record
                 repayment = LoanRepayment.objects.create(
                     loan=loan,
                     member=loan.member,
                     amount_paid=amount,
-                    reference=generate_transaction_ref("TR")
+                    reference=generate_transaction_ref("TR"),
+                    is_xmas=False # Assuming normal loan based on the view name
                 )
 
-                # 2️⃣ Apply to repayment schedule
+                # 3. Amortization: Apply to the Repayment Schedule
                 amount_to_distribute = amount
                 schedules = LoanRepaymentSchedule.objects.filter(
                     loan=loan, is_paid=False
@@ -1597,26 +1603,19 @@ def treasurer_pay_loan(request, loan_id):
                 for installment in schedules:
                     if amount_to_distribute <= 0:
                         break
+                    
                     if amount_to_distribute >= installment.amount_due:
                         amount_to_distribute -= installment.amount_due
                         installment.is_paid = True
+                        installment.date_paid = timezone.now()
                         installment.save()
                     else:
+                        # Optional: Architect choice - apply partial payment to the installment
+                        # For now, we stop distributing if the full installment isn't covered
                         break
 
-                # 3️⃣ Excess goes to savings
-                if amount_to_distribute > 0:
-                    MonthlyContribution.objects.create(
-                        member=loan.member,
-                        amount=amount_to_distribute,
-                        month=timezone.now().date()
-                    )
-
-                # 4️⃣ Update loan status
-                total_payable = LoanRepaymentSchedule.objects.filter(
-                    loan=loan
-                ).aggregate(Sum('amount_due'))['amount_due__sum'] or Decimal('0.00')
-
+                # 4. Status Update Logic
+                total_payable = loan.total_payable
                 total_paid = LoanRepayment.objects.filter(
                     loan=loan
                 ).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
@@ -1625,7 +1624,27 @@ def treasurer_pay_loan(request, loan_id):
                     loan.status = 'completed'
                     loan.save()
 
-                # 5️⃣ Log transaction
+                # 5. BUSINESS RULE: Excess Routing
+                # Only route to savings if this loan is closed AND no other loans exist
+                if amount_to_distribute > 0:
+                    other_active_loans = Loan.objects.filter(
+                        member=loan.member, 
+                        status__in=['disbursed', 'approved', 'defaulted']
+                    ).exclude(id=loan.id).exists()
+
+                    if loan.status == 'completed' and not other_active_loans:
+                        # Route to Savings (MonthlyContribution)
+                        MonthlyContribution.objects.create(
+                            member=loan.member,
+                            amount=int(amount_to_distribute), # Cast to int for your model
+                            month=timezone.now().date()
+                        )
+                        messages.info(request, f"Excess of KES {amount_to_distribute} moved to Savings.")
+                    else:
+                        # Keep it in the loan system or notify the Treasurer
+                        messages.warning(request, f"Excess of KES {amount_to_distribute} held as unallocated credit (Member has active loans).")
+
+                # 6. Final Transaction Log
                 Transaction.objects.create(
                     member=loan.member,
                     transaction_type='repayment',
@@ -1633,14 +1652,86 @@ def treasurer_pay_loan(request, loan_id):
                     reference=repayment.reference
                 )
 
-            messages.success(request, f"Payment of KES {amount} recorded for {loan.member}")
+            messages.success(request, f"Payment of KES {amount} processed for {loan.member}")
             return redirect('treasurer_dashboard')
 
         except Exception as e:
-            messages.error(request, f"Error processing payment: {str(e)}")
+            messages.error(request, f"Architectural Error: {str(e)}")
+            # The transaction.atomic() ensures no data is partially saved if an error occurs
 
-    # Render the page for GET request
-    return render(request, "treasurer_pay_loan.html", {"loan": loan})
+    return render(request, "treasurer_pay_loan.html", {"loan": loan})# Only Treasurer
+# def treasurer_pay_loan(request, loan_id):
+#     loan = get_object_or_404(Loan, id=loan_id)
+
+#     if request.user.user_type != '3':  # Only Treasurer
+#         messages.error(request, "Unauthorized access")
+#         return redirect('treasurer_dashboard')
+#     if request.method == "POST":
+#         try:
+#             amount = Decimal(request.POST.get('amount'))
+
+#             with transaction.atomic():
+#                 # 1️⃣ Record repayment
+#                 repayment = LoanRepayment.objects.create(
+#                     loan=loan,
+#                     member=loan.member,
+#                     amount_paid=amount,
+#                     reference=generate_transaction_ref("TR")
+#                 )
+
+#                 # 2️⃣ Apply to repayment schedule
+#                 amount_to_distribute = amount
+#                 schedules = LoanRepaymentSchedule.objects.filter(
+#                     loan=loan, is_paid=False
+#                 ).order_by('due_date')
+
+#                 for installment in schedules:
+#                     if amount_to_distribute <= 0:
+#                         break
+#                     if amount_to_distribute >= installment.amount_due:
+#                         amount_to_distribute -= installment.amount_due
+#                         installment.is_paid = True
+#                         installment.save()
+#                     else:
+#                         break
+
+#                 # 3️⃣ Excess goes to savings
+#                 if amount_to_distribute > 0:
+#                     MonthlyContribution.objects.create(
+#                         member=loan.member,
+#                         amount=amount_to_distribute,
+#                         month=timezone.now().date()
+#                     )
+
+#                 # 4️⃣ Update loan status
+#                 total_payable = LoanRepaymentSchedule.objects.filter(
+#                     loan=loan
+#                 ).aggregate(Sum('amount_due'))['amount_due__sum'] or Decimal('0.00')
+
+#                 total_paid = LoanRepayment.objects.filter(
+#                     loan=loan
+#                 ).aggregate(Sum('amount_paid'))['amount_paid__sum'] or Decimal('0.00')
+
+#                 if total_paid >= total_payable:
+#                     loan.status = 'completed'
+#                     loan.save()
+
+#                 # 5️⃣ Log transaction
+#                 Transaction.objects.create(
+#                     member=loan.member,
+#                     transaction_type='repayment',
+#                     amount=amount,
+#                     reference=repayment.reference
+#                 )
+
+#             messages.success(request, f"Payment of KES {amount} recorded for {loan.member}")
+#             return redirect('treasurer_dashboard')
+
+#         except Exception as e:
+#             messages.error(request, f"Error processing payment: {str(e)}")
+
+#     # Render the page for GET request
+#     return render(request, "treasurer_pay_loan.html", {"loan": loan})
 @login_required
 @role_required(allowed_roles=['2', '4'])  # Staff and Admin
 def staff_dashboard(request):
@@ -3253,9 +3344,13 @@ def sacco_report(request, year=None, month=None):
 
 
 import datetime
+from django.shortcuts import render
+from django.contrib import messages
+# Ensure this import exists!
+from home.service import SaccoReportService 
+
 def Bank_Statement(request):
-    # Get year from user input, default to current year
-    current_year = datetime.datetime.now().year
+    current_year = timezone.now().year
     year = request.GET.get('year', current_year)
     
     try:
@@ -3263,9 +3358,15 @@ def Bank_Statement(request):
     except ValueError:
         year = current_year
 
-    report_data = SaccoReportService.generate_annual_report(year)
-    
-    # Generate list of years for the selection dropdown (e.g., last 5 years)
+    report_data = None
+    try:
+        # The service call that might be failing
+        report_data = SaccoReportService.generate_annual_report(year)
+    except Exception as e:
+        # Log the error for the Architect to see
+        print(f"Report Error: {e}") 
+        messages.error(request, f"Could not generate report for {year}. Please ensure data exists.")
+
     year_range = range(current_year - 5, current_year + 1)
     
     return render(request, 'financial_audit.html', {
@@ -3332,12 +3433,7 @@ def member_loan_details_view(request, profile_id):
         'xmas_loans': xmas_loans,
     }
     return render(request, 'member_loans.html', context)
-from decimal import Decimal
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from django.db import transaction
-from django.shortcuts import get_object_or_404, render, redirect
-from django.contrib import messages
+
 
 def to_decimal(value):
     try:
