@@ -10,13 +10,13 @@ env = environ.Env()
 # Read the .env file
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-# Now replace your hardcoded key with this:
+# api
 BREVO_API_KEY = env('BREVO_API_KEY')
 
 # You can also use it for your Django Secret Key
 SECRET_KEY = env('SECRET_KEY')
 # DEBUG = env.bool('DEBUG', default=False)
-DEBUG = False  # Set to False in production  
+# DEBUG = False  # Set to False in production  
 ALLOWED_HOSTS = ['*']  # or set your Render URL
 # ALLOWED_HOSTS = [
 #     "edopoly.ac.ke",
