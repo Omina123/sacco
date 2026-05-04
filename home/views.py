@@ -1573,15 +1573,15 @@ def treasurer_pay_loan(request, loan_id):
     loan = get_object_or_404(Loan, id=loan_id)
 
     # 1. Access Control
-    if request.user.user_type != '3':  # Treasurer Role
+    if request.user.user_type != '3':
         messages.error(request, "Unauthorized access: Treasurer permissions required.")
         return redirect('treasurer_dashboard')
 
     if request.method == "POST":
         try:
-            amount = Decimal(request.POST.get('amount'))
+            amount = Decimal(request.POST.get('amount', '0'))
             if amount <= 0:
-                messages.error(request, "Invalid amount.")
+                messages.error(request, "Invalid amount. Please enter a positive value.")
                 return redirect('treasurer_pay_loan', loan_id=loan.id)
 
             with transaction.atomic():
@@ -1591,10 +1591,10 @@ def treasurer_pay_loan(request, loan_id):
                     member=loan.member,
                     amount_paid=amount,
                     reference=generate_transaction_ref("TR"),
-                    is_xmas=False # Assuming normal loan based on the view name
+                    is_xmas=False
                 )
 
-                # 3. Amortization: Apply to the Repayment Schedule
+                # 3. Amortization Logic
                 amount_to_distribute = amount
                 schedules = LoanRepaymentSchedule.objects.filter(
                     loan=loan, is_paid=False
@@ -1610,11 +1610,11 @@ def treasurer_pay_loan(request, loan_id):
                         installment.date_paid = timezone.now()
                         installment.save()
                     else:
-                        # Optional: Architect choice - apply partial payment to the installment
-                        # For now, we stop distributing if the full installment isn't covered
+                        # Partial payment logic could go here, 
+                        # but keeping current behavior as requested.
                         break
 
-                # 4. Status Update Logic
+                # 4. Conditional Status Update
                 total_payable = loan.total_payable
                 total_paid = LoanRepayment.objects.filter(
                     loan=loan
@@ -1624,27 +1624,16 @@ def treasurer_pay_loan(request, loan_id):
                     loan.status = 'completed'
                     loan.save()
 
-                # 5. BUSINESS RULE: Excess Routing
-                # Only route to savings if this loan is closed AND no other loans exist
+                # 5. AUTOMATIC OVERFLOW TO SAVINGS
+                # If there's money left after servicing current installments, save it.
                 if amount_to_distribute > 0:
-                    other_active_loans = Loan.objects.filter(
-                        member=loan.member, 
-                        status__in=['disbursed', 'approved', 'defaulted']
-                    ).exclude(id=loan.id).exists()
+                    MonthlyContribution.objects.create(
+                        member=loan.member,
+                        amount=int(amount_to_distribute),
+                        month=timezone.now().date()
+                    )
 
-                    if loan.status == 'completed' and not other_active_loans:
-                        # Route to Savings (MonthlyContribution)
-                        MonthlyContribution.objects.create(
-                            member=loan.member,
-                            amount=int(amount_to_distribute), # Cast to int for your model
-                            month=timezone.now().date()
-                        )
-                        messages.info(request, f"Excess of KES {amount_to_distribute} moved to Savings.")
-                    else:
-                        # Keep it in the loan system or notify the Treasurer
-                        messages.warning(request, f"Excess of KES {amount_to_distribute} held as unallocated credit (Member has active loans).")
-
-                # 6. Final Transaction Log
+                # 6. Immutable Transaction Log
                 Transaction.objects.create(
                     member=loan.member,
                     transaction_type='repayment',
@@ -1652,14 +1641,13 @@ def treasurer_pay_loan(request, loan_id):
                     reference=repayment.reference
                 )
 
-            messages.success(request, f"Payment of KES {amount} processed for {loan.member}")
+            messages.success(request, f"Successfully processed KES {amount} for {loan.member}.")
             return redirect('treasurer_dashboard')
 
         except Exception as e:
-            messages.error(request, f"Architectural Error: {str(e)}")
-            # The transaction.atomic() ensures no data is partially saved if an error occurs
+            messages.error(request, f"System Error: {str(e)}")
 
-    return render(request, "treasurer_pay_loan.html", {"loan": loan})# Only Treasurer
+    return render(request, "treasurer_pay_loan.html", {"loan": loan})
 # def treasurer_pay_loan(request, loan_id):
 #     loan = get_object_or_404(Loan, id=loan_id)
 
